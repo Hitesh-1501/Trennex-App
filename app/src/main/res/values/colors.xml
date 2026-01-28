@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <color name="black">#FF000000</color>
+    <color name="white">#FFFFFFFF</color>
+
+    <!-- Brand Colors -->
+    <color name="colorPrimary">#2962FF</color>
+    <color name="colorAccent">#FF6D00</color>
+
+    <!-- Backgrounds -->
+    <color name="colorBackground">#FFFFFF</color>
+    <color name="colorSurface">#F7F7F7</color>
+
+    <!-- Text Colors -->
+    <color name="textPrimary">#212121</color>
+    <color name="textSecondary">#757575</color>
+    <color name="textPlaceholder">#BDBDBD</color>
+
+    <!-- Status Colors -->
+    <color name="colorSuccess">#4CAF50</color>
+    <color name="colorError">#E53935</color>
+
+    <!-- Buttons -->
+    <color name="btnPrimary">#2962FF</color>
+    <color name="btnPrimaryText">#FFFFFF</color>
+    <color name="btnSecondaryBorder">#2962FF</color>
+
+    <color name="ripplePrimary">#2962FF20</color>
+
+</resources>
