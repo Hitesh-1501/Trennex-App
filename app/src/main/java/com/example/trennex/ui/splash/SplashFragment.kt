@@ -15,7 +15,7 @@ import androidx.navigation.fragment.findNavController
 import com.example.trennex.R
 import com.example.trennex.databinding.FragmentSplashBinding
 
-class SplashFragment : Fragment() {
+class SplashFragment : Fragment(R.layout.fragment_splash) {
     private var _binding: FragmentSplashBinding? = null
     private val binding get()  = _binding!!
 

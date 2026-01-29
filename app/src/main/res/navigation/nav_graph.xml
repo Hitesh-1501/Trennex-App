@@ -20,7 +20,7 @@
     </fragment>
     <fragment
         android:id="@+id/onboardingFragment"
-        android:name="com.example.trennex.ui.splash.OnboardingFragment"
+        android:name="com.example.trennex.ui.Onboarding.OnboardingFragment"
         android:label="fragment_onboarding"
         tools:layout="@layout/fragment_onboarding" />
 </navigation>

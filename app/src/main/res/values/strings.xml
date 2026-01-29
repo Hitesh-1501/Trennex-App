@@ -1,4 +1,9 @@
 <resources>
     <string name="app_name">TrenNex</string>>
-    <string name="hello_blank_fragment">Hello blank fragment</string>
+    <string name="onboarding1_page_title">Discover Amazing Products</string>
+    <string name="onboarding1_page_description"> Find the best deals across all categories</string>
+    <string name="onboarding2_page_title">Fast &amp; Safe Delivery</string>
+    <string name="onboarding2_page_description">Your orders delivered at your doorstep</string>
+    <string name="onboarding3_page_title">Secure Payments</string>
+    <string name="onboarding3_page_description">safely with trusted providers</string>
 </resources>
