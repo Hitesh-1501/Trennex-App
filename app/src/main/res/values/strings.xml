@@ -6,4 +6,7 @@
     <string name="onboarding2_page_description">Your orders delivered at your doorstep</string>
     <string name="onboarding3_page_title">Secure Payments</string>
     <string name="onboarding3_page_description">safely with trusted providers</string>
+    <string name="phone_login_text">Login With Phone Number</string>
+    <string name="phone_No_text">Enter Phone No</string>
+    <string name="get_otp_text">Get Otp</string>
 </resources>

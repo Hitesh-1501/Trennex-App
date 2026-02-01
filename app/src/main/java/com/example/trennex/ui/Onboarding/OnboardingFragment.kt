@@ -5,6 +5,7 @@ import androidx.fragment.app.Fragment
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
+import androidx.navigation.fragment.findNavController
 import androidx.viewpager2.widget.ViewPager2
 import com.example.trennex.R
 import com.example.trennex.databinding.FragmentOnboardingBinding
@@ -38,7 +39,9 @@ class OnboardingFragment : Fragment(R.layout.fragment_onboarding) {
             tab?.customView = layoutInflater.inflate(R.layout.dot_tab, binding.tabLayout,false)
         }
         binding.btnNext.visibility = View.INVISIBLE
-
+        binding.btnNext.setOnClickListener {
+            findNavController().navigate(R.id.action_onboardingFragment_to_loginFragment)
+        }
         binding.viewpager.registerOnPageChangeCallback(object: ViewPager2.OnPageChangeCallback(){
             override fun onPageSelected(position: Int) {
                 if(position == pages.size-1){
@@ -49,5 +52,9 @@ class OnboardingFragment : Fragment(R.layout.fragment_onboarding) {
                 }
             }
         })
+    }
+    override fun onDestroyView() {
+        super.onDestroyView()
+        _binding = null
     }
 }

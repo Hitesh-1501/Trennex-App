@@ -1,31 +1,30 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
+        <color name="black">#FF000000</color>
+        <color name="white">#FFFFFFFF</color>
 
         <!-- Brand Colors -->
-        <color name="colorPrimary">#82B1FF</color>
-        <color name="colorAccent">#FF8A50</color>
+        <color name="colorPrimary">#2962FF</color>
+        <color name="colorAccent">#FF6D00</color>
 
         <!-- Backgrounds -->
-        <color name="colorBackground">#121212</color>
-        <color name="colorSurface">#1E1E1E</color>
+        <color name="colorBackground">#FFFFFF</color>
+        <color name="colorSurface">#F7F7F7</color>
 
         <!-- Text Colors -->
-        <color name="textPrimary">#EAEAEA</color>
-        <color name="textSecondary">#A7A7A7</color>
-        <color name="textPlaceholder">#7A7A7A</color>
+        <color name="textPrimary">#212121</color>
+        <color name="textSecondary">#757575</color>
+        <color name="textPlaceholder">#BDBDBD</color>
 
         <!-- Status Colors -->
-        <color name="colorSuccess">#81C784</color>
-        <color name="colorError">#EF5350</color>
-
+        <color name="colorSuccess">#4CAF50</color>
+        <color name="colorError">#E53935</color>
 
         <!-- Buttons -->
-        <!-- Primary stays constant -->
         <color name="btnPrimary">#2962FF</color>
         <color name="btnPrimaryText">#FFFFFF</color>
-        <color name="btnSecondaryBorder">#82B1FF</color>
+        <color name="btnSecondaryBorder">#2962FF</color>
 
-        <color name="ripplePrimary">#FFFFFF20</color>
-
+        <color name="ripplePrimary">#2962FF20</color>
 
 </resources>
