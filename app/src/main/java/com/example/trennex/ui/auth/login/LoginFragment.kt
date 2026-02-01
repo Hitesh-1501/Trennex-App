@@ -38,6 +38,7 @@ class LoginFragment : Fragment(R.layout.fragment_login) {
         binding.btnGetOtp.setOnClickListener {
             viewModel.onGetOtpClick(binding.etPhone.text.toString())
         }
+
         lifecycleScope.launch {
             viewLifecycleOwner.repeatOnLifecycle(Lifecycle.State.STARTED) {
                 viewModel.state.collect { state ->

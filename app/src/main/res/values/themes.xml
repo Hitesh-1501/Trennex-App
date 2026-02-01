@@ -53,4 +53,18 @@
     <style name="LoginEditTextStyle" parent="Widget.MaterialComponents.TextInputEditText.OutlinedBox">
         <item name="android:textColor">@color/black</item>
         <item name="android:textColorHint">@color/textPlaceholder</item> </style>
+
+    <style name="OtpEditText">
+        <item name="android:layout_width">56dp</item>
+        <item name="android:layout_height">56dp</item>
+        <item name="android:layout_margin">8dp</item>
+        <item name="android:gravity">center</item>
+        <item name="android:textSize">22sp</item>
+        <item name="android:textStyle">bold</item>
+        <item name="android:maxLength">1</item>
+        <item name="android:inputType">number</item>
+        <item name="android:importantForAutofill">yes</item>
+        <item name="android:background">@drawable/otp_default</item>
+    </style>
+
 </resources>
