@@ -1,0 +1,141 @@
+<?xml version="1.0" encoding="utf-8"?>
+<androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:background="@drawable/toolbar_home_gradient_color"
+    android:padding="12dp">
+
+
+    <TextView
+        android:id="@+id/trennex_heading"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginStart="4dp"
+        android:text="@string/app_name"
+        android:textColor="@color/white"
+        android:textSize="24sp"
+        android:textStyle="bold"
+        app:layout_constraintBottom_toTopOf="@+id/searchBar"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent" />
+
+    <androidx.cardview.widget.CardView
+        android:id="@+id/searchBar"
+        android:layout_width="0dp"
+        android:layout_height="30dp"
+        android:layout_marginStart="4dp"
+        app:cardCornerRadius="6dp"
+        app:cardBackgroundColor="@color/white"
+        app:cardElevation="5dp"
+        app:layout_constraintEnd_toStartOf="@id/notification_bar"
+        app:layout_constraintStart_toStartOf="parent"
+        android:layout_marginBottom="50dp"
+        app:layout_constraintBottom_toTopOf="@+id/location_bar"
+        app:layout_constraintTop_toBottomOf="@+id/trennex_heading"
+       >
+
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:orientation="horizontal"
+            android:layout_gravity="center_vertical"
+            android:paddingHorizontal="10dp"
+            android:gravity="center_vertical"
+            >
+
+            <ImageView
+                android:id="@+id/trennex_logo"
+                android:layout_width="20dp"
+                android:layout_height="20dp"
+                android:src="@drawable/trennex_searchbar_logo"/>
+
+            <TextView
+                android:id="@+id/searchHint"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Search in Trennex"
+                android:textColor="@color/textPlaceholder"
+                android:layout_marginStart="8dp"
+                android:layout_weight="1"
+                android:textSize="12sp"/>
+            
+            <ImageView
+                android:layout_width="20dp"
+                android:layout_height="16dp"
+                android:src="@drawable/search_icon"
+                />
+
+        </LinearLayout>
+
+    </androidx.cardview.widget.CardView>
+
+    <LinearLayout
+        android:id="@+id/location_bar"
+        android:layout_width="0dp"
+        android:layout_height="25dp"
+        android:orientation="horizontal"
+        app:layout_constraintTop_toBottomOf="@+id/searchBar"
+        android:layout_marginStart="4dp"
+        android:layout_marginTop="10dp"
+        app:layout_constraintEnd_toStartOf="@+id/notification_bar"
+        android:background="@drawable/toolbar_location_background"
+        app:layout_constraintStart_toStartOf="parent"
+        android:paddingHorizontal="10dp"
+        android:layout_marginEnd="10dp"
+        android:gravity="center_vertical">
+
+        <ImageView
+            android:layout_width="20dp"
+            android:layout_height="20dp"
+            android:src="@drawable/baseline_location_on_24"
+           />
+
+        <TextView
+            android:id="@+id/location_address"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="your delivery address"
+            android:textColor="@color/textPlaceholder"
+            android:layout_marginStart="8dp"
+            android:layout_weight="1"
+            android:textSize="12sp"/>
+
+
+        <ImageView
+            android:id="@+id/location_arrrow"
+            android:layout_width="20dp"
+            android:layout_height="16dp"
+            android:src="@drawable/down_arrow"
+            />
+
+    </LinearLayout>
+
+
+    <ImageView
+        android:id="@+id/notification_bar"
+        android:layout_width="40dp"
+        android:layout_height="40dp"
+        android:src="@drawable/notification_icon"
+        android:padding="8dp"
+        android:layout_marginStart="10dp"
+        app:layout_constraintStart_toEndOf="@+id/searchBar"
+        app:layout_constraintEnd_toStartOf="@+id/wishlist_bar"
+        app:layout_constraintTop_toTopOf="parent"
+        app:layout_constraintBottom_toBottomOf="parent"/>
+
+    <ImageView
+        android:id="@+id/wishlist_bar"
+        android:layout_width="40dp"
+        android:layout_height="40dp"
+        android:src="@drawable/wishlist"
+        android:padding="8dp"
+        app:layout_constraintStart_toEndOf="@+id/notification_bar"
+        app:layout_constraintTop_toTopOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintBottom_toBottomOf="parent"/>
+
+
+
+</androidx.constraintlayout.widget.ConstraintLayout>

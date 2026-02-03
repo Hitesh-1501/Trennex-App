@@ -1,0 +1,5 @@
+package com.example.trennex.ui.main
+
+enum class ToolBarType {
+    NONE,HOME,SEARCH, TITLE,ITEMS,OTP
+}
