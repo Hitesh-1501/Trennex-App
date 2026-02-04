@@ -41,6 +41,12 @@ class OtpFragment : Fragment(R.layout.fragment_otp) {
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
+        val args = OtpFragmentArgs.fromBundle(requireArguments())
+        val phone = args.phone
+
+        val mask = mask(phone)
+        binding.tvSubtitle.text = "code has been sent to +91$mask"
+
         setupOtpUI()
         viewModel.setTimer()
         binding.btnVerify.setOnClickListener {
@@ -152,5 +158,10 @@ class OtpFragment : Fragment(R.layout.fragment_otp) {
         binding.textinputErrorTxt.visibility = View.VISIBLE
         binding.textinputErrorTxt.text = message
         binding.textinputErrorTxt.setTextColor(ContextCompat.getColor(requireContext(),R.color.colorError))
+    }
+    fun mask(phone: String): String{
+        if(phone.length < 3) return phone
+        val visible = phone.take(3)
+        return  visible + "XXXXXXX"
     }
 }

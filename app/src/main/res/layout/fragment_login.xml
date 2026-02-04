@@ -20,75 +20,62 @@
 
     <ImageView
         android:id="@+id/img_illustration"
-        android:layout_width="300dp"
-        android:layout_height="300dp"
+        android:layout_width="0dp"
+        android:layout_height="220dp"
         android:src="@drawable/login_image"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintBottom_toTopOf="@+id/login_text"
         app:layout_constraintTop_toTopOf="parent"
+        app:layout_constraintVertical_bias="0.2"
         app:layout_constraintVertical_chainStyle="packed"/>
 
     <TextView
         android:id="@+id/login_text"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
+        android:layout_marginTop="24dp"
         android:text="@string/phone_login_text"
         android:textStyle="bold"
         android:textSize="18sp"
         android:textColor="@color/textPrimary"
         app:layout_constraintTop_toBottomOf="@+id/img_illustration"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintBottom_toTopOf="@+id/layout_inputs"
+        app:layout_constraintBottom_toTopOf="@+id/phoneInputLayout"
         app:layout_constraintEnd_toEndOf="parent"/>
 
 
-    <LinearLayout
-        android:id="@+id/layout_inputs"
+    <com.google.android.material.textfield.TextInputLayout
+        android:id="@+id/phoneInputLayout"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:orientation="horizontal"
-        android:layout_marginTop="25dp"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintEnd_toEndOf="parent"
+        android:layout_marginTop="32dp"
+        app:prefixText="+91 "
+        app:prefixTextColor="@color/textSecondary"
+        style="@style/LoginInputLayout"
+        app:errorEnabled="true"
         app:layout_constraintBottom_toTopOf="@+id/btn_get_otp"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toBottomOf="@+id/login_text">
 
-        <EditText
-            android:layout_width="60dp"
-            android:layout_height="wrap_content"
-            android:background="@drawable/edit_text_border"
-            android:text="+91"
-            android:padding="12dp"
-            android:enabled="false"
-            android:layout_marginEnd="3dp"
-            android:textColor="@color/textPlaceholder"/>
-
-        <com.google.android.material.textfield.TextInputLayout
-            android:id="@+id/phoneInputLayout"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            style="@style/LoginInputLayout"
-            app:errorEnabled="true">
-
-            <com.google.android.material.textfield.TextInputEditText
+        <com.google.android.material.textfield.TextInputEditText
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 style="@style/LoginEditTextStyle"
                 android:id="@+id/et_phone"
                 android:inputType="phone"
                 android:hint="@string/phone_No_text"
-                android:padding="12dp"/>
+                android:padding="15dp"/>
 
         </com.google.android.material.textfield.TextInputLayout>
 
-    </LinearLayout>
 
     <androidx.appcompat.widget.AppCompatButton
         android:id="@+id/btn_get_otp"
-        android:layout_width="180dp"
+        android:layout_width="200dp"
         android:layout_height="wrap_content"
-        android:layout_marginTop="10dp"
+        android:layout_marginTop="8dp"
         android:background = "@drawable/btn_state"
         android:enabled="false"
         android:backgroundTint="@null"
@@ -98,7 +85,8 @@
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintBottom_toBottomOf="parent"
-        app:layout_constraintTop_toBottomOf="@id/layout_inputs" />
+        app:layout_constraintVertical_bias="0.0"
+        app:layout_constraintTop_toBottomOf="@id/phoneInputLayout" />
 
     <ProgressBar
         android:id="@+id/login_progressbar"

@@ -65,7 +65,8 @@ class LoginFragment : Fragment(R.layout.fragment_login) {
     fun showSuccess(){
         binding.root.alpha = 1.0f
         binding.loginProgressbar.visibility = View.GONE
-        findNavController().navigate(R.id.action_loginFragment_to_otpFragment)
+        val actions = LoginFragmentDirections.actionLoginFragmentToOtpFragment(binding.etPhone.text.toString())
+        findNavController().navigate(actions)
     }
     fun showError(message: String){
         binding.root.animate().alpha(1.0f).setDuration(200).start()
