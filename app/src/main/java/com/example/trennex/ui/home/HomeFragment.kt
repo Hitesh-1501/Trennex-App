@@ -5,56 +5,91 @@ import androidx.fragment.app.Fragment
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
+import androidx.recyclerview.widget.GridLayoutManager
+import androidx.recyclerview.widget.LinearLayoutManager
+import androidx.recyclerview.widget.PagerSnapHelper
 import com.example.trennex.R
+import com.example.trennex.databinding.FragmentHomeBinding
+import com.example.trennex.databinding.FragmentOnboardingBinding
+import com.example.trennex.ui.home.adapters.BannerAdapter
+import com.example.trennex.ui.home.adapters.CategoryAdapter
+import com.example.trennex.ui.home.adapters.ProductAdapter
+import com.example.trennex.ui.home.model.BannerModel
+import com.example.trennex.ui.home.model.CategoryModel
+import com.example.trennex.ui.home.model.ProductModel
 
-// TODO: Rename parameter arguments, choose names that match
-// the fragment initialization parameters, e.g. ARG_ITEM_NUMBER
-private const val ARG_PARAM1 = "param1"
-private const val ARG_PARAM2 = "param2"
 
-/**
- * A simple [Fragment] subclass.
- * Use the [HomeFragment.newInstance] factory method to
- * create an instance of this fragment.
- */
-class HomeFragment : Fragment() {
-    // TODO: Rename and change types of parameters
-    private var param1: String? = null
-    private var param2: String? = null
-
-    override fun onCreate(savedInstanceState: Bundle?) {
-        super.onCreate(savedInstanceState)
-        arguments?.let {
-            param1 = it.getString(ARG_PARAM1)
-            param2 = it.getString(ARG_PARAM2)
-        }
-    }
-
+class HomeFragment : Fragment(R.layout.fragment_home) {
+    private var _binding: FragmentHomeBinding? = null
+    private val binding get()  = _binding!!
     override fun onCreateView(
         inflater: LayoutInflater, container: ViewGroup?,
         savedInstanceState: Bundle?
     ): View? {
         // Inflate the layout for this fragment
-        return inflater.inflate(R.layout.fragment_home, container, false)
+        _binding = FragmentHomeBinding.inflate(layoutInflater,container,false)
+        return binding.root
     }
 
-    companion object {
-        /**
-         * Use this factory method to create a new instance of
-         * this fragment using the provided parameters.
-         *
-         * @param param1 Parameter 1.
-         * @param param2 Parameter 2.
-         * @return A new instance of fragment HomeFragment.
-         */
-        // TODO: Rename and change types and number of parameters
-        @JvmStatic
-        fun newInstance(param1: String, param2: String) =
-            HomeFragment().apply {
-                arguments = Bundle().apply {
-                    putString(ARG_PARAM1, param1)
-                    putString(ARG_PARAM2, param2)
-                }
-            }
+    override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
+        super.onViewCreated(view, savedInstanceState)
+        setupCategories()
+        setupBanners()
+        setupPopularProducts()
+    }
+
+    private fun setupCategories(){
+        val categories = listOf<CategoryModel>(
+            CategoryModel(R.drawable.for_you,"For you"),
+            CategoryModel(R.drawable.for_you,"Fashion"),
+            CategoryModel(R.drawable.for_you,"Electronics"),
+            CategoryModel(R.drawable.for_you,"Mobiles"),
+            CategoryModel(R.drawable.for_you,"Appliances"),
+            CategoryModel(R.drawable.for_you,"Beauty"),
+            CategoryModel(R.drawable.for_you,"Home"),
+            CategoryModel(R.drawable.for_you,"Furniture"),
+            CategoryModel(R.drawable.for_you,"Toys"),
+            CategoryModel(R.drawable.for_you,"Sports"),
+        )
+        binding.rvCategories.apply {
+            layoutManager = LinearLayoutManager(requireContext(), LinearLayoutManager.HORIZONTAL,false)
+            adapter = CategoryAdapter(categories)
+        }
+    }
+    private fun setupBanners() {
+        val Banners = listOf<BannerModel>(
+            BannerModel(R.drawable.samsung_banner),
+            BannerModel(R.drawable.samsung_banner),
+            BannerModel(R.drawable.samsung_banner),
+            BannerModel(R.drawable.samsung_banner),
+        )
+        val snapHelper = PagerSnapHelper()
+        snapHelper.attachToRecyclerView(binding.rvBanners)
+        binding.rvBanners.apply {
+            layoutManager =
+                LinearLayoutManager(requireContext(), LinearLayoutManager.HORIZONTAL, false)
+            adapter = BannerAdapter(Banners)
+        }
+    }
+
+    private fun setupPopularProducts(){
+        val products = listOf<ProductModel>(
+            ProductModel(R.drawable.product_image,"U.S Polo Jacket","2000"),
+            ProductModel(R.drawable.product_image,"U.S Polo Jacket","2000"),
+            ProductModel(R.drawable.product_image,"U.S Polo Jacket","2000"),
+            ProductModel(R.drawable.product_image,"U.S Polo Jacket","2000"),
+            ProductModel(R.drawable.product_image,"U.S Polo Jacket","2000"),
+            ProductModel(R.drawable.product_image,"U.S Polo Jacket","2000"),
+            ProductModel(R.drawable.product_image,"U.S Polo Jacket","2000")
+        )
+        binding.rvProducts.apply {
+            layoutManager = GridLayoutManager(requireContext(),3)
+            binding.rvProducts.isNestedScrollingEnabled = false
+            adapter = ProductAdapter(products)
+        }
+    }
+    override fun onDestroyView() {
+        super.onDestroyView()
+        _binding = null
     }
 }

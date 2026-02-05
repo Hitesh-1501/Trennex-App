@@ -5,6 +5,7 @@ import android.os.Bundle
 import android.view.View
 import android.view.WindowInsetsController
 import androidx.appcompat.app.AppCompatActivity
+import androidx.core.view.ViewCompat
 import androidx.core.view.WindowCompat
 import androidx.core.view.WindowInsetsCompat
 import androidx.core.view.WindowInsetsControllerCompat
@@ -26,6 +27,7 @@ class MainActivity : AppCompatActivity() {
         super.onCreate(savedInstanceState)
         binding = ActivityMainBinding.inflate(layoutInflater)
         setContentView(binding.root)
+
         val navhostFragement =  supportFragmentManager.findFragmentById(R.id.nav_host_fragment) as NavHostFragment
         navController = navhostFragement.navController
 
@@ -96,7 +98,7 @@ class MainActivity : AppCompatActivity() {
             show(WindowInsetsCompat.Type.statusBars())
             isAppearanceLightStatusBars = true
         }
-        window.statusBarColor = getColor(R.color.colorPrimary)
+        window.statusBarColor = getColor(R.color.white)
     }
 
     private fun setFullScreen() {
