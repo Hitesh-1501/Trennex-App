@@ -8,15 +8,18 @@ import android.view.ViewGroup
 import androidx.recyclerview.widget.GridLayoutManager
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.PagerSnapHelper
+import androidx.viewpager2.widget.ViewPager2
 import com.example.trennex.R
 import com.example.trennex.databinding.FragmentHomeBinding
 import com.example.trennex.databinding.FragmentOnboardingBinding
 import com.example.trennex.ui.home.adapters.BannerAdapter
 import com.example.trennex.ui.home.adapters.CategoryAdapter
+import com.example.trennex.ui.home.adapters.HomeFragmentPagerAdapter
 import com.example.trennex.ui.home.adapters.ProductAdapter
 import com.example.trennex.ui.home.model.BannerModel
 import com.example.trennex.ui.home.model.CategoryModel
 import com.example.trennex.ui.home.model.ProductModel
+import com.google.android.material.tabs.TabLayoutMediator
 
 
 class HomeFragment : Fragment(R.layout.fragment_home) {
@@ -63,13 +66,45 @@ class HomeFragment : Fragment(R.layout.fragment_home) {
             BannerModel(R.drawable.samsung_banner),
             BannerModel(R.drawable.samsung_banner),
         )
-        val snapHelper = PagerSnapHelper()
-        snapHelper.attachToRecyclerView(binding.rvBanners)
-        binding.rvBanners.apply {
-            layoutManager =
-                LinearLayoutManager(requireContext(), LinearLayoutManager.HORIZONTAL, false)
-            adapter = BannerAdapter(Banners)
+        val bannerList = mutableListOf<BannerModel>()
+        bannerList.add(Banners.last())
+        bannerList.addAll(Banners)
+        bannerList.add(Banners.first())
+        val adapter = HomeFragmentPagerAdapter(this, bannerList)
+        binding.rvBanners.adapter = adapter
+        binding.rvBanners.setCurrentItem(1, false)
+        TabLayoutMediator(binding.bannerIndicator, binding.rvBanners) { tab, position ->
+            if (position == 0 || position == bannerList.size - 1) {
+                tab.view.visibility = View.GONE
+            }
+        }.attach()
+        for (i in 0 until binding.bannerIndicator.tabCount) {
+            val tab = binding.bannerIndicator.getTabAt(i)
+            tab?.customView =
+                layoutInflater.inflate(R.layout.banner_dot_tab, binding.bannerIndicator, false)
         }
+        binding.rvBanners.registerOnPageChangeCallback(
+            object : ViewPager2.OnPageChangeCallback() {
+
+                override fun onPageScrollStateChanged(state: Int) {
+                    if (state == ViewPager2.SCROLL_STATE_IDLE) {
+                        val position = binding.rvBanners.currentItem
+
+                        when (position) {
+                            0 -> binding.rvBanners.setCurrentItem(
+                                bannerList.size - 2,
+                                false
+                            )
+
+                            bannerList.size - 1 -> binding.rvBanners.setCurrentItem(
+                                1,
+                                false
+                            )
+                        }
+                    }
+                }
+            }
+        )
     }
 
     private fun setupPopularProducts(){
