@@ -18,6 +18,7 @@ import com.example.trennex.databinding.NavigationIconToolbarBinding
 import com.example.trennex.databinding.SearchToolbarBinding
 import com.example.trennex.databinding.TitleToolbarBinding
 import com.example.trennex.databinding.ToolbarHomeBinding
+import np.com.susanthapa.curved_bottom_navigation.CbnMenuItem
 
 
 class MainActivity : AppCompatActivity() {
@@ -27,29 +28,62 @@ class MainActivity : AppCompatActivity() {
         super.onCreate(savedInstanceState)
         binding = ActivityMainBinding.inflate(layoutInflater)
         setContentView(binding.root)
-
+        WindowCompat.setDecorFitsSystemWindows(window,false)
         val navhostFragement =  supportFragmentManager.findFragmentById(R.id.nav_host_fragment) as NavHostFragment
         navController = navhostFragement.navController
+
+        initializeBottomMenu()
+
+        binding.curveBottomNav.setupWithNavController(navController)
+
+        setupWindowInsets()
 
         navController.addOnDestinationChangedListener {_, destination, _ ->
             when(destination.id){
                 R.id.splashFragment, R.id.onboardingFragment, R.id.loginFragment ->{
                     showToolBar(ToolBarType.NONE)
-                    setFullScreen()
+                    setLightStatusBar(false)
+                    binding.curveBottomNav.visibility = View.GONE
+
                 }
                 R.id.otpFragment ->{
                     showToolBar(ToolBarType.OTP)
-                    setFullScreen()
+                    binding.curveBottomNav.visibility = View.GONE
+                   setLightStatusBar(false)
                 }
                 R.id.homeFragment -> {
                     showToolBar(ToolBarType.HOME)
-                    setNormalMode()
+                    setLightStatusBar(true)
+                    binding.curveBottomNav.visibility = View.VISIBLE
                 }
             }
         }
     }
     override fun onSupportNavigateUp(): Boolean {
         return navController.navigateUp() || super.onSupportNavigateUp()
+    }
+
+    private fun setupWindowInsets(){
+        ViewCompat.setOnApplyWindowInsetsListener(binding.root){ _, insets ->
+            val statusBarHeight =  insets.getInsets(WindowInsetsCompat.Type.statusBars()).top
+            val navBarHeight = insets.getInsets(WindowInsetsCompat.Type.navigationBars()).bottom
+            binding.toolbarContainer.setPadding(
+                0,statusBarHeight,0,0)
+
+            binding.curveBottomNav.setPadding(
+                0,
+                0,
+                0,
+                navBarHeight
+            )
+            insets
+        }
+    }
+    private fun setLightStatusBar(light: Boolean) {
+        WindowInsetsControllerCompat(window, window.decorView).apply {
+            isAppearanceLightStatusBars = light
+        }
+        window.statusBarColor = Color.TRANSPARENT
     }
 
     fun showToolBar(type: ToolBarType, title: String? = null){
@@ -92,24 +126,35 @@ class MainActivity : AppCompatActivity() {
         }
 
     }
-    private fun setNormalMode(){
-        WindowCompat.setDecorFitsSystemWindows(window,true)
-        WindowInsetsControllerCompat(window,window.decorView).apply {
-            show(WindowInsetsCompat.Type.statusBars())
-            isAppearanceLightStatusBars = true
-        }
-        window.statusBarColor = getColor(R.color.white)
+
+    private fun  initializeBottomMenu(){
+        val menuItems = arrayOf(
+            CbnMenuItem(
+                R.drawable.home,
+                R.drawable.avd_home,
+                R.id.homeFragment,
+                "Home"
+            ),
+            CbnMenuItem(
+                R.drawable.category_icon,
+                R.drawable.avd_category,
+                R.id.categoryFragment,
+                "Category"
+            ),
+            CbnMenuItem(
+                R.drawable.profile_icon,
+                R.drawable.avd_profile,
+                R.id.profileFragment,
+                "Profile"
+            ),
+            CbnMenuItem(
+                R.drawable.cart_icon,
+                R.drawable.avd_cart,
+                R.id.cartFragment,
+                "Cart"
+            )
+        )
+        binding.curveBottomNav.setMenuItems(menuItems, 0)
+
     }
-
-    private fun setFullScreen() {
-        WindowCompat.setDecorFitsSystemWindows(window, false)
-
-        WindowInsetsControllerCompat(window, window.decorView).apply {
-            hide(WindowInsetsCompat.Type.statusBars())
-            systemBarsBehavior =
-                WindowInsetsControllerCompat.BEHAVIOR_SHOW_TRANSIENT_BARS_BY_SWIPE
-        }
-        window.statusBarColor = Color.TRANSPARENT
-    }
-
 }

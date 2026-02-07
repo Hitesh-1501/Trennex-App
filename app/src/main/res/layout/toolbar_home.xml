@@ -4,7 +4,6 @@
     android:layout_height="@dimen/home_toolbar_height"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     android:background="@drawable/toolbar_home_gradient_color"
-    android:paddingTop="?attr/actionBarSize"
     android:padding="12dp">
 
 

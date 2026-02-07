@@ -21,6 +21,7 @@ android {
     buildTypes {
         release {
             isMinifyEnabled = false
+            @Suppress("UnstableApiUsage")
             proguardFiles(
                 getDefaultProguardFile("proguard-android-optimize.txt"),
                 "proguard-rules.pro"
@@ -34,6 +35,7 @@ android {
     kotlinOptions {
         jvmTarget = "11"
     }
+    @Suppress("UnstableApiUsage")
     buildFeatures {
         viewBinding = true
     }
@@ -67,4 +69,5 @@ dependencies {
 
     // UI
     implementation(libs.androidx.recyclerview)
+    implementation(libs.curved.bottom.navigation)
 }

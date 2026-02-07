@@ -10,7 +10,8 @@
     <com.google.android.material.appbar.AppBarLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:background="@color/white"
+        android:fitsSystemWindows="false"
+        android:background="@android:color/transparent"
         app:elevation="0dp">
 
     <FrameLayout
@@ -22,15 +23,47 @@
     </com.google.android.material.appbar.AppBarLayout>
 
 
-    <androidx.fragment.app.FragmentContainerView
-        android:id="@+id/nav_host_fragment"
-        android:name="androidx.navigation.fragment.NavHostFragment"
+    <androidx.constraintlayout.widget.ConstraintLayout
         android:layout_width="match_parent"
         android:layout_height="match_parent"
-        app:defaultNavHost = "true"
-        app:navGraph = "@navigation/nav_graph"
-        app:layout_behavior="@string/appbar_scrolling_view_behavior"
-       />
+        app:layout_behavior="@string/appbar_scrolling_view_behavior">
+
+        <androidx.fragment.app.FragmentContainerView
+            android:id="@+id/nav_host_fragment"
+            android:name="androidx.navigation.fragment.NavHostFragment"
+            android:layout_width="0dp"
+            android:layout_height="0dp"
+            app:defaultNavHost = "true"
+            app:navGraph = "@navigation/nav_graph"
+            app:layout_constraintTop_toTopOf="parent"
+            app:layout_constraintBottom_toTopOf="@id/curveBottomNav"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_behavior="@string/appbar_scrolling_view_behavior"
+           />
+
+        <np.com.susanthapa.curved_bottom_navigation.CurvedBottomNavigationView
+            android:id="@+id/curveBottomNav"
+            android:layout_width="match_parent"
+            android:layout_height="80dp"
+            android:layout_gravity="bottom"
+            app:menu = "@menu/bottom_menu"
+            app:cbn_bg="@color/colorPrimary"
+            app:cbn_textColor="@color/white"
+            app:cbn_fabBg="@color/white"
+            app:cbn_selectedColor="@color/colorPrimary"
+            app:cbn_unSelectedColor="@color/white"
+            app:cbn_textSize="14sp"
+            app:cbn_animDuration="300"
+            app:cbn_showDot="true"
+            app:cbn_dotColor="@color/white"
+            app:cbn_dotSize="3dp"
+            android:paddingBottom="12dp"
+            app:layout_constraintBottom_toBottomOf="parent"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintEnd_toEndOf="parent"/>
+
+    </androidx.constraintlayout.widget.ConstraintLayout>
 
 
 </androidx.coordinatorlayout.widget.CoordinatorLayout>
