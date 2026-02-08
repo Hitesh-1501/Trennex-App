@@ -1,8 +1,12 @@
 package com.example.trennex.ui.home
 
+import android.annotation.SuppressLint
 import android.os.Bundle
+import android.os.Handler
+import android.os.Looper
 import androidx.fragment.app.Fragment
 import android.view.LayoutInflater
+import android.view.MotionEvent
 import android.view.View
 import android.view.ViewGroup
 import androidx.recyclerview.widget.GridLayoutManager
@@ -22,6 +26,7 @@ import com.example.trennex.ui.home.model.ProductModel
 import com.google.android.material.tabs.TabLayoutMediator
 
 
+
 class HomeFragment : Fragment(R.layout.fragment_home) {
     private var _binding: FragmentHomeBinding? = null
     private val binding get()  = _binding!!
@@ -32,6 +37,26 @@ class HomeFragment : Fragment(R.layout.fragment_home) {
         // Inflate the layout for this fragment
         _binding = FragmentHomeBinding.inflate(layoutInflater,container,false)
         return binding.root
+    }
+
+    private val bannerHandler = Handler(Looper.getMainLooper())
+    private val bannerRunnable = object : Runnable{
+        override fun run() {
+            val nextItem = binding.rvBanners.currentItem+1
+            binding.rvBanners.setCurrentItem(nextItem,true)
+            bannerHandler.postDelayed(this,3000)
+        }
+
+    }
+
+    override fun onResume() {
+        super.onResume()
+        bannerHandler.postDelayed(bannerRunnable,3000)
+    }
+
+    override fun onPause() {
+        super.onPause()
+        bannerHandler.removeCallbacks(bannerRunnable)
     }
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
@@ -59,6 +84,7 @@ class HomeFragment : Fragment(R.layout.fragment_home) {
             adapter = CategoryAdapter(categories)
         }
     }
+    @SuppressLint("ClickableViewAccessibility")
     private fun setupBanners() {
         val Banners = listOf<BannerModel>(
             BannerModel(R.drawable.samsung_banner),
@@ -105,6 +131,15 @@ class HomeFragment : Fragment(R.layout.fragment_home) {
                 }
             }
         )
+        binding.rvBanners.getChildAt(0)
+            .setOnTouchListener { _,event ->
+                when(event.action){
+                    MotionEvent.ACTION_DOWN -> bannerHandler.removeCallbacks(bannerRunnable)
+                    MotionEvent.ACTION_UP, MotionEvent.ACTION_CANCEL ->
+                        bannerHandler.postDelayed(bannerRunnable,3000)
+                }
+                false
+            }
     }
 
     private fun setupPopularProducts(){

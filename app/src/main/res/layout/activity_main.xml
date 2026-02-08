@@ -10,7 +10,6 @@
     <com.google.android.material.appbar.AppBarLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:fitsSystemWindows="false"
         android:background="@android:color/transparent"
         app:elevation="0dp">
 
@@ -39,7 +38,6 @@
             app:layout_constraintBottom_toTopOf="@id/curveBottomNav"
             app:layout_constraintStart_toStartOf="parent"
             app:layout_constraintEnd_toEndOf="parent"
-            app:layout_behavior="@string/appbar_scrolling_view_behavior"
            />
 
         <np.com.susanthapa.curved_bottom_navigation.CurvedBottomNavigationView

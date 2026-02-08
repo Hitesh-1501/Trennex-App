@@ -19,8 +19,9 @@
         <item name="colorControlNormal">@color/colorPrimary</item>
 
         <!-- Navigation / Status bar -->
-        <item name="android:statusBarColor">@color/colorPrimary</item>
-        <item name="android:navigationBarColor">@color/btnPrimaryText</item>
+        <item name="android:statusBarColor">@android:color/transparent</item>
+        <item name="android:windowDrawsSystemBarBackgrounds">true</item>
+        <item name="android:navigationBarColor">@color/black</item>
 
         <!-- Ripple / Control Colors -->
         <item name="colorControlHighlight">@color/ripplePrimary</item>

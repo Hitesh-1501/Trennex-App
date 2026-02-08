@@ -26,9 +26,15 @@ class MainActivity : AppCompatActivity() {
     private lateinit var  navController: NavController
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        WindowCompat.setDecorFitsSystemWindows(window,false)
         binding = ActivityMainBinding.inflate(layoutInflater)
         setContentView(binding.root)
-        WindowCompat.setDecorFitsSystemWindows(window,false)
+        window.statusBarColor = Color.TRANSPARENT
+
+        WindowInsetsControllerCompat(window, window.decorView).apply {
+            isAppearanceLightNavigationBars = false
+        }
+
         val navhostFragement =  supportFragmentManager.findFragmentById(R.id.nav_host_fragment) as NavHostFragment
         navController = navhostFragement.navController
 
@@ -42,18 +48,18 @@ class MainActivity : AppCompatActivity() {
             when(destination.id){
                 R.id.splashFragment, R.id.onboardingFragment, R.id.loginFragment ->{
                     showToolBar(ToolBarType.NONE)
-                    setLightStatusBar(false)
+                    setLightStatusBar(true)
                     binding.curveBottomNav.visibility = View.GONE
 
                 }
                 R.id.otpFragment ->{
                     showToolBar(ToolBarType.OTP)
                     binding.curveBottomNav.visibility = View.GONE
-                   setLightStatusBar(false)
+                   setLightStatusBar(true)
                 }
                 R.id.homeFragment -> {
                     showToolBar(ToolBarType.HOME)
-                    setLightStatusBar(true)
+                    setLightStatusBar(false)
                     binding.curveBottomNav.visibility = View.VISIBLE
                 }
             }
@@ -64,13 +70,13 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun setupWindowInsets(){
-        ViewCompat.setOnApplyWindowInsetsListener(binding.root){ _, insets ->
+        ViewCompat.setOnApplyWindowInsetsListener(binding.root){ view, insets ->
             val statusBarHeight =  insets.getInsets(WindowInsetsCompat.Type.statusBars()).top
             val navBarHeight = insets.getInsets(WindowInsetsCompat.Type.navigationBars()).bottom
             binding.toolbarContainer.setPadding(
                 0,statusBarHeight,0,0)
 
-            binding.curveBottomNav.setPadding(
+            view.setPadding(
                 0,
                 0,
                 0,
@@ -82,8 +88,10 @@ class MainActivity : AppCompatActivity() {
     private fun setLightStatusBar(light: Boolean) {
         WindowInsetsControllerCompat(window, window.decorView).apply {
             isAppearanceLightStatusBars = light
+            isAppearanceLightNavigationBars = false
         }
         window.statusBarColor = Color.TRANSPARENT
+        window.navigationBarColor = Color.BLACK
     }
 
     fun showToolBar(type: ToolBarType, title: String? = null){
