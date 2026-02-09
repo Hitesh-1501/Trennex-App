@@ -88,9 +88,9 @@ class HomeFragment : Fragment(R.layout.fragment_home) {
     private fun setupBanners() {
         val Banners = listOf<BannerModel>(
             BannerModel(1,R.drawable.samsung_banner),
-            BannerModel(2,R.drawable.samsung_banner),
+            BannerModel(2,R.drawable.shoes_banner),
             BannerModel(3,R.drawable.samsung_banner),
-            BannerModel(4,R.drawable.samsung_banner),
+            BannerModel(4,R.drawable.shoes_banner),
         )
         val bannerList = mutableListOf<BannerModel>()
         bannerList.add(Banners.last())
