@@ -9,14 +9,12 @@ import android.view.LayoutInflater
 import android.view.MotionEvent
 import android.view.View
 import android.view.ViewGroup
+import android.widget.Toast
 import androidx.recyclerview.widget.GridLayoutManager
 import androidx.recyclerview.widget.LinearLayoutManager
-import androidx.recyclerview.widget.PagerSnapHelper
 import androidx.viewpager2.widget.ViewPager2
 import com.example.trennex.R
 import com.example.trennex.databinding.FragmentHomeBinding
-import com.example.trennex.databinding.FragmentOnboardingBinding
-import com.example.trennex.ui.home.adapters.BannerAdapter
 import com.example.trennex.ui.home.adapters.CategoryAdapter
 import com.example.trennex.ui.home.adapters.HomeFragmentPagerAdapter
 import com.example.trennex.ui.home.adapters.ProductAdapter
@@ -68,20 +66,22 @@ class HomeFragment : Fragment(R.layout.fragment_home) {
 
     private fun setupCategories(){
         val categories = listOf<CategoryModel>(
-            CategoryModel(R.drawable.for_you,"For you"),
-            CategoryModel(R.drawable.for_you,"Fashion"),
-            CategoryModel(R.drawable.for_you,"Electronics"),
-            CategoryModel(R.drawable.for_you,"Mobiles"),
-            CategoryModel(R.drawable.for_you,"Appliances"),
-            CategoryModel(R.drawable.for_you,"Beauty"),
-            CategoryModel(R.drawable.for_you,"Home"),
-            CategoryModel(R.drawable.for_you,"Furniture"),
-            CategoryModel(R.drawable.for_you,"Toys"),
-            CategoryModel(R.drawable.for_you,"Sports"),
+            CategoryModel(1,R.drawable.for_you,"For you"),
+            CategoryModel(2,R.drawable.fashion,"Fashion"),
+            CategoryModel(3,R.drawable.electronics,"Electronics"),
+            CategoryModel(4,R.drawable.mobile,"Mobiles"),
+            CategoryModel(5,R.drawable.appliances,"Appliances"),
+            CategoryModel(6,R.drawable.beauty,"Beauty"),
+            CategoryModel(7,R.drawable.home_category,"Home"),
+            CategoryModel(8,R.drawable.furniture,"Furniture"),
+            CategoryModel(9,R.drawable.toys,"Toys"),
+            CategoryModel(10,R.drawable.sports,"Sports"),
         )
         binding.rvCategories.apply {
             layoutManager = LinearLayoutManager(requireContext(), LinearLayoutManager.HORIZONTAL,false)
-            adapter = CategoryAdapter(categories)
+            adapter = CategoryAdapter(categories){
+                Toast.makeText(context, "Selected: ${it.title}", Toast.LENGTH_SHORT).show()
+            }
         }
     }
     @SuppressLint("ClickableViewAccessibility")

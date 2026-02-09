@@ -3,7 +3,6 @@ package com.example.trennex.ui.main
 import android.graphics.Color
 import android.os.Bundle
 import android.view.View
-import android.view.WindowInsetsController
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.view.ViewCompat
 import androidx.core.view.WindowCompat

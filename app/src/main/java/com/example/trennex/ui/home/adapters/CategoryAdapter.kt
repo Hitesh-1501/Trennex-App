@@ -8,7 +8,8 @@ import com.example.trennex.databinding.ItemCategoryBinding
 import com.example.trennex.ui.home.model.CategoryModel
 
 class CategoryAdapter(
- private val list : List<CategoryModel>
+ private val list : List<CategoryModel>,
+    private val onClick : (CategoryModel) -> Unit
 ): RecyclerView.Adapter<CategoryAdapter.CategoryViewHolder>(){
     private var selectedPosition = 0
     override fun onCreateViewHolder(
@@ -37,6 +38,7 @@ class CategoryAdapter(
                 selectedPosition = currentPosition
                 notifyItemChanged(previousPosition)
                 notifyItemChanged(selectedPosition)
+                onClick(item)
             }
         }
     }
