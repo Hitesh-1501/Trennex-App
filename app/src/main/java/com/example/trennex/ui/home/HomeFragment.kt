@@ -67,7 +67,7 @@ class HomeFragment : Fragment(R.layout.fragment_home) {
     private fun setupCategories(){
         val categories = listOf<CategoryModel>(
             CategoryModel(1,R.drawable.for_you,"For you"),
-            CategoryModel(2,R.drawable.fashion,"Fashion"),
+            CategoryModel(2,R.drawable.fashion_category,"Fashion"),
             CategoryModel(3,R.drawable.electronics,"Electronics"),
             CategoryModel(4,R.drawable.mobile,"Mobiles"),
             CategoryModel(5,R.drawable.appliances,"Appliances"),
@@ -144,13 +144,13 @@ class HomeFragment : Fragment(R.layout.fragment_home) {
 
     private fun setupPopularProducts(){
         val products = listOf<ProductModel>(
-            ProductModel(R.drawable.product_image,"U.S Polo Jacket","2000"),
-            ProductModel(R.drawable.product_image,"U.S Polo Jacket","2000"),
-            ProductModel(R.drawable.product_image,"U.S Polo Jacket","2000"),
-            ProductModel(R.drawable.product_image,"U.S Polo Jacket","2000"),
-            ProductModel(R.drawable.product_image,"U.S Polo Jacket","2000"),
-            ProductModel(R.drawable.product_image,"U.S Polo Jacket","2000"),
-            ProductModel(R.drawable.product_image,"U.S Polo Jacket","2000")
+            ProductModel(1,R.drawable.product_image,"U.S Polo Jacket","2000"),
+            ProductModel(2,R.drawable.tshirt,"Mortex Blue Jacket","1000"),
+            ProductModel(3,R.drawable.printeed_tshirt,"Roadster printed..","600"),
+            ProductModel(4,R.drawable.samsung_mobile,"Samsung S24 onyx Black","40,999"),
+            ProductModel(5,R.drawable.tv,"Lg  Smart  Tv 55 inch ","90,000"),
+            ProductModel(6,R.drawable.watch,"Fastrack watch","800"),
+            ProductModel(7,R.drawable.laptop,"Asus A15 Laptop","55,000")
         )
         binding.rvProducts.apply {
             layoutManager = GridLayoutManager(requireContext(),3)
