@@ -21,13 +21,39 @@
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:orientation="vertical"
-            android:padding="16dp">
-
+            android:paddingTop="16dp"
+           >
 
             <FrameLayout
                 android:id="@+id/layout_image_banner"
                 android:layout_width="match_parent"
-                android:layout_height = "280dp"/>
+                android:background="@color/colorSurface"
+                android:layout_height = "350dp">
+
+
+                <androidx.viewpager2.widget.ViewPager2
+                    android:id="@+id/product_Banners"
+                    android:layout_width="match_parent"
+                    android:layout_height="match_parent"
+                   />
+
+                <com.google.android.material.tabs.TabLayout
+                    android:id="@+id/bannerIndicator"
+                    android:layout_width="wrap_content"
+                    android:layout_height="20dp"
+                    android:layout_gravity="bottom|center"
+                    android:layout_marginBottom="12dp"
+                    app:tabIndicatorHeight="0dp"
+                    android:background="@android:color/transparent"/>
+
+
+            </FrameLayout>
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical"
+                android:padding="16dp">
 
             <LinearLayout
                 android:id="@+id/layoutProductInfo"
@@ -65,6 +91,8 @@
                 android:layout_height="wrap_content"
                 android:orientation="vertical"
                 android:layout_marginTop="16dp" />
+
+            </LinearLayout>
 
         </LinearLayout>
 
