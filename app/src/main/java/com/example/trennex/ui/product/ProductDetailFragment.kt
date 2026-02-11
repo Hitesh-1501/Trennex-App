@@ -9,11 +9,14 @@ import androidx.core.view.size
 import com.example.trennex.R
 import com.example.trennex.databinding.FragmentHomeBinding
 import com.example.trennex.databinding.FragmentProductDetailBinding
+import com.example.trennex.ui.product.adapter.ColorVariantAdapter
 import com.example.trennex.ui.product.adapter.ProductImageAdapter
+import com.example.trennex.ui.product.model.ProductColorModel
+import com.example.trennex.ui.product.model.VariantModel
 import com.google.android.material.tabs.TabLayoutMediator
 
 
-class ProductDetailFragment : Fragment() {
+class ProductDetailFragment : Fragment(R.layout.fragment_product_detail) {
     private var _binding: FragmentProductDetailBinding? = null
     private val binding get()  = _binding!!
     override fun onCreateView(
@@ -27,6 +30,7 @@ class ProductDetailFragment : Fragment() {
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
         setupImageBanner()
+        setupColorVariants()
     }
 
     private fun setupImageBanner() {
@@ -44,6 +48,22 @@ class ProductDetailFragment : Fragment() {
             val tab = binding.bannerIndicator.getTabAt(i)
             tab?.customView =
                 layoutInflater.inflate(R.layout.product_banner_dot, binding.bannerIndicator, false)
+        }
+    }
+
+    private fun setupColorVariants(){
+        val variants = listOf(
+            ProductColorModel(1,R.drawable.samsung_mobile,"Onyx Black",true),
+            ProductColorModel(2,R.drawable.samsung_mobile,"Amber Yellow"),
+            ProductColorModel(2,R.drawable.samsung_mobile,"Cobalt Violet"),
+            ProductColorModel(2,R.drawable.samsung_mobile,"Marble Gray"),
+
+        )
+        binding.rvColorVariants.apply {
+            adapter = ColorVariantAdapter(colorVariantList = variants,{
+                binding.tvSelectedColor.text = it }, {selected ->
+
+            })
         }
     }
 
