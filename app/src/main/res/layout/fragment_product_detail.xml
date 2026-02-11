@@ -14,6 +14,7 @@
         android:fillViewport="true"
         android:clipToPadding="false"
         app:layout_constraintTop_toTopOf="parent"
+        app:layout_constraintBottom_toTopOf="@+id/bottomActionLayout"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintEnd_toEndOf="parent">
         
@@ -27,15 +28,50 @@
             <FrameLayout
                 android:id="@+id/layout_image_banner"
                 android:layout_width="match_parent"
-                android:background="@color/colorSurface"
                 android:layout_height = "350dp">
-
 
                 <androidx.viewpager2.widget.ViewPager2
                     android:id="@+id/product_Banners"
                     android:layout_width="match_parent"
-                    android:layout_height="match_parent"
+                    android:layout_height="320dp"
                    />
+
+                <LinearLayout
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:orientation="horizontal"
+                    android:paddingHorizontal="8dp"
+                    android:paddingVertical="4dp"
+                    android:layout_gravity="bottom|end"
+                    android:layout_marginEnd="16dp"
+                    android:layout_marginBottom="40dp"
+                    android:gravity="center"
+                    android:background="@drawable/rating_bg"
+                    android:layout_marginTop="8dp">
+
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:includeFontPadding="false"
+                        android:text="4.3 ★"
+                        android:textSize="12sp"
+                        android:textStyle="bold"
+                        android:textColor="@color/white"/>
+
+
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text=" | 51"
+                        android:layout_marginStart="2dp"
+                        android:textStyle="bold"
+                        android:includeFontPadding="false"
+                        android:textColor="@color/white"
+                        android:textSize="12sp"
+                        />
+
+
+                </LinearLayout>
 
                 <com.google.android.material.tabs.TabLayout
                     android:id="@+id/bannerIndicator"
@@ -46,21 +82,73 @@
                     app:tabIndicatorHeight="0dp"
                     android:background="@android:color/transparent"/>
 
-
             </FrameLayout>
-
+            
             <LinearLayout
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:orientation="vertical"
                 android:padding="16dp">
 
-            <LinearLayout
-                android:id="@+id/layoutProductInfo"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:orientation="vertical"
-                android:layout_marginTop="16dp"/>
+                <LinearLayout
+                    android:id="@+id/layoutProductInfo"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="vertical"
+                   >
+
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="Samsung"
+                        android:textStyle="bold"
+                        android:textSize="16sp"
+                        android:textColor="@color/black"/>
+
+                    <TextView
+                        android:id="@+id/tvProductTitle"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:text="Galaxy S24 5G Snapdragon (Onyx Black, 128 GB) (8 GB RAM)"
+                        android:textSize="14sp"
+                        android:textColor="@color/textPrimary"
+                        android:layout_marginTop="4dp"/>
+
+                    
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:orientation="horizontal"
+                        android:layout_gravity="center_vertical"
+                        android:layout_marginTop="4dp">
+
+                        <TextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:id="@+id/tvMrp"
+                            android:text="@string/mrp_text"
+                            android:textColor="@color/textSecondary"
+                            android:textSize="14sp"/>
+
+                        <TextView
+                            android:id="@+id/tvPrice"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text=" ₹40,999"
+                            android:textColor="@color/black"
+                            android:textStyle="bold"
+                            android:textSize="18sp"
+                            android:layout_marginStart="8dp"/>
+
+                    </LinearLayout>
+                    <View
+                        android:layout_width="match_parent"
+                        android:layout_height="1dp"
+                        android:layout_marginTop="8dp"
+                        android:background="@color/colorSurface"/>
+
+
+                </LinearLayout>
 
 
             <LinearLayout
@@ -123,7 +211,8 @@
             android:layout_width="0dp"
             android:layout_height="wrap_content"
             android:text="Buy Now"
-            android:textSize="14dp"
+            android:textSize="14sp"
+            android:textStyle="bold"
             android:textAllCaps="false"
             android:layout_marginHorizontal="30dp"
             android:background="@drawable/btn_selector"
