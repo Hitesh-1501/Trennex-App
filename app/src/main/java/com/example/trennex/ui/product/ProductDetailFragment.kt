@@ -1,5 +1,6 @@
 package com.example.trennex.ui.product
 
+import android.graphics.Color
 import android.os.Bundle
 import androidx.fragment.app.Fragment
 import android.view.LayoutInflater
@@ -11,6 +12,7 @@ import com.example.trennex.databinding.FragmentHomeBinding
 import com.example.trennex.databinding.FragmentProductDetailBinding
 import com.example.trennex.ui.product.adapter.ColorVariantAdapter
 import com.example.trennex.ui.product.adapter.ProductImageAdapter
+import com.example.trennex.ui.product.adapter.VariantAdapter
 import com.example.trennex.ui.product.model.ProductColorModel
 import com.example.trennex.ui.product.model.VariantModel
 import com.google.android.material.tabs.TabLayoutMediator
@@ -31,6 +33,7 @@ class ProductDetailFragment : Fragment(R.layout.fragment_product_detail) {
         super.onViewCreated(view, savedInstanceState)
         setupImageBanner()
         setupColorVariants()
+        setUpVariants()
     }
 
     private fun setupImageBanner() {
@@ -62,6 +65,20 @@ class ProductDetailFragment : Fragment(R.layout.fragment_product_detail) {
         binding.rvColorVariants.apply {
             adapter = ColorVariantAdapter(colorVariantList = variants,{
                 binding.tvSelectedColor.text = it }, {selected ->
+
+            })
+        }
+    }
+
+    private fun setUpVariants(){
+        val variants = listOf(
+            VariantModel(1,"128GB + 8GB","₹40,999",true),
+            VariantModel(2,"256GB + 8GB","₹45,999")
+        )
+        binding.rvVariants.apply {
+            adapter = VariantAdapter(variants = variants,{
+                binding.tvVariant.text = it
+            },{
 
             })
         }
