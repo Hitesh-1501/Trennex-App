@@ -168,6 +168,7 @@
                         android:layout_height="wrap_content"
                         android:text ="Selected Color :"
                         android:textSize="14sp"
+                        android:textColor="@color/textPrimary"
                         android:textStyle="bold"/>
 
                     <TextView
@@ -200,6 +201,7 @@
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
                         android:text ="Variant:"
+                        android:textColor="@color/textPrimary"
                         android:textSize="14sp"
                         android:textStyle="bold"/>
 
@@ -228,7 +230,160 @@
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:layout_marginTop="16dp"
-                android:orientation="vertical"/>
+                android:orientation="vertical">
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="Delivery &amp; Services"
+                    android:textSize="14sp"
+                    android:textStyle="bold"
+                    android:textColor="@color/textPrimary"/>
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="horizontal"
+                    android:background="@drawable/bg_delivery_services"
+                    android:gravity="center_vertical"
+                    android:padding="8dp"
+                    android:layout_marginTop="12dp">
+
+
+                    <ImageView
+                        android:layout_width="18dp"
+                        android:layout_height="18dp"
+                        android:layout_marginTop="-2dp"
+                        android:src="@drawable/product_detail_location"/>
+
+                    <TextView
+                        android:id="@+id/tvAddress"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="Address"
+                        android:textSize="13sp"
+                        android:ellipsize="end"
+                        android:maxLines="1"
+                        android:layout_marginStart="8dp"
+                        android:textColor="@color/textPrimary"/>
+
+
+                    <TextView
+                        android:id="@+id/tvChange"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:text="Change"
+                        android:textSize="13sp"
+                        android:gravity="end"
+                        android:layout_marginEnd="10dp"
+                        android:textColor="@color/colorPrimary"/>
+
+                </LinearLayout>
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="horizontal"
+                    android:background="@drawable/bg_delivery_services"
+                    android:gravity="center_vertical"
+                    android:padding="8dp"
+                    android:layout_marginTop="12dp">
+
+
+                    <ImageView
+                        android:layout_width="18dp"
+                        android:layout_height="18dp"
+                        android:layout_marginTop="-2dp"
+                        android:src="@drawable/delivery_icon"/>
+
+                    <TextView
+                        android:id="@+id/tvDelivery"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="Delivery By Tommarow, 12 Feb"
+                        android:textSize="13sp"
+                        android:ellipsize="end"
+                        android:maxLines="1"
+                        android:layout_marginStart="8dp"
+                        android:textColor="@color/textPrimary"/>
+
+
+                    <TextView
+                        android:id="@+id/tvPriceDetails"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:text="₹ 40,999"
+                        android:textSize="13sp"
+                        android:gravity="end"
+                        android:layout_marginEnd="10dp"
+                        android:textColor="@color/textPrimary"/>
+
+                </LinearLayout>
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="horizontal"
+                    android:background="@drawable/bg_delivery_services"
+                    android:gravity="center_vertical"
+                    android:padding="8dp"
+                    android:layout_marginTop="12dp">
+
+
+                    <ImageView
+                        android:layout_width="40dp"
+                        android:layout_height="24dp"
+                        android:layout_marginTop="-2dp"
+                        android:src="@drawable/samsung_brand_logo"/>
+
+                    <TextView
+                        android:id="@+id/tvManufacture"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="1-year Manufacture warranty for device"
+                        android:textSize="13sp"
+                        android:ellipsize="end"
+                        android:maxLines="1"
+                        android:layout_marginStart="8dp"
+                        android:textColor="@color/textPrimary"/>
+
+                </LinearLayout>
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="horizontal"
+                    android:background="@drawable/bg_delivery_services"
+                    android:gravity="center_vertical"
+                    android:padding="8dp"
+                    android:layout_marginTop="12dp">
+
+
+                    <ImageView
+                        android:layout_width="18dp"
+                        android:layout_height="18dp"
+                        android:layout_marginTop="-2dp"
+                        android:src="@drawable/return_policy"/>
+
+                    <TextView
+                        android:id="@+id/tv_return_policy"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="10-Day Return Policy"
+                        android:textSize="13sp"
+                        android:ellipsize="end"
+                        android:maxLines="1"
+                        android:layout_marginStart="8dp"
+                        android:textColor="@color/textPrimary"/>
+
+
+                </LinearLayout>
+
+
+
+
+
+            </LinearLayout>
 
             <LinearLayout
                 android:id="@+id/layoutSpecs"
