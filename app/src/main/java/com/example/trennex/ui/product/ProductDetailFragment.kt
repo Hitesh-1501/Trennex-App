@@ -21,6 +21,7 @@ import com.google.android.material.tabs.TabLayoutMediator
 class ProductDetailFragment : Fragment(R.layout.fragment_product_detail) {
     private var _binding: FragmentProductDetailBinding? = null
     private val binding get()  = _binding!!
+    private var isSpecExpandable = false
     override fun onCreateView(
         inflater: LayoutInflater, container: ViewGroup?,
         savedInstanceState: Bundle?
@@ -34,6 +35,15 @@ class ProductDetailFragment : Fragment(R.layout.fragment_product_detail) {
         setupImageBanner()
         setupColorVariants()
         setUpVariants()
+
+        binding.specheader.setOnClickListener {
+            isSpecExpandable = !isSpecExpandable
+            binding.specContent.visibility = if(isSpecExpandable) View.VISIBLE else View.GONE
+            binding.imgSpecArrow.animate()
+                .rotation(if (isSpecExpandable) 180f else 0f)
+                .setDuration(200)
+                .start()
+        }
     }
 
     private fun setupImageBanner() {
@@ -52,6 +62,7 @@ class ProductDetailFragment : Fragment(R.layout.fragment_product_detail) {
             tab?.customView =
                 layoutInflater.inflate(R.layout.product_banner_dot, binding.bannerIndicator, false)
         }
+
     }
 
     private fun setupColorVariants(){

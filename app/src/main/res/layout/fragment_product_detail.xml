@@ -145,7 +145,7 @@
                     <View
                         android:layout_width="match_parent"
                         android:layout_height="1dp"
-                        android:layout_marginTop="12dp"
+                        android:layout_marginTop="16dp"
                         android:background="@color/colorSurface"/>
 
                 </LinearLayout>
@@ -221,6 +221,12 @@
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:layout_marginTop="8dp"/>
+
+                <View
+                    android:layout_width="match_parent"
+                    android:layout_height="1dp"
+                    android:layout_marginTop="16dp"
+                    android:background="@color/colorSurface"/>
 
 
             </LinearLayout>
@@ -379,8 +385,11 @@
 
                 </LinearLayout>
 
-
-
+                <View
+                    android:layout_width="match_parent"
+                    android:layout_height="1dp"
+                    android:layout_marginTop="16dp"
+                    android:background="@color/colorSurface"/>
 
 
             </LinearLayout>
@@ -390,7 +399,223 @@
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:orientation="vertical"
-                android:layout_marginTop="16dp" />
+                android:layout_marginTop="16dp">
+
+
+                <LinearLayout
+                    android:id="@+id/specheader"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="horizontal"
+                    android:paddingVertical="12dp"
+                    android:gravity="center_vertical">
+
+
+                    <TextView
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="1"
+                        android:text="Specifications"
+                        android:textStyle="bold"
+                        android:textSize="14sp"
+                        android:textColor="@color/textPrimary"/>
+
+
+                    <ImageView
+                        android:id="@+id/imgSpecArrow"
+                        android:layout_width="20dp"
+                        android:layout_height="20dp"
+                        android:src="@drawable/arrow_down"/>
+
+
+
+                </LinearLayout>
+
+
+                <LinearLayout
+                    android:id="@+id/specContent"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="vertical"
+                    android:visibility="gone"
+                    android:paddingBottom="8dp">
+
+
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="Top Highlights"
+                        android:textColor="@color/textPrimary"/>
+
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:orientation="horizontal"
+                        android:gravity="center_vertical"
+                        android:paddingHorizontal="10dp"
+                        android:layout_marginTop="8dp">
+
+
+                        <FrameLayout
+                            android:layout_width="36dp"
+                            android:layout_height="36dp"
+                            android:background="@drawable/bg_product_spec">
+
+                            <ImageView
+                                android:layout_width="24dp"
+                                android:layout_height="24dp"
+                                android:layout_gravity="center"
+                                android:src="@drawable/product_spec_storage"/>
+
+                        </FrameLayout>
+
+                        <TextView
+                            android:id="@+id/tv_spec_storage"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="8 GB RAM | 128 GB RAM"
+                            android:layout_marginStart="10dp"
+                            android:textColor="@color/textPrimary"/>
+
+                    </LinearLayout>
+
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:orientation="horizontal"
+                        android:gravity="center_vertical"
+                        android:paddingHorizontal="10dp"
+                        android:layout_marginTop="8dp">
+
+
+                        <FrameLayout
+                            android:layout_width="36dp"
+                            android:layout_height="36dp"
+                            android:background="@drawable/bg_product_spec">
+
+                            <ImageView
+                                android:layout_width="24dp"
+                                android:layout_height="24dp"
+                                android:layout_gravity="center"
+                                android:src="@drawable/product_spec_processor"/>
+
+                        </FrameLayout>
+
+                        <TextView
+                            android:id="@+id/tv_spec_processor"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="8 Gen 3 | Octa Core Processor | 3.39 GHz clock Speed"
+                            android:layout_marginStart="10dp"
+                            android:textColor="@color/textPrimary"/>
+
+                    </LinearLayout>
+
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:orientation="horizontal"
+                        android:gravity="center_vertical"
+                        android:paddingHorizontal="10dp"
+                        android:layout_marginTop="8dp">
+
+
+                        <FrameLayout
+                            android:layout_width="36dp"
+                            android:layout_height="36dp"
+                            android:background="@drawable/bg_product_spec">
+
+                            <ImageView
+                                android:layout_width="24dp"
+                                android:layout_height="24dp"
+                                android:layout_gravity="center"
+                                android:src="@drawable/product_spec_camera"/>
+
+                        </FrameLayout>
+
+                        <TextView
+                            android:id="@+id/tv_spec_camera"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="50MP + 12MP | 12MP Front Camera"
+                            android:layout_marginStart="10dp"
+                            android:textColor="@color/textPrimary"/>
+
+                    </LinearLayout>
+
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:orientation="horizontal"
+                        android:gravity="center_vertical"
+                        android:paddingHorizontal="10dp"
+                        android:layout_marginTop="8dp">
+
+
+                        <FrameLayout
+                            android:layout_width="36dp"
+                            android:layout_height="36dp"
+                            android:background="@drawable/bg_product_spec">
+
+                            <ImageView
+                                android:layout_width="24dp"
+                                android:layout_height="24dp"
+                                android:layout_gravity="center"
+                                android:src="@drawable/product_spec_display"/>
+
+                        </FrameLayout>
+
+                        <TextView
+                            android:id="@+id/tv_spec_display"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="15.75 cm (6.2 inch) Full HD+ Display"
+                            android:layout_marginStart="10dp"
+                            android:textColor="@color/textPrimary"/>
+
+                    </LinearLayout>
+
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:orientation="horizontal"
+                        android:gravity="center_vertical"
+                        android:paddingHorizontal="10dp"
+                        android:layout_marginTop="8dp">
+
+
+                        <FrameLayout
+                            android:layout_width="36dp"
+                            android:layout_height="36dp"
+                            android:background="@drawable/bg_product_spec">
+
+                            <ImageView
+                                android:layout_width="24dp"
+                                android:layout_height="24dp"
+                                android:layout_gravity="center"
+                                android:src="@drawable/product_spec_battery"/>
+
+                        </FrameLayout>
+
+                        <TextView
+                            android:id="@+id/tv_spec_battery"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="4000 mAh Battery"
+                            android:layout_marginStart="10dp"
+                            android:textColor="@color/textPrimary"/>
+
+                    </LinearLayout>
+
+                </LinearLayout>
+
+                <View
+                    android:layout_width="match_parent"
+                    android:layout_height="1dp"
+                    android:background="@color/colorSurface"
+                    android:layout_marginTop="8dp"/>
+
+            </LinearLayout>
 
 
             <LinearLayout
