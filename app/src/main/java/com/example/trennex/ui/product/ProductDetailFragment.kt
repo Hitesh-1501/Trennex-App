@@ -7,13 +7,16 @@ import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import androidx.core.view.size
+import androidx.recyclerview.widget.LinearLayoutManager
 import com.example.trennex.R
 import com.example.trennex.databinding.FragmentHomeBinding
 import com.example.trennex.databinding.FragmentProductDetailBinding
 import com.example.trennex.ui.product.adapter.ColorVariantAdapter
 import com.example.trennex.ui.product.adapter.ProductImageAdapter
+import com.example.trennex.ui.product.adapter.ReviewAdapter
 import com.example.trennex.ui.product.adapter.VariantAdapter
 import com.example.trennex.ui.product.model.ProductColorModel
+import com.example.trennex.ui.product.model.ReviewModel
 import com.example.trennex.ui.product.model.VariantModel
 import com.google.android.material.tabs.TabLayoutMediator
 
@@ -22,6 +25,7 @@ class ProductDetailFragment : Fragment(R.layout.fragment_product_detail) {
     private var _binding: FragmentProductDetailBinding? = null
     private val binding get()  = _binding!!
     private var isSpecExpandable = false
+    private var isReviewExpandable = false
     override fun onCreateView(
         inflater: LayoutInflater, container: ViewGroup?,
         savedInstanceState: Bundle?
@@ -35,6 +39,7 @@ class ProductDetailFragment : Fragment(R.layout.fragment_product_detail) {
         setupImageBanner()
         setupColorVariants()
         setUpVariants()
+        setUpReviews()
 
         binding.specheader.setOnClickListener {
             isSpecExpandable = !isSpecExpandable
@@ -44,6 +49,16 @@ class ProductDetailFragment : Fragment(R.layout.fragment_product_detail) {
                 .setDuration(200)
                 .start()
         }
+
+        binding.reviewheader.setOnClickListener {
+            isSpecExpandable = !isSpecExpandable
+            binding.reviewContent.visibility = if(isSpecExpandable) View.VISIBLE else View.GONE
+            binding.imgReviewArrow.animate()
+                .rotation(if (isSpecExpandable) 180f else 0f)
+                .setDuration(200)
+                .start()
+        }
+
     }
 
     private fun setupImageBanner() {
@@ -78,6 +93,19 @@ class ProductDetailFragment : Fragment(R.layout.fragment_product_detail) {
                 binding.tvSelectedColor.text = it }, {selected ->
 
             })
+        }
+    }
+
+    private fun setUpReviews(){
+        val reviews = listOf(
+            ReviewModel(4.5f, "1 month ago", "Excellent performance and great display."),
+            ReviewModel(4.1f, "2 months ago", "Camera quality is outstanding."),
+            ReviewModel(3.5f, "3 months ago", "Battery life is good for daily usage.")
+        )
+        binding.rvReviews.apply {
+            layoutManager = LinearLayoutManager(requireContext(), LinearLayoutManager.VERTICAL,false)
+            adapter = ReviewAdapter(reviews)
+            isNestedScrollingEnabled = false
         }
     }
 
