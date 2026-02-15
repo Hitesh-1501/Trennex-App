@@ -83,4 +83,9 @@
         android:name="com.example.trennex.cartFragment"
         android:label="fragment_cart"
         tools:layout="@layout/fragment_cart" />
+    <fragment
+        android:id="@+id/productDetailFragment"
+        android:name="com.example.trennex.ui.product.ProductDetailFragment"
+        android:label="fragment_product_detail"
+        tools:layout="@layout/fragment_product_detail" />
 </navigation>

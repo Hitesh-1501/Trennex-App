@@ -17,6 +17,7 @@ import com.example.trennex.databinding.NavigationIconToolbarBinding
 import com.example.trennex.databinding.SearchToolbarBinding
 import com.example.trennex.databinding.TitleToolbarBinding
 import com.example.trennex.databinding.ToolbarHomeBinding
+import com.example.trennex.databinding.ToolbarProductScreenBinding
 import np.com.susanthapa.curved_bottom_navigation.CbnMenuItem
 
 
@@ -47,19 +48,24 @@ class MainActivity : AppCompatActivity() {
             when(destination.id){
                 R.id.splashFragment, R.id.onboardingFragment, R.id.loginFragment ->{
                     showToolBar(ToolBarType.NONE)
-                    setLightStatusBar(true)
+                    setLightStatusBar(false)
                     binding.curveBottomNav.visibility = View.GONE
 
                 }
                 R.id.otpFragment ->{
                     showToolBar(ToolBarType.OTP)
                     binding.curveBottomNav.visibility = View.GONE
-                   setLightStatusBar(true)
+                   setLightStatusBar(false)
                 }
                 R.id.homeFragment -> {
                     showToolBar(ToolBarType.HOME)
-                    setLightStatusBar(false)
+                    setLightStatusBar(true)
                     binding.curveBottomNav.visibility = View.VISIBLE
+                }
+                R.id.productDetailFragment ->{
+                    showToolBar(ToolBarType.PRODUCT)
+                    setLightStatusBar(true)
+                    binding.curveBottomNav.visibility = View.GONE
                 }
             }
         }
@@ -87,7 +93,7 @@ class MainActivity : AppCompatActivity() {
     private fun setLightStatusBar(light: Boolean) {
         WindowInsetsControllerCompat(window, window.decorView).apply {
             isAppearanceLightStatusBars = light
-            isAppearanceLightNavigationBars = false
+            isAppearanceLightNavigationBars = true
         }
         window.statusBarColor = Color.TRANSPARENT
         window.navigationBarColor = Color.BLACK
@@ -125,6 +131,13 @@ class MainActivity : AppCompatActivity() {
             }
             ToolBarType.OTP -> {
                 val toolbarBinding = NavigationIconToolbarBinding.inflate(layoutInflater)
+                binding.toolbarContainer.addView(toolbarBinding.root)
+                toolbarBinding.backArrow.setOnClickListener {
+                    navController.popBackStack()
+                }
+            }
+            ToolBarType.PRODUCT -> {
+                val toolbarBinding = ToolbarProductScreenBinding.inflate(layoutInflater)
                 binding.toolbarContainer.addView(toolbarBinding.root)
                 toolbarBinding.backArrow.setOnClickListener {
                     navController.popBackStack()
