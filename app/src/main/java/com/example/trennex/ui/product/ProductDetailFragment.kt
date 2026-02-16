@@ -6,6 +6,7 @@ import androidx.fragment.app.Fragment
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
+import android.widget.Toast
 import androidx.core.view.size
 import androidx.recyclerview.widget.LinearLayoutManager
 import com.example.trennex.R
@@ -51,14 +52,22 @@ class ProductDetailFragment : Fragment(R.layout.fragment_product_detail) {
         }
 
         binding.reviewheader.setOnClickListener {
-            isSpecExpandable = !isSpecExpandable
-            binding.reviewContent.visibility = if(isSpecExpandable) View.VISIBLE else View.GONE
+            isReviewExpandable = !isReviewExpandable
+            binding.reviewContent.visibility = if(isReviewExpandable) View.VISIBLE else View.GONE
             binding.imgReviewArrow.animate()
-                .rotation(if (isSpecExpandable) 180f else 0f)
+                .rotation(if (isReviewExpandable) 180f else 0f)
                 .setDuration(200)
                 .start()
         }
 
+        binding.addToCart.setOnClickListener {
+            Toast.makeText(requireContext(),"Added to cart", Toast.LENGTH_SHORT).show()
+        }
+
+        binding.wishlist.setOnClickListener {
+            Toast.makeText(requireContext(),"Proceed to checkout", Toast.LENGTH_SHORT).show()
+
+        }
     }
 
     private fun setupImageBanner() {
