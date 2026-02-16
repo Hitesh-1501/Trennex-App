@@ -98,6 +98,7 @@ class ProductDetailFragment : Fragment(R.layout.fragment_product_detail) {
 
         )
         binding.rvColorVariants.apply {
+            layoutManager = LinearLayoutManager(requireContext(), LinearLayoutManager.HORIZONTAL,false)
             adapter = ColorVariantAdapter(colorVariantList = variants,{
                 binding.tvSelectedColor.text = it }, {selected ->
 
@@ -124,6 +125,7 @@ class ProductDetailFragment : Fragment(R.layout.fragment_product_detail) {
             VariantModel(2,"256GB + 8GB","₹45,999")
         )
         binding.rvVariants.apply {
+            layoutManager = LinearLayoutManager(requireContext(), LinearLayoutManager.HORIZONTAL,false)
             adapter = VariantAdapter(variants = variants,{
                 binding.tvVariant.text = it
             },{

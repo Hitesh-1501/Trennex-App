@@ -14,7 +14,7 @@
     <string name="resend_otp">Resend Otp</string>
     <string name="Didn_t_receive_otp">Didn\'t get otp code?</string>
     <string name="verify_otp">Verify Otp</string>
-    <string name="mrp_text">MRP <s>₹75,000</s></string>
+    <string name="mrp_text">MRP <strike>₹75,000</strike></string>
     <!-- TODO: Remove or change this placeholder text -->
     <string name="hello_blank_fragment">Hello blank fragment</string>
 

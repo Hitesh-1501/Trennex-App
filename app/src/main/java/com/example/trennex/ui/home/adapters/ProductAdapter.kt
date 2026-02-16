@@ -7,7 +7,8 @@ import com.example.trennex.databinding.ItemProductBinding
 import com.example.trennex.ui.home.model.ProductModel
 
 class ProductAdapter(
-    private val products: List<ProductModel>
+    private val products: List<ProductModel>,
+    private val onProductClick : () -> Unit
 ): RecyclerView.Adapter<ProductAdapter.ProductVieewHolder>(){
     override fun onCreateViewHolder(
         parent: ViewGroup,
@@ -26,6 +27,9 @@ class ProductAdapter(
        holder.binding.tvProductTitle.text = item.productName
        holder.binding.tvProductPrice.text = "₹${item.productPrice}"
 
+       holder.itemView.setOnClickListener {
+           onProductClick()
+       }
     }
 
     override fun getItemCount(): Int {

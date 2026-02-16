@@ -6,9 +6,9 @@
 
     <View
         android:id="@+id/dot_view"
-        android:layout_width="12dp"
-        android:layout_height="12dp"
-        android:layout_marginHorizontal="2dp"
+        android:layout_width="10dp"
+        android:layout_height="10dp"
+        android:layout_marginHorizontal="4dp"
         android:background="@drawable/product_banners"
         />
 

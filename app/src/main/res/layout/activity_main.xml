@@ -5,13 +5,17 @@
     android:id="@+id/main"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
+    android:fitsSystemWindows="false"
     tools:context=".ui.main.MainActivity">
 
     <com.google.android.material.appbar.AppBarLayout
+        android:id="@+id/appBarLayout"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:background="@android:color/transparent"
-        app:elevation="0dp">
+        android:background="@drawable/toolbar_home_gradient_color"
+        app:elevation="0dp"
+        android:fitsSystemWindows="false"
+        app:liftOnScroll="false">
 
     <FrameLayout
         android:id="@+id/toolbarContainer"

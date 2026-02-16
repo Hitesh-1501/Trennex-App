@@ -47,6 +47,5 @@ class ColorVariantAdapter(
         return colorVariantList.size
     }
 
-
     inner class ColorVariantViewHolder(val binding: ItemColorVariantBinding): RecyclerView.ViewHolder(binding.root)
 }

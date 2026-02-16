@@ -10,6 +10,7 @@ import android.view.MotionEvent
 import android.view.View
 import android.view.ViewGroup
 import android.widget.Toast
+import androidx.navigation.fragment.findNavController
 import androidx.recyclerview.widget.GridLayoutManager
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.viewpager2.widget.ViewPager2
@@ -155,7 +156,9 @@ class HomeFragment : Fragment(R.layout.fragment_home) {
         binding.rvProducts.apply {
             layoutManager = GridLayoutManager(requireContext(),3)
             binding.rvProducts.isNestedScrollingEnabled = false
-            adapter = ProductAdapter(products)
+            adapter = ProductAdapter(products){
+                findNavController().navigate(R.id.action_homeFragment_to_productDetailFragment)
+            }
         }
     }
     override fun onDestroyView() {

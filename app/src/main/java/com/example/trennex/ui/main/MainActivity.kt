@@ -3,6 +3,7 @@ package com.example.trennex.ui.main
 import android.graphics.Color
 import android.os.Bundle
 import android.view.View
+import androidx.activity.enableEdgeToEdge
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.view.ViewCompat
 import androidx.core.view.WindowCompat
@@ -19,30 +20,26 @@ import com.example.trennex.databinding.TitleToolbarBinding
 import com.example.trennex.databinding.ToolbarHomeBinding
 import com.example.trennex.databinding.ToolbarProductScreenBinding
 import np.com.susanthapa.curved_bottom_navigation.CbnMenuItem
+import androidx.core.graphics.toColorInt
 
 
 class MainActivity : AppCompatActivity() {
     private lateinit var binding: ActivityMainBinding
     private lateinit var  navController: NavController
     override fun onCreate(savedInstanceState: Bundle?) {
+        enableEdgeToEdge()
+        WindowCompat.setDecorFitsSystemWindows(window, false)
         super.onCreate(savedInstanceState)
-        WindowCompat.setDecorFitsSystemWindows(window,false)
         binding = ActivityMainBinding.inflate(layoutInflater)
         setContentView(binding.root)
         window.statusBarColor = Color.TRANSPARENT
-
-        WindowInsetsControllerCompat(window, window.decorView).apply {
-            isAppearanceLightNavigationBars = false
-        }
-
+        setupWindowInsets()
         val navhostFragement =  supportFragmentManager.findFragmentById(R.id.nav_host_fragment) as NavHostFragment
         navController = navhostFragement.navController
 
         initializeBottomMenu()
 
         binding.curveBottomNav.setupWithNavController(navController)
-
-        setupWindowInsets()
 
         navController.addOnDestinationChangedListener {_, destination, _ ->
             when(destination.id){
@@ -59,12 +56,12 @@ class MainActivity : AppCompatActivity() {
                 }
                 R.id.homeFragment -> {
                     showToolBar(ToolBarType.HOME)
-                    setLightStatusBar(true)
+                    setLightStatusBar(false)
                     binding.curveBottomNav.visibility = View.VISIBLE
                 }
                 R.id.productDetailFragment ->{
                     showToolBar(ToolBarType.PRODUCT)
-                    setLightStatusBar(true)
+                    setLightStatusBar(false)
                     binding.curveBottomNav.visibility = View.GONE
                 }
             }
@@ -76,32 +73,25 @@ class MainActivity : AppCompatActivity() {
 
     private fun setupWindowInsets(){
         ViewCompat.setOnApplyWindowInsetsListener(binding.root){ view, insets ->
-            val statusBarHeight =  insets.getInsets(WindowInsetsCompat.Type.statusBars()).top
-            val navBarHeight = insets.getInsets(WindowInsetsCompat.Type.navigationBars()).bottom
-            binding.toolbarContainer.setPadding(
-                0,statusBarHeight,0,0)
+            val systemBars = insets.getInsets(WindowInsetsCompat.Type.systemBars())
+            binding.appBarLayout.setPadding(0, systemBars.top, 0, 0)
+            binding.root.setPadding(0, 0, 0, systemBars.bottom)
 
-            view.setPadding(
-                0,
-                0,
-                0,
-                navBarHeight
-            )
             insets
         }
     }
     private fun setLightStatusBar(light: Boolean) {
         WindowInsetsControllerCompat(window, window.decorView).apply {
             isAppearanceLightStatusBars = light
-            isAppearanceLightNavigationBars = true
+            isAppearanceLightNavigationBars = false
         }
-        window.statusBarColor = Color.TRANSPARENT
         window.navigationBarColor = Color.BLACK
     }
 
     fun showToolBar(type: ToolBarType, title: String? = null){
         binding.toolbarContainer.visibility = View.VISIBLE
         binding.toolbarContainer.removeAllViews()
+        binding.appBarLayout.setBackgroundColor(Color.WHITE)
         when(type){
             ToolBarType.NONE -> {
                 binding.toolbarContainer.visibility = View.GONE
@@ -109,6 +99,7 @@ class MainActivity : AppCompatActivity() {
             ToolBarType.HOME ->{
                 val toolbarBinding = ToolbarHomeBinding.inflate(layoutInflater)
                 binding.toolbarContainer.addView(toolbarBinding.root)
+                binding.appBarLayout.setBackgroundResource(R.drawable.toolbar_home_gradient_color)
 
             }
             ToolBarType.TITLE -> {
@@ -135,6 +126,7 @@ class MainActivity : AppCompatActivity() {
                 toolbarBinding.backArrow.setOnClickListener {
                     navController.popBackStack()
                 }
+                binding.appBarLayout.setBackgroundColor(Color.WHITE)
             }
             ToolBarType.PRODUCT -> {
                 val toolbarBinding = ToolbarProductScreenBinding.inflate(layoutInflater)
@@ -142,6 +134,7 @@ class MainActivity : AppCompatActivity() {
                 toolbarBinding.backArrow.setOnClickListener {
                     navController.popBackStack()
                 }
+                binding.appBarLayout.setBackgroundColor("#4D2962FF".toColorInt())
             }
         }
 

@@ -9,7 +9,9 @@ import android.view.ViewGroup
 import android.view.WindowInsets
 import android.view.WindowManager
 import android.view.animation.DecelerateInterpolator
+import androidx.core.view.WindowCompat
 import androidx.core.view.WindowInsetsCompat
+import androidx.core.view.WindowInsetsControllerCompat
 import androidx.navigation.NavArgument
 import androidx.navigation.fragment.findNavController
 import com.example.trennex.R
@@ -29,13 +31,13 @@ class SplashFragment : Fragment(R.layout.fragment_splash) {
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
-        if(Build.VERSION.SDK_INT >= Build.VERSION_CODES.R){
-            activity?.window?.insetsController?.hide(WindowInsets.Type.statusBars())
-        }else{
-            @Suppress("DEPRECATION")
-            activity?.window?.addFlags(WindowManager.LayoutParams.FLAG_FULLSCREEN)
-        }
-
+        val window = activity?.window ?: return
+        WindowCompat.setDecorFitsSystemWindows(window, false)
+        window.statusBarColor = android.graphics.Color.TRANSPARENT
+        window.navigationBarColor = android.graphics.Color.TRANSPARENT
+        val controller = WindowCompat.getInsetsController(window, window.decorView)
+        controller.show(WindowInsetsCompat.Type.systemBars())
+        controller.isAppearanceLightStatusBars = true
         binding.trennexLogo.translationX = 1000f
 
         binding.trennexLogo.animate()
