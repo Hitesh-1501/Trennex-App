@@ -43,7 +43,7 @@ class MainActivity : AppCompatActivity() {
 
         navController.addOnDestinationChangedListener {_, destination, _ ->
             when(destination.id){
-                R.id.splashFragment, R.id.onboardingFragment, R.id.loginFragment ->{
+                R.id.splashFragment, R.id.onboardingFragment, R.id.loginFragment,R.id.imagePreviewFragment ->{
                     showToolBar(ToolBarType.NONE)
                     setLightStatusBar(false)
                     binding.curveBottomNav.visibility = View.GONE

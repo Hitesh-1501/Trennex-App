@@ -8,6 +8,7 @@ import android.view.View
 import android.view.ViewGroup
 import android.widget.Toast
 import androidx.core.view.size
+import androidx.navigation.fragment.findNavController
 import androidx.recyclerview.widget.LinearLayoutManager
 import com.example.trennex.R
 import com.example.trennex.databinding.FragmentHomeBinding
@@ -82,7 +83,10 @@ class ProductDetailFragment : Fragment(R.layout.fragment_product_detail) {
             R.drawable.product_img_four,
         )
         binding.productBanners.apply {
-            adapter = ProductImageAdapter(images)
+            adapter = ProductImageAdapter(images){
+                findNavController()
+                    .navigate(R.id.action_productDetailFragment_to_imagePreviewFragment)
+            }
         }
         TabLayoutMediator(binding.bannerIndicator, binding.productBanners) { tab, position -> }.attach()
         for(i in 0 until binding.bannerIndicator.tabCount){

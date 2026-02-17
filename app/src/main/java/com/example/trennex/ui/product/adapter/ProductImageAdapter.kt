@@ -6,7 +6,8 @@ import androidx.recyclerview.widget.RecyclerView
 import com.example.trennex.databinding.ItemProductBannerBinding
 
 class ProductImageAdapter(
-    private val images: List<Int>
+    private val images: List<Int>,
+    private val onImgClick : () -> Unit
 ): RecyclerView.Adapter<ProductImageAdapter.ProductImageViewHolder>(){
     override fun onCreateViewHolder(
         parent: ViewGroup,
@@ -22,6 +23,9 @@ class ProductImageAdapter(
     ) {
         val item = images[position]
         holder.binding.imgProducts.setImageResource(item)
+        holder.itemView.setOnClickListener {
+            onImgClick()
+        }
     }
 
     override fun getItemCount(): Int {
