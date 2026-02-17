@@ -5,7 +5,7 @@
     android:orientation="vertical"
     android:minWidth="100dp"
     android:gravity="center"
-    android:layout_marginEnd="8dp"
+    android:layout_marginEnd="12dp"
     android:paddingHorizontal="4dp"
     android:paddingVertical="8dp"
     android:background="@drawable/variant_unselected"

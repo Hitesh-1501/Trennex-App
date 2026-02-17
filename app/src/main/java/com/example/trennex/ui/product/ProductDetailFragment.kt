@@ -96,9 +96,9 @@ class ProductDetailFragment : Fragment(R.layout.fragment_product_detail) {
     private fun setupColorVariants(){
         val variants = listOf(
             ProductColorModel(1,R.drawable.samsung_mobile,"Onyx Black",true),
-            ProductColorModel(2,R.drawable.samsung_mobile,"Amber Yellow"),
-            ProductColorModel(2,R.drawable.samsung_mobile,"Cobalt Violet"),
-            ProductColorModel(2,R.drawable.samsung_mobile,"Marble Gray"),
+            ProductColorModel(2,R.drawable.amber_yellow,"Amber Yellow"),
+            ProductColorModel(2,R.drawable.cobalt_violet,"Cobalt Violet"),
+            ProductColorModel(2,R.drawable.marble_gray,"Marble Gray"),
 
         )
         binding.rvColorVariants.apply {
