@@ -38,6 +38,10 @@ class ProductDetailFragment : Fragment(R.layout.fragment_product_detail) {
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
         setupImageBanner()
+        binding.productBanners.offscreenPageLimit = 1
+        binding.productBanners.setPageTransformer { page , position ->
+            page.alpha = 0.5f +(1-kotlin.math.abs(position))
+        }
         setupColorVariants()
         setUpVariants()
         setUpReviews()
