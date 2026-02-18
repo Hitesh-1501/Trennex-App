@@ -10,7 +10,6 @@
     <androidx.viewpager2.widget.ViewPager2
         android:id="@+id/imgPreview"
         android:layout_width="match_parent"
-        android:transitionName="product_image"
         android:layout_height="match_parent"/>
 
     <ImageView

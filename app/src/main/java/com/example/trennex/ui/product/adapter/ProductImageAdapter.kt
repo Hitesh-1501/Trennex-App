@@ -2,12 +2,14 @@ package com.example.trennex.ui.product.adapter
 
 import android.view.LayoutInflater
 import android.view.ViewGroup
+import android.widget.ImageView
+import androidx.core.view.ViewCompat
 import androidx.recyclerview.widget.RecyclerView
 import com.example.trennex.databinding.ItemProductBannerBinding
 
 class ProductImageAdapter(
     private val images: List<Int>,
-    private val onImgClick : () -> Unit
+    private val onImgClick : (ImageView, Int) -> Unit
 ): RecyclerView.Adapter<ProductImageAdapter.ProductImageViewHolder>(){
     override fun onCreateViewHolder(
         parent: ViewGroup,
@@ -22,9 +24,11 @@ class ProductImageAdapter(
         position: Int
     ) {
         val item = images[position]
+        ViewCompat.setTransitionName(holder.binding.imgProducts,null)
         holder.binding.imgProducts.setImageResource(item)
         holder.itemView.setOnClickListener {
-            onImgClick()
+            ViewCompat.setTransitionName(holder.binding.imgProducts,"product_image")
+            onImgClick(holder.binding.imgProducts,position)
         }
     }
 

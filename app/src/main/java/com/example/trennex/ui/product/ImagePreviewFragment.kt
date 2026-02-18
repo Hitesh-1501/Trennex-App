@@ -1,16 +1,18 @@
 package com.example.trennex.ui.product
 
 import android.os.Bundle
-import android.transition.Transition
-import android.transition.TransitionInflater
+import androidx.transition.TransitionInflater
 import androidx.fragment.app.Fragment
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import androidx.navigation.fragment.findNavController
+import androidx.transition.ChangeBounds
+import androidx.transition.ChangeImageTransform
+import androidx.transition.ChangeTransform
+import androidx.transition.TransitionSet
 import com.example.trennex.R
 import com.example.trennex.databinding.FragmentImagePreviewBinding
-import com.example.trennex.databinding.FragmentProductDetailBinding
 import com.example.trennex.ui.product.adapter.FullImageAdapter
 
 class ImagePreviewFragment : Fragment(R.layout.fragment_image_preview) {
@@ -25,13 +27,28 @@ class ImagePreviewFragment : Fragment(R.layout.fragment_image_preview) {
     }
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
+        postponeEnterTransition()
         super.onViewCreated(view, savedInstanceState)
 
-        sharedElementEnterTransition = TransitionInflater.from(requireContext())
-            .inflateTransition(android.R.transition.move)
+        binding.imgPreview.post {
+            startPostponedEnterTransition()
+        }
 
-        sharedElementReturnTransition = TransitionInflater.from(requireContext())
-                .inflateTransition(android.R.transition.move)
+        sharedElementEnterTransition = TransitionSet().apply {
+            addTransition(ChangeBounds())
+            duration = 300L
+            addTransition(ChangeTransform())
+            addTransition(ChangeImageTransform())
+        }
+
+        sharedElementReturnTransition = TransitionSet().apply {
+            addTransition(ChangeBounds())
+            duration = 300L
+            addTransition(ChangeTransform())
+            addTransition(ChangeImageTransform())
+        }
+
+        val startPosition = arguments?.getInt("start_position") ?:0
 
         val images = listOf(
             R.drawable.product_img,
@@ -39,7 +56,8 @@ class ImagePreviewFragment : Fragment(R.layout.fragment_image_preview) {
             R.drawable.product_img_three,
             R.drawable.product_img_four
         )
-        binding.imgPreview.adapter = FullImageAdapter(images)
+        binding.imgPreview.adapter = FullImageAdapter(images,startPosition)
+        binding.imgPreview.setCurrentItem(startPosition,false)
 
         binding.btnBack.setOnClickListener {
             findNavController().popBackStack()

@@ -7,6 +7,7 @@ import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import android.widget.Toast
+import androidx.core.os.bundleOf
 import androidx.core.view.size
 import androidx.navigation.fragment.FragmentNavigatorExtras
 import androidx.navigation.fragment.findNavController
@@ -22,6 +23,7 @@ import com.example.trennex.ui.product.model.ProductColorModel
 import com.example.trennex.ui.product.model.ReviewModel
 import com.example.trennex.ui.product.model.VariantModel
 import com.google.android.material.tabs.TabLayoutMediator
+import com.google.android.material.transition.Hold
 
 
 class ProductDetailFragment : Fragment(R.layout.fragment_product_detail) {
@@ -83,14 +85,25 @@ class ProductDetailFragment : Fragment(R.layout.fragment_product_detail) {
             R.drawable.product_img_three,
             R.drawable.product_img_four,
         )
-        val extras = FragmentNavigatorExtras(
-            binding.productBanners to "product_image"
-        )
+
         binding.productBanners.apply {
-            adapter = ProductImageAdapter(images){
+            adapter = ProductImageAdapter(images){clickedImg,position  ->
+                exitTransition = Hold().apply {
+                    duration = 300L
+                }
+                reenterTransition = Hold().apply {
+                    duration = 300L
+                }
+
+                val extras = FragmentNavigatorExtras(
+                    clickedImg to "product_image"
+                )
+                val bundle = bundleOf(
+                    "start_position" to position
+                )
                 findNavController()
                     .navigate(R.id.action_productDetailFragment_to_imagePreviewFragment,
-                        null,
+                        bundle,
                         null,
                         extras)
             }

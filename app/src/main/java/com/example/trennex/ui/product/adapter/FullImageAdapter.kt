@@ -2,10 +2,12 @@ package com.example.trennex.ui.product.adapter
 
 import android.view.ViewGroup
 import android.widget.ImageView
+import androidx.core.view.ViewCompat
 import androidx.recyclerview.widget.RecyclerView
 
 class FullImageAdapter(
-    private val images: List<Int>
+    private val images: List<Int>,
+    private val startPosition : Int
 ): RecyclerView.Adapter<FullImageAdapter.ImageVH>(){
     override fun onCreateViewHolder(
         parent: ViewGroup,
@@ -25,7 +27,11 @@ class FullImageAdapter(
         holder: ImageVH,
         position: Int
     ) {
-       holder.img.setImageResource(images[position])
+        holder.img.setImageResource(images[position])
+        ViewCompat.setTransitionName(holder.img,null)
+        if(position == startPosition){
+            ViewCompat.setTransitionName(holder.img,"product_image")
+        }
     }
 
     override fun getItemCount(): Int {
