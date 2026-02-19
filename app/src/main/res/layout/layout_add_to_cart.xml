@@ -1,0 +1,108 @@
+<?xml version="1.0" encoding="utf-8"?>
+<androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:orientation="vertical"
+    android:layout_width="match_parent"
+    android:background="@color/white"
+    android:paddingBottom="12dp"
+    android:layout_height="wrap_content"
+    >
+
+    <androidx.constraintlayout.widget.ConstraintLayout
+        android:id="@+id/add_to_cart_container"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:padding="12dp"
+        android:background="#4D2962FF"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintTop_toTopOf="parent"
+        app:layout_constraintStart_toStartOf="parent">
+
+
+        <ImageView
+            android:id="@+id/productImg"
+            android:layout_width="60dp"
+            android:layout_height="60dp"
+            app:layout_constraintBottom_toBottomOf="parent"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toTopOf="parent"
+            app:layout_constraintEnd_toStartOf="@+id/tv_add"
+            android:padding="2dp"
+            android:src="@drawable/samsung_transperent" />
+
+
+        <TextView
+            android:id="@+id/tv_add"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginBottom="5dp"
+            android:text="Added to cart"
+            android:textColor="@color/textPrimary"
+            app:layout_constraintTop_toTopOf="parent"
+            android:layout_marginTop="5dp"
+            app:layout_constraintBottom_toTopOf="@+id/tv_product_detail"
+            android:layout_marginStart="10dp"
+            app:layout_constraintStart_toEndOf="@+id/productImg"
+            android:textSize="13sp" />
+
+        <TextView
+            android:id="@+id/tv_product_detail"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="S24(Onyx Black , 128 GB)"
+            android:textColor="@color/textPrimary"
+            android:layout_marginTop="4dp"
+            android:layout_marginStart="10dp"
+            app:layout_constraintStart_toEndOf="@+id/productImg"
+            app:layout_constraintTop_toBottomOf="@+id/tv_add"
+            android:textSize="13sp" />
+
+        <ImageView
+            android:id="@+id/img_close"
+            android:layout_width="24dp"
+            android:layout_height="24dp"
+            android:layout_marginStart="150dp"
+            android:layout_marginEnd="10dp"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintBottom_toBottomOf="parent"
+            app:layout_constraintTop_toTopOf="parent"
+            app:layout_constraintStart_toEndOf="@id/tv_product_detail"
+            android:src="@drawable/baseline_close_24" />
+
+    </androidx.constraintlayout.widget.ConstraintLayout>
+
+
+    <com.google.android.material.button.MaterialButton
+        android:id="@+id/btn_go_to_cart"
+        style="@style/Widget.MaterialComponents.Button.OutlinedButton"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="15dp"
+        android:text="Go to cart"
+        android:textAllCaps="false"
+        android:textColor="@color/textPrimary"
+        android:textSize="12sp"
+        android:layout_marginHorizontal="10dp"
+        app:layout_constraintEnd_toStartOf="@+id/btn_skip"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintTop_toBottomOf="@+id/add_to_cart_container"
+        app:strokeColor="@color/textSecondary" />
+
+    <com.google.android.material.button.MaterialButton
+        android:id="@+id/btn_skip"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="15dp"
+        android:text="Skip"
+        android:textAllCaps="false"
+        android:textColor="@color/white"
+        android:textSize="12sp"
+        android:layout_marginHorizontal="10dp"
+        app:cornerRadius="8dp"
+        android:backgroundTint="@color/colorPrimary"
+        app:layout_constraintStart_toEndOf="@id/btn_go_to_cart"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintBottom_toBottomOf="parent" />
+
+</androidx.constraintlayout.widget.ConstraintLayout>

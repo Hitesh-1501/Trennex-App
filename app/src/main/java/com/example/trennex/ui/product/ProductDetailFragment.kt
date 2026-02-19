@@ -34,12 +34,13 @@ import com.google.android.material.transition.Hold
 import androidx.core.graphics.drawable.toDrawable
 
 
-class ProductDetailFragment : Fragment(R.layout.fragment_product_detail), WishListDialogBinding.WishlistActionListener {
+class ProductDetailFragment : Fragment(R.layout.fragment_product_detail), WishListDialogBinding.WishlistActionListener, AddToCartSheet.AddToCartActionListener{
     private var _binding: FragmentProductDetailBinding? = null
     private val binding get()  = _binding!!
     private var isSpecExpandable = false
     private var isReviewExpandable = false
     private var isWishlisted = false
+    private var isCart = false
     override fun onCreateView(
         inflater: LayoutInflater, container: ViewGroup?,
         savedInstanceState: Bundle?
@@ -59,6 +60,7 @@ class ProductDetailFragment : Fragment(R.layout.fragment_product_detail), WishLi
         setUpVariants()
         setUpReviews()
         setupwishList()
+        setUpCart()
 
         binding.specheader.setOnClickListener {
             isSpecExpandable = !isSpecExpandable
@@ -78,12 +80,25 @@ class ProductDetailFragment : Fragment(R.layout.fragment_product_detail), WishLi
                 .start()
         }
 
-        binding.addToCart.setOnClickListener {
-            Toast.makeText(requireContext(),"Added to cart", Toast.LENGTH_SHORT).show()
-        }
-
     }
 
+    private fun setUpCart(){
+        binding.addToCart.setOnClickListener {
+            if(!isCart) {
+                isCart = true
+                binding.addToCart.setImageResource(R.drawable.cart_filled)
+                val addToCartSheet = AddToCartSheet()
+                addToCartSheet.listener = this
+                addToCartSheet.show(parentFragmentManager, "add_to_cart_sheet")
+                Toast.makeText(requireContext(),"Added to cart", Toast.LENGTH_SHORT).show()
+            }else{
+                findNavController().navigate(R.id.action_productDetailFragment_to_cartFragment)
+            }
+        }
+    }
+    override fun gotoCart() {
+        findNavController().navigate(R.id.action_productDetailFragment_to_cartFragment)
+    }
     private fun setupwishList(){
         binding.wishlist.setOnClickListener {
             if(!isWishlisted){
@@ -248,4 +263,6 @@ class ProductDetailFragment : Fragment(R.layout.fragment_product_detail), WishLi
         super.onDestroy()
         _binding = null
     }
+
+
 }
