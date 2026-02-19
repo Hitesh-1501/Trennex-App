@@ -1,11 +1,17 @@
 package com.example.trennex.ui.product
 
+import android.annotation.SuppressLint
+import android.content.Context
 import android.graphics.Color
+import android.graphics.drawable.ColorDrawable
 import android.os.Bundle
 import androidx.fragment.app.Fragment
 import android.view.LayoutInflater
+import android.view.MotionEvent
 import android.view.View
 import android.view.ViewGroup
+import android.view.WindowManager
+import android.widget.PopupWindow
 import android.widget.Toast
 import androidx.core.os.bundleOf
 import androidx.core.view.size
@@ -15,6 +21,7 @@ import androidx.recyclerview.widget.LinearLayoutManager
 import com.example.trennex.R
 import com.example.trennex.databinding.FragmentHomeBinding
 import com.example.trennex.databinding.FragmentProductDetailBinding
+import com.example.trennex.databinding.WishlistDialogBinding
 import com.example.trennex.ui.product.adapter.ColorVariantAdapter
 import com.example.trennex.ui.product.adapter.ProductImageAdapter
 import com.example.trennex.ui.product.adapter.ReviewAdapter
@@ -24,13 +31,15 @@ import com.example.trennex.ui.product.model.ReviewModel
 import com.example.trennex.ui.product.model.VariantModel
 import com.google.android.material.tabs.TabLayoutMediator
 import com.google.android.material.transition.Hold
+import androidx.core.graphics.drawable.toDrawable
 
 
-class ProductDetailFragment : Fragment(R.layout.fragment_product_detail) {
+class ProductDetailFragment : Fragment(R.layout.fragment_product_detail), WishListDialogBinding.WishlistActionListener {
     private var _binding: FragmentProductDetailBinding? = null
     private val binding get()  = _binding!!
     private var isSpecExpandable = false
     private var isReviewExpandable = false
+    private var isWishlisted = false
     override fun onCreateView(
         inflater: LayoutInflater, container: ViewGroup?,
         savedInstanceState: Bundle?
@@ -49,6 +58,7 @@ class ProductDetailFragment : Fragment(R.layout.fragment_product_detail) {
         setupColorVariants()
         setUpVariants()
         setUpReviews()
+        setupwishList()
 
         binding.specheader.setOnClickListener {
             isSpecExpandable = !isSpecExpandable
@@ -72,11 +82,83 @@ class ProductDetailFragment : Fragment(R.layout.fragment_product_detail) {
             Toast.makeText(requireContext(),"Added to cart", Toast.LENGTH_SHORT).show()
         }
 
-        binding.wishlist.setOnClickListener {
-            Toast.makeText(requireContext(),"Proceed to checkout", Toast.LENGTH_SHORT).show()
+    }
 
+    private fun setupwishList(){
+        binding.wishlist.setOnClickListener {
+            if(!isWishlisted){
+                isWishlisted = true
+                binding.wishlist.setImageResource(R.drawable.wishlist_filled)
+                Toast.makeText(requireContext(),"Added to Wishlist", Toast.LENGTH_SHORT).show()
+            }else{
+                val location = IntArray(2)
+                binding.wishlist.getLocationOnScreen(location)
+                val dialog = WishListDialogBinding.newInstance(
+                    location[0],
+                    location[1]
+                )
+                dialog.listener = this
+                dialog.show(parentFragmentManager,"wishlist_dialog")
+            }
         }
     }
+
+    override fun removeFromWishlist() {
+        isWishlisted = false
+        binding.wishlist.setImageResource(R.drawable.wishlist_product)
+        Toast.makeText(requireContext(), "Removed from Wishlist", Toast.LENGTH_SHORT).show()
+    }
+
+//    @SuppressLint("ClickableViewAccessibility")
+//    private fun showWishlistPopup(anchorView: View){
+//        val popupBinding = WishlistDialogBinding.inflate(layoutInflater)
+//        val widthInPx = (300 * resources.displayMetrics.density).toInt()
+//        val popupWindow = PopupWindow(
+//            popupBinding.root,
+//            widthInPx,
+//            ViewGroup.LayoutParams.WRAP_CONTENT,
+//            true
+//        )
+//        popupWindow.setBackgroundDrawable(Color.TRANSPARENT.toDrawable())
+//        popupWindow.isOutsideTouchable = false
+//        popupWindow.isClippingEnabled  = false
+//        popupWindow.isFocusable = true
+//        popupWindow.setTouchInterceptor { _, event ->
+//            event.action == MotionEvent.ACTION_OUTSIDE
+//        }
+//        popupWindow.animationStyle = R.style.PopupAnimation
+//        popupWindow.elevation = 10f
+//        popupBinding.root.measure(
+//            View.MeasureSpec.makeMeasureSpec(widthInPx,View.MeasureSpec.EXACTLY),
+//            View.MeasureSpec.makeMeasureSpec(0, View.MeasureSpec.UNSPECIFIED)
+//        )
+//        val popupHeight = popupBinding.root.measuredHeight
+//        val xOffset = anchorView.width / 2
+//        val yOffset = -(popupHeight + anchorView.height)
+//
+//        popupBinding.closeIv.setOnClickListener {
+//            popupWindow.dismiss()
+//        }
+//
+//        popupBinding.goToWishlist.setOnClickListener {
+//            isWishlisted = false
+//            binding.wishlist.setImageResource(R.drawable.wishlist_product)
+//            popupWindow.dismiss()
+//        }
+//
+//        popupWindow.showAsDropDown(anchorView,xOffset,yOffset)
+//        dimBehind(popupWindow)
+//    }
+//
+//    private fun dimBehind(popupWindow: PopupWindow){
+//        val container = popupWindow.contentView.rootView
+//        val wm = requireContext().getSystemService(Context.WINDOW_SERVICE) as WindowManager
+//        val params = container.layoutParams as WindowManager.LayoutParams
+//        params.flags = params.flags or WindowManager.LayoutParams.FLAG_DIM_BEHIND
+//        params.dimAmount = 0.5f
+//        wm.updateViewLayout(container,params)
+//
+//    }
 
     private fun setupImageBanner() {
         val images = listOf<Int>(
