@@ -1,5 +1,6 @@
 package com.example.trennex.ui.product.adapter
 
+import android.annotation.SuppressLint
 import android.view.LayoutInflater
 import android.view.ViewGroup
 import android.widget.ImageView
@@ -8,7 +9,7 @@ import androidx.recyclerview.widget.RecyclerView
 import com.example.trennex.databinding.ItemProductBannerBinding
 
 class ProductImageAdapter(
-    private val images: List<Int>,
+    private var images: List<Int>,
     private val onImgClick : (ImageView, Int) -> Unit
 ): RecyclerView.Adapter<ProductImageAdapter.ProductImageViewHolder>(){
     override fun onCreateViewHolder(
@@ -36,6 +37,11 @@ class ProductImageAdapter(
         return images.size
     }
 
+    @SuppressLint("NotifyDataSetChanged")
+    fun updateImages(newImages : List<Int>){
+        images  = newImages
+        notifyDataSetChanged()
+    }
     inner class ProductImageViewHolder(val binding: ItemProductBannerBinding): RecyclerView.ViewHolder(binding.root)
 
 

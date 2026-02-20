@@ -11,8 +11,16 @@ import com.example.trennex.ui.product.model.ProductColorModel
 class ColorVariantAdapter(
     private val colorVariantList : List<ProductColorModel>,
     private val onVariantName : (String) -> Unit,
-    private val onVariantSelected: (ProductColorModel) -> Unit
+    private val onVariantSelected: (ProductColorModel,Int) -> Unit
 ): RecyclerView.Adapter<ColorVariantAdapter.ColorVariantViewHolder>(){
+
+    private var selectedPosition = 0
+
+    @SuppressLint("NotifyDataSetChanged")
+    fun setSelectedColorPosition(position: Int){
+        selectedPosition = position
+        notifyDataSetChanged()
+    }
 
     override fun onCreateViewHolder(
         parent: ViewGroup,
@@ -29,16 +37,17 @@ class ColorVariantAdapter(
     ) {
         val item = colorVariantList[position]
         holder.binding.colorVariants.setImageResource(item.img)
-        if(item.isSelected){
+        if(position == selectedPosition){
             holder.binding.productLayout.setBackgroundResource(R.drawable.bg_product_color_selected)
         }else{
             holder.binding.productLayout.setBackgroundResource(R.drawable.bg_product_color_unselected)
         }
         holder.binding.productLayout.setOnClickListener {
-            colorVariantList.forEach { it.isSelected = false }
-            item.isSelected = true
-            notifyDataSetChanged()
-            onVariantSelected(item)
+            val previous = selectedPosition
+            selectedPosition = holder.adapterPosition
+            notifyItemChanged(previous)
+            notifyItemChanged(selectedPosition)
+            onVariantSelected(item,selectedPosition)
             onVariantName(item.modelName)
         }
     }

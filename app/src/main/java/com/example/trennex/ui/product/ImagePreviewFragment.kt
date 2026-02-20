@@ -11,6 +11,7 @@ import androidx.transition.ChangeBounds
 import androidx.transition.ChangeImageTransform
 import androidx.transition.ChangeTransform
 import androidx.transition.TransitionSet
+import androidx.viewpager2.widget.ViewPager2
 import com.example.trennex.R
 import com.example.trennex.databinding.FragmentImagePreviewBinding
 import com.example.trennex.ui.product.adapter.FullImageAdapter
@@ -18,6 +19,7 @@ import com.example.trennex.ui.product.adapter.FullImageAdapter
 class ImagePreviewFragment : Fragment(R.layout.fragment_image_preview) {
     private var _binding: FragmentImagePreviewBinding? = null
     private val binding get()  = _binding!!
+    private var currentPosition = 0
     override fun onCreateView(
         inflater: LayoutInflater, container: ViewGroup?,
         savedInstanceState: Bundle?
@@ -49,17 +51,30 @@ class ImagePreviewFragment : Fragment(R.layout.fragment_image_preview) {
         }
 
         val startPosition = arguments?.getInt("start_position") ?:0
+        val images = arguments?.getIntArray("images")?.toList() ?: emptyList()
 
-        val images = listOf(
-            R.drawable.product_img,
-            R.drawable.product_img_two,
-            R.drawable.product_img_three,
-            R.drawable.product_img_four
-        )
         binding.imgPreview.adapter = FullImageAdapter(images,startPosition)
         binding.imgPreview.setCurrentItem(startPosition,false)
+        currentPosition = startPosition
+
+        binding.imgPreview.registerOnPageChangeCallback(
+         object : ViewPager2.OnPageChangeCallback() {
+             override fun onPageSelected(position: Int) {
+                 super.onPageSelected(position)
+                 currentPosition = position
+                }
+            }
+         )
 
         binding.btnBack.setOnClickListener {
+            findNavController().previousBackStackEntry
+                ?.savedStateHandle
+                ?.set("selected_position",currentPosition)
+
+            findNavController().previousBackStackEntry
+                ?.savedStateHandle
+                ?.set("selected_color", arguments?.getString("selected_color"))
+
             findNavController().popBackStack()
         }
     }

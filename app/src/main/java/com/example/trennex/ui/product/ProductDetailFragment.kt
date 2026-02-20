@@ -11,6 +11,7 @@ import android.view.MotionEvent
 import android.view.View
 import android.view.ViewGroup
 import android.view.WindowManager
+import android.widget.ImageView
 import android.widget.PopupWindow
 import android.widget.Toast
 import androidx.core.os.bundleOf
@@ -32,15 +33,52 @@ import com.example.trennex.ui.product.model.VariantModel
 import com.google.android.material.tabs.TabLayoutMediator
 import com.google.android.material.transition.Hold
 import androidx.core.graphics.drawable.toDrawable
+import androidx.viewpager2.widget.ViewPager2
 
 
 class ProductDetailFragment : Fragment(R.layout.fragment_product_detail), WishListDialogBinding.WishlistActionListener, AddToCartSheet.AddToCartActionListener{
     private var _binding: FragmentProductDetailBinding? = null
     private val binding get()  = _binding!!
+    private lateinit var imageAdapter: ProductImageAdapter
+    private lateinit var colorAdapter: ColorVariantAdapter
+    private var currentImages:List<Int> = emptyList()
     private var isSpecExpandable = false
     private var isReviewExpandable = false
     private var isWishlisted = false
     private var isCart = false
+
+    private var currentBannerPosition = 0
+    private var selectedColor = "Onyx Black"
+    private var selectedColorPosition = 0
+
+    private var bannerMediator: TabLayoutMediator? = null
+
+    private val colorImageMap = mapOf(
+        "Onyx Black" to listOf(
+            R.drawable.product_img,
+            R.drawable.product_img_two,
+            R.drawable.product_img_three,
+            R.drawable.product_img_four
+        ),
+        "Amber Yellow" to listOf(
+            R.drawable.amber_yellow_banner,
+            R.drawable.product_img_two,
+            R.drawable.product_img_three,
+            R.drawable.product_img_four
+        ),
+        "Cobalt Violet" to listOf(
+            R.drawable.cobalt_violet_banner,
+            R.drawable.product_img_two,
+            R.drawable.product_img_three,
+            R.drawable.product_img_four
+        ),
+        "Marble Gray" to listOf(
+            R.drawable.marble_gray_banner,
+            R.drawable.product_img_two,
+            R.drawable.product_img_three,
+            R.drawable.product_img_four
+        )
+    )
     override fun onCreateView(
         inflater: LayoutInflater, container: ViewGroup?,
         savedInstanceState: Bundle?
@@ -80,6 +118,36 @@ class ProductDetailFragment : Fragment(R.layout.fragment_product_detail), WishLi
                 .start()
         }
 
+        binding.productBanners.registerOnPageChangeCallback(
+            object: ViewPager2.OnPageChangeCallback(){
+                override fun onPageSelected(position: Int) {
+                    super.onPageSelected(position)
+                    currentBannerPosition = position
+                }
+            }
+        )
+
+        findNavController().currentBackStackEntry
+            ?.savedStateHandle
+            ?.getLiveData<Int>("selected_position")
+            ?.observe(viewLifecycleOwner){position ->
+                currentBannerPosition = position
+                binding.productBanners.post {
+                    binding.productBanners.setCurrentItem(position,false)
+                }
+            }
+
+        findNavController().currentBackStackEntry
+            ?.savedStateHandle
+            ?.getLiveData<String>("selected_color")
+            ?.observe(viewLifecycleOwner){color ->
+                selectedColor = color
+                val index = colorImageMap.keys.indexOf(color)
+                selectedColorPosition = index
+                colorAdapter.setSelectedColorPosition(selectedColorPosition)
+                updateProductImages(color)
+                binding.tvSelectedColor.text = color
+            }
     }
 
     private fun setUpCart(){
@@ -176,42 +244,26 @@ class ProductDetailFragment : Fragment(R.layout.fragment_product_detail), WishLi
 //    }
 
     private fun setupImageBanner() {
-        val images = listOf<Int>(
-            R.drawable.product_img,
-            R.drawable.product_img_two,
-            R.drawable.product_img_three,
-            R.drawable.product_img_four,
-        )
 
-        binding.productBanners.apply {
-            adapter = ProductImageAdapter(images){clickedImg,position  ->
-                exitTransition = Hold().apply {
-                    duration = 300L
-                }
-                reenterTransition = Hold().apply {
-                    duration = 300L
-                }
+        currentImages = colorImageMap["Onyx Black"]!!
 
-                val extras = FragmentNavigatorExtras(
-                    clickedImg to "product_image"
-                )
-                val bundle = bundleOf(
-                    "start_position" to position
-                )
-                findNavController()
-                    .navigate(R.id.action_productDetailFragment_to_imagePreviewFragment,
-                        bundle,
-                        null,
-                        extras)
-            }
+        imageAdapter = ProductImageAdapter(currentImages) { clickedImg, _ ->
+            openFullScreen(clickedImg, currentBannerPosition, currentImages)
         }
-        TabLayoutMediator(binding.bannerIndicator, binding.productBanners) { tab, position -> }.attach()
+        binding.productBanners.adapter = imageAdapter
+        binding.productBanners.setCurrentItem(currentBannerPosition,false)
+
+        attachBannerDots()
+    }
+    private fun attachBannerDots(){
+        bannerMediator?.detach()
+        bannerMediator = TabLayoutMediator(binding.bannerIndicator, binding.productBanners) { tab, position -> }
+        bannerMediator?.attach()
         for(i in 0 until binding.bannerIndicator.tabCount){
             val tab = binding.bannerIndicator.getTabAt(i)
             tab?.customView =
                 layoutInflater.inflate(R.layout.product_banner_dot, binding.bannerIndicator, false)
         }
-
     }
 
     private fun setupColorVariants(){
@@ -222,15 +274,50 @@ class ProductDetailFragment : Fragment(R.layout.fragment_product_detail), WishLi
             ProductColorModel(2,R.drawable.marble_gray,"Marble Gray"),
 
         )
+        colorAdapter = ColorVariantAdapter(colorVariantList = variants,{
+            binding.tvSelectedColor.text = it }, {selected ,position->
+            selectedColor = selected.modelName
+            selectedColorPosition = position
+            updateProductImages(selected.modelName)
+        })
         binding.rvColorVariants.apply {
             layoutManager = LinearLayoutManager(requireContext(), LinearLayoutManager.HORIZONTAL,false)
-            adapter = ColorVariantAdapter(colorVariantList = variants,{
-                binding.tvSelectedColor.text = it }, {selected ->
-
-            })
+            adapter = colorAdapter
         }
+        colorAdapter.setSelectedColorPosition(selectedColorPosition)
     }
 
+    private fun updateProductImages(colorName : String){
+        val newImages = colorImageMap[colorName] ?: return
+        currentImages  = newImages
+        currentBannerPosition = 0
+        imageAdapter.updateImages(newImages)
+        binding.productBanners.setCurrentItem(0,false)
+        attachBannerDots()
+    }
+
+    private fun openFullScreen(imageView: ImageView, position : Int,images: List<Int>){
+        exitTransition = Hold().apply {
+            duration = 300L
+        }
+        reenterTransition = Hold().apply {
+            duration = 300L
+        }
+
+        val extras = FragmentNavigatorExtras(
+            imageView to "product_image"
+        )
+        val bundle = bundleOf(
+            "start_position" to position,
+            "images" to images.toIntArray(),
+            "selected_color" to selectedColor
+        )
+        findNavController()
+            .navigate(R.id.action_productDetailFragment_to_imagePreviewFragment,
+                bundle,
+                null,
+                extras)
+    }
     private fun setUpReviews(){
         val reviews = listOf(
             ReviewModel(4.5f, "1 month ago", "Excellent performance and great display."),
