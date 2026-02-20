@@ -41,6 +41,7 @@ class ProductDetailFragment : Fragment(R.layout.fragment_product_detail), WishLi
     private val binding get()  = _binding!!
     private lateinit var imageAdapter: ProductImageAdapter
     private lateinit var colorAdapter: ColorVariantAdapter
+    private lateinit var  variantAdapter : VariantAdapter
     private var currentImages:List<Int> = emptyList()
     private var isSpecExpandable = false
     private var isReviewExpandable = false
@@ -49,9 +50,15 @@ class ProductDetailFragment : Fragment(R.layout.fragment_product_detail), WishLi
 
     private var currentBannerPosition = 0
     private var selectedColor = "Onyx Black"
+    private var selectedVariant = "128GB + 8GB"
     private var selectedColorPosition = 0
-
+    private var selectedVariantPosition = 0
     private var bannerMediator: TabLayoutMediator? = null
+
+    val variants = listOf(
+        VariantModel(1,"128GB + 8GB","₹40,999","₹75,000",true),
+        VariantModel(2,"256GB + 8GB","₹45,999","₹79,000")
+    )
 
     private val colorImageMap = mapOf(
         "Onyx Black" to listOf(
@@ -144,10 +151,27 @@ class ProductDetailFragment : Fragment(R.layout.fragment_product_detail), WishLi
                 selectedColor = color
                 val index = colorImageMap.keys.indexOf(color)
                 selectedColorPosition = index
+                updateMainTitle()
                 colorAdapter.setSelectedColorPosition(selectedColorPosition)
                 updateProductImages(color)
                 binding.tvSelectedColor.text = color
             }
+
+        findNavController().currentBackStackEntry
+            ?.savedStateHandle
+            ?.getLiveData<Int>("selected_variant_position")
+            ?.observe(viewLifecycleOwner){variantPosition ->
+                selectedVariantPosition = variantPosition
+                variantAdapter.setSelectedVariantPosition(selectedVariantPosition)
+                val currentVariant = variants[variantPosition]
+                selectedVariant = currentVariant.variant
+                binding.tvVariant.text = currentVariant.variant
+                binding.tvPrice.text = currentVariant.Price
+                binding.tvMrp.text = currentVariant.mrpPrice
+                updateMainTitle()
+            }
+
+        binding.tvMrp.paintFlags = binding.tvMrp.paintFlags or android.graphics.Paint.STRIKE_THRU_TEXT_FLAG
     }
 
     private fun setUpCart(){
@@ -278,6 +302,7 @@ class ProductDetailFragment : Fragment(R.layout.fragment_product_detail), WishLi
             binding.tvSelectedColor.text = it }, {selected ,position->
             selectedColor = selected.modelName
             selectedColorPosition = position
+            updateMainTitle()
             updateProductImages(selected.modelName)
         })
         binding.rvColorVariants.apply {
@@ -310,7 +335,8 @@ class ProductDetailFragment : Fragment(R.layout.fragment_product_detail), WishLi
         val bundle = bundleOf(
             "start_position" to position,
             "images" to images.toIntArray(),
-            "selected_color" to selectedColor
+            "selected_color" to selectedColor,
+            "selected_variant_pos" to selectedVariantPosition
         )
         findNavController()
             .navigate(R.id.action_productDetailFragment_to_imagePreviewFragment,
@@ -332,18 +358,25 @@ class ProductDetailFragment : Fragment(R.layout.fragment_product_detail), WishLi
     }
 
     private fun setUpVariants(){
-        val variants = listOf(
-            VariantModel(1,"128GB + 8GB","₹40,999",true),
-            VariantModel(2,"256GB + 8GB","₹45,999")
-        )
+        variantAdapter = VariantAdapter(variants = variants,{
+            selectedVariant = it
+            binding.tvVariant.text = it
+            updateMainTitle()
+        },{ variant , position ->
+            binding.tvPrice.text = variant.Price
+            binding.tvMrp.text = variant.mrpPrice
+            selectedVariantPosition = position
+        })
         binding.rvVariants.apply {
             layoutManager = LinearLayoutManager(requireContext(), LinearLayoutManager.HORIZONTAL,false)
-            adapter = VariantAdapter(variants = variants,{
-                binding.tvVariant.text = it
-            },{
-
-            })
+            adapter = variantAdapter
         }
+        variantAdapter.setSelectedVariantPosition(selectedVariantPosition)
+    }
+
+    private fun updateMainTitle(){
+        val title = "Galaxy S24 5G Snapdragon ($selectedColor, $selectedVariant)"
+        binding.tvProductTitle.text = title
     }
 
     override fun onDestroy() {

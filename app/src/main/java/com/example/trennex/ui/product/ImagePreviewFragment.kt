@@ -75,6 +75,10 @@ class ImagePreviewFragment : Fragment(R.layout.fragment_image_preview) {
                 ?.savedStateHandle
                 ?.set("selected_color", arguments?.getString("selected_color"))
 
+            findNavController().previousBackStackEntry
+                ?.savedStateHandle
+                ?.set("selected_variant_position", arguments?.getInt("selected_variant_pos"))
+
             findNavController().popBackStack()
         }
     }

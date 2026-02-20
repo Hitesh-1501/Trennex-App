@@ -21,6 +21,23 @@
         android:paddingVertical="2dp"
         android:textColor="@color/textPrimary"/>
 
+    <View
+        android:layout_width="match_parent"
+        android:layout_height="1dp"
+        android:layout_marginHorizontal="8dp"
+        android:background="@color/textPlaceholder"/>
+
+
+    <TextView
+        android:id="@+id/tvMrp"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="@string/mrp_text_variant"
+        android:textSize="11sp"
+        android:layout_marginTop="4dp"
+        android:paddingHorizontal="8dp"
+        android:textColor="@color/textSecondary"/>
+
     <TextView
         android:id="@+id/tvPrice"
         android:layout_width="wrap_content"
@@ -28,6 +45,7 @@
         android:text="₹40,999"
         android:textSize="11sp"
         android:textStyle="bold"
+        android:layout_marginTop="4dp"
         android:paddingHorizontal="8dp"
         android:textColor="@color/textPrimary"/>
 
