@@ -100,7 +100,7 @@
         android:textSize="12sp"
         android:layout_marginHorizontal="10dp"
         app:cornerRadius="8dp"
-        android:backgroundTint="@color/colorPrimary"
+        android:backgroundTint="@color/colorAccent"
         app:layout_constraintStart_toEndOf="@id/btn_go_to_cart"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintBottom_toBottomOf="parent" />

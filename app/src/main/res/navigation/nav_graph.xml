@@ -84,7 +84,7 @@
     </fragment>
     <fragment
         android:id="@+id/cartFragment"
-        android:name="com.example.trennex.cartFragment"
+        android:name="com.example.trennex.ui.cart.cartFragment"
         android:label="fragment_cart"
         tools:layout="@layout/fragment_cart" />
     <fragment
