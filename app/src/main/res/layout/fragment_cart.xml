@@ -272,8 +272,5 @@
             android:textAllCaps="false"
             android:textColor="@android:color/white"
             android:background="@drawable/btn_selector"/>
-
     </LinearLayout>
-
-
 </androidx.constraintlayout.widget.ConstraintLayout>
