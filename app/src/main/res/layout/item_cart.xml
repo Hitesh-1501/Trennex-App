@@ -41,7 +41,7 @@
             app:layout_constraintTop_toTopOf="@id/imgProduct" />
 
         <TextView
-            android:id="@+id/TvBrand"
+            android:id="@+id/tvTitle"
             android:layout_width="0dp"
             android:layout_height="wrap_content"
             android:text="Samsung"
@@ -54,7 +54,7 @@
             android:layout_marginStart="12dp"/>
 
         <TextView
-            android:id="@+id/tvTitle"
+            android:id="@+id/tvDescription"
             android:layout_width="0dp"
             android:layout_height="wrap_content"
             android:text="Galaxy S24 5G Snapdragon (Onyx Black, 128 GB)..."
@@ -62,9 +62,9 @@
             android:ellipsize="end"
             android:textSize="12sp"
             android:textColor="@color/textPrimary"
-            app:layout_constraintStart_toStartOf="@id/TvBrand"
-            app:layout_constraintEnd_toEndOf="@id/TvBrand"
-            app:layout_constraintTop_toBottomOf="@id/TvBrand"
+            app:layout_constraintStart_toStartOf="@id/tvTitle"
+            app:layout_constraintEnd_toEndOf="@id/tvTitle"
+            app:layout_constraintTop_toBottomOf="@id/tvTitle"
             android:layout_marginTop="2dp"/>
 
         <TextView
@@ -74,8 +74,8 @@
             android:text="★★★★★ 4.3 (51)"
             android:textColor="#21AD60"
             android:textSize="12sp"
-            app:layout_constraintStart_toStartOf="@id/TvBrand"
-            app:layout_constraintTop_toBottomOf="@id/tvTitle"
+            app:layout_constraintStart_toStartOf="@id/tvTitle"
+            app:layout_constraintTop_toBottomOf="@id/tvDescription"
             android:layout_marginTop="4dp"/>
 
         <TextView
@@ -85,7 +85,7 @@
             android:text="MRP ₹75,000"
             android:textSize="12sp"
             android:textColor="@color/textSecondary"
-            app:layout_constraintStart_toStartOf="@id/TvBrand"
+            app:layout_constraintStart_toStartOf="@id/tvTitle"
             app:layout_constraintTop_toBottomOf="@id/tvRating"
             android:layout_marginTop="4dp"/>
 
@@ -99,7 +99,7 @@
             android:textColor="@color/textPrimary"
             app:layout_constraintStart_toEndOf="@+id/tvMrp"
             app:layout_constraintTop_toBottomOf="@id/tvRating"
-            app:layout_constraintEnd_toEndOf="@id/TvBrand"
+            app:layout_constraintEnd_toEndOf="@id/tvTitle"
             android:layout_marginStart="10dp"
             android:layout_marginTop="4dp"/>
 
@@ -109,8 +109,8 @@
             android:layout_height="wrap_content"
             android:orientation="horizontal"
             android:gravity="center_vertical"
-            app:layout_constraintStart_toStartOf="@id/TvBrand"
-            app:layout_constraintEnd_toEndOf="@+id/TvBrand"
+            app:layout_constraintStart_toStartOf="@id/tvTitle"
+            app:layout_constraintEnd_toEndOf="@+id/tvTitle"
             app:layout_constraintTop_toBottomOf="@id/tvMrp"
             android:layout_marginTop="6dp">
 
@@ -134,8 +134,8 @@
             android:layout_height="wrap_content"
             android:orientation="horizontal"
             android:gravity="center_vertical"
-            app:layout_constraintStart_toStartOf="@id/TvBrand"
-            app:layout_constraintEnd_toEndOf="@+id/TvBrand"
+            app:layout_constraintStart_toStartOf="@id/tvTitle"
+            app:layout_constraintEnd_toEndOf="@+id/tvTitle"
             app:layout_constraintTop_toBottomOf="@id/layoutReturn"
             android:layout_marginTop="6dp">
 
