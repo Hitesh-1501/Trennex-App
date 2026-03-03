@@ -1,8 +1,12 @@
 package com.example.trennex.ui.main
 
+import android.content.res.ColorStateList
 import android.graphics.Color
+import android.graphics.Color.parseColor
 import android.os.Bundle
 import android.view.View
+import android.widget.ImageView
+import android.widget.ProgressBar
 import androidx.activity.enableEdgeToEdge
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.view.ViewCompat
@@ -21,6 +25,8 @@ import com.example.trennex.databinding.ToolbarHomeBinding
 import com.example.trennex.databinding.ToolbarProductScreenBinding
 import np.com.susanthapa.curved_bottom_navigation.CbnMenuItem
 import androidx.core.graphics.toColorInt
+import com.example.trennex.databinding.LayoutAddToCartBinding
+import com.example.trennex.databinding.ToolbarCartBinding
 
 
 class MainActivity : AppCompatActivity() {
@@ -63,6 +69,11 @@ class MainActivity : AppCompatActivity() {
                     showToolBar(ToolBarType.PRODUCT)
                     setLightStatusBar(false)
                     binding.curveBottomNav.visibility = View.GONE
+                }
+                R.id.cartFragment ->{
+                    showToolBar(ToolBarType.CART)
+                    setLightStatusBar(true)
+                    binding.curveBottomNav.visibility = View.VISIBLE
                 }
             }
         }
@@ -136,6 +147,11 @@ class MainActivity : AppCompatActivity() {
                 }
                 binding.appBarLayout.setBackgroundColor("#4D2962FF".toColorInt())
             }
+            ToolBarType.CART ->{
+                val toolbarBinding = ToolbarCartBinding.inflate(layoutInflater)
+                binding.toolbarContainer.addView(toolbarBinding.root)
+                toolbarBinding.backArrow.setOnClickListener { navController.popBackStack() }
+            }
         }
 
     }
@@ -169,5 +185,68 @@ class MainActivity : AppCompatActivity() {
         )
         binding.curveBottomNav.setMenuItems(menuItems, 0)
 
+    }
+
+    fun toggleCartProgress(isVisible : Boolean){
+        val container = binding.toolbarContainer.findViewById<View>(R.id.progressContainer)
+        container?.visibility = if(isVisible) View.VISIBLE else View.GONE
+    }
+
+    fun updateCartStep(step: Int){
+        val root = binding.toolbarContainer
+        val pbCart = root.findViewById<ProgressBar>(R.id.pbCart) ?: return
+        val statusCart = root.findViewById<ImageView>(R.id.statusCart)
+
+        val pbAddress = root.findViewById<ProgressBar>(R.id.pbAddress)
+        val statusAddress = root.findViewById<ImageView>(R.id.statusAddress)
+
+        val pbPayment = root.findViewById<ProgressBar>(R.id.pbPayment)
+        val statusPayment = root.findViewById<ImageView>(R.id.statusPayment)
+
+        when(step){
+            1 -> {
+                pbCart.isIndeterminate = true
+                statusCart.setImageResource(R.drawable.ic_step_active)
+
+                pbAddress.isIndeterminate = false
+                pbAddress.progress = 0
+                statusAddress.setImageResource(R.drawable.ic_step_inactive)
+
+                pbPayment.isIndeterminate = false
+                pbPayment.progress = 0
+                statusPayment.setImageResource(R.drawable.ic_step_inactive)
+            }
+            2->{
+                pbCart.isIndeterminate = false
+                pbCart.progress = 100
+                pbCart.progressTintList = ColorStateList.valueOf("#21AD60".toColorInt())
+                statusCart.setImageResource(R.drawable.ic_step_done)
+
+                pbAddress.isIndeterminate = true
+                pbAddress.indeterminateTintList = ColorStateList.valueOf("#2962FF".toColorInt())
+                statusAddress.setImageResource(R.drawable.ic_step_active)
+
+                pbPayment.isIndeterminate = false
+                pbPayment.progress = 0
+                statusPayment.setImageResource(R.drawable.ic_step_inactive)
+
+            }
+
+            3 ->{
+                pbCart.isIndeterminate = false
+                pbCart.progress = 100
+                pbCart.progressTintList = ColorStateList.valueOf("#21AD60".toColorInt())
+                statusCart.setImageResource(R.drawable.ic_step_done)
+
+                pbAddress.isIndeterminate = false
+                pbAddress.progress = 100
+                pbAddress.progressTintList = ColorStateList.valueOf("#21AD60".toColorInt())
+                statusAddress.setImageResource(R.drawable.ic_step_done)
+
+                pbPayment.isIndeterminate = true
+                pbPayment.indeterminateTintList = ColorStateList.valueOf("#2962FF".toColorInt())
+                statusPayment.setImageResource(R.drawable.ic_step_active)
+            }
+        }
     }
 }
