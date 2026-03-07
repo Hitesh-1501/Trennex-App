@@ -78,7 +78,7 @@
         tools:layout="@layout/fragment_category" />
     <fragment
         android:id="@+id/profileFragment"
-        android:name="com.example.trennex.profileFragment"
+        android:name="com.example.trennex.ui.profile.profileFragment"
         android:label="fragment_profile"
         tools:layout="@layout/fragment_profile" >
     </fragment>

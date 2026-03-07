@@ -1,60 +1,108 @@
 package com.example.trennex.ui.profile
 
 import android.os.Bundle
-import androidx.fragment.app.Fragment
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
+import android.widget.Toast
+import androidx.fragment.app.Fragment
+import androidx.recyclerview.widget.GridLayoutManager
 import com.example.trennex.R
+import com.example.trennex.databinding.FragmentProfileBinding
+import com.example.trennex.ui.profile.adapter.ProfileGridAdapter
+import com.example.trennex.ui.profile.model.ProfileGridItem
 
-// TODO: Rename parameter arguments, choose names that match
-// the fragment initialization parameters, e.g. ARG_ITEM_NUMBER
-private const val ARG_PARAM1 = "param1"
-private const val ARG_PARAM2 = "param2"
+class profileFragment : Fragment(R.layout.fragment_profile) {
 
-/**
- * A simple [Fragment] subclass.
- * Use the [profileFragment.newInstance] factory method to
- * create an instance of this fragment.
- */
-class profileFragment : Fragment() {
-    // TODO: Rename and change types of parameters
-    private var param1: String? = null
-    private var param2: String? = null
+    private var _binding: FragmentProfileBinding? = null
+    private val binding get() = _binding!!
 
-    override fun onCreate(savedInstanceState: Bundle?) {
-        super.onCreate(savedInstanceState)
-        arguments?.let {
-            param1 = it.getString(ARG_PARAM1)
-            param2 = it.getString(ARG_PARAM2)
-        }
-    }
+    private var isLoggedIn = true
+
+
 
     override fun onCreateView(
         inflater: LayoutInflater, container: ViewGroup?,
         savedInstanceState: Bundle?
     ): View? {
-        // Inflate the layout for this fragment
-        return inflater.inflate(R.layout.fragment_profile2, container, false)
+        _binding = FragmentProfileBinding.inflate(inflater, container, false)
+        return binding.root
+
     }
 
-    companion object {
-        /**
-         * Use this factory method to create a new instance of
-         * this fragment using the provided parameters.
-         *
-         * @param param1 Parameter 1.
-         * @param param2 Parameter 2.
-         * @return A new instance of fragment profileFragment.
-         */
-        // TODO: Rename and change types and number of parameters
-        @JvmStatic
-        fun newInstance(param1: String, param2: String) =
-            profileFragment().apply {
-                arguments = Bundle().apply {
-                    putString(ARG_PARAM1, param1)
-                    putString(ARG_PARAM2, param2)
-                }
-            }
+    override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
+        super.onViewCreated(view, savedInstanceState)
+        setupUi()
+        UpdateUi()
+        binding.btnLogout.setOnClickListener {
+            isLoggedIn = false
+            UpdateUi()
+            Toast.makeText(requireContext(), "Logged Out", Toast.LENGTH_SHORT).show()
+        }
+        binding.btnLogInSignUp.setOnClickListener {
+            isLoggedIn = true
+            UpdateUi()
+        }
+
+        val gridItems = listOf(
+            ProfileGridItem(R.drawable.ic_explore, "Explore Trenex"),
+            ProfileGridItem(R.drawable.order_icon, "Orders"),
+            ProfileGridItem(R.drawable.ic_help, "Help Center"),
+            ProfileGridItem(R.drawable.ic_coupn, "Coupons")
+        )
+
+        val adapter = ProfileGridAdapter(gridItems)
+
+        binding.profileGridRecycler.layoutManager =
+            GridLayoutManager(requireContext(), 2)
+
+        binding.profileGridRecycler.adapter = adapter
+
+    }
+
+    fun UpdateUi(){
+        if(isLoggedIn){
+            binding.profileCard.visibility = View.VISIBLE
+            binding.nologincard.visibility = View.GONE
+            binding.btnLogout.visibility = View.VISIBLE
+        }else{
+            binding.profileCard.visibility = View.GONE
+            binding.nologincard.visibility = View.VISIBLE
+            binding.btnLogout.visibility = View.GONE
+        }
+    }
+
+    private fun setupUi(){
+        binding.wishlistSection.apply {
+            tvRowTitle.text = "Wishlist"
+            tvRowSubtitle.text = "Your most loved styles"
+            ivRowIcon.setImageResource(R.drawable.wishlist_items)
+        }
+        binding.notificationSection.apply {
+            tvRowTitle.text = "Notifications"
+            tvRowSubtitle.text = "Stay Updated, Instantly"
+            ivRowIcon.setImageResource(R.drawable.ic_notification)
+        }
+        binding.saveCreditSection.apply {
+            tvRowTitle.text = "Saved Credit / Debit & Gift Cards"
+            tvRowSubtitle.text = "saved payment methods"
+            ivRowIcon.setImageResource(R.drawable.ic_card)
+        }
+        binding.FAQsSection.apply {
+            tvRowTitle.text = "FAQs"
+            tvRowSubtitle.text = "Frequently Asked, Clearly Answered."
+            ivRowIcon.setImageResource(R.drawable.ic_faq)
+        }
+        binding.termsSection.apply {
+            tvRowTitle.text = "Terms,Policies and Licenses"
+            tvRowSubtitle.text = "Clear Terms. Honest Policies"
+            ivRowIcon.setImageResource(R.drawable.ic_terms)
+        }
+    }
+
+
+    override fun onDestroyView() {
+        super.onDestroyView()
+        _binding = null
     }
 }

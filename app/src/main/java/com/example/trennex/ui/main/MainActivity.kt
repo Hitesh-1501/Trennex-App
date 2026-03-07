@@ -75,6 +75,11 @@ class MainActivity : AppCompatActivity() {
                     setLightStatusBar(true)
                     binding.curveBottomNav.visibility = View.VISIBLE
                 }
+                R.id.profileFragment ->{
+                    showToolBar(ToolBarType.TITLE,"Profile")
+                    setLightStatusBar(true)
+                    binding.curveBottomNav.visibility = View.VISIBLE
+                }
             }
         }
     }
@@ -117,6 +122,7 @@ class MainActivity : AppCompatActivity() {
                 val toolbarBinding = TitleToolbarBinding.inflate(layoutInflater)
                 binding.toolbarContainer.addView(toolbarBinding.root)
                 toolbarBinding.pageTitle.text = title
+                binding.appBarLayout.setBackgroundColor(Color.parseColor("#332962FF"))
                 toolbarBinding.backArrow.setOnClickListener {
                     navController.popBackStack()
                 }
