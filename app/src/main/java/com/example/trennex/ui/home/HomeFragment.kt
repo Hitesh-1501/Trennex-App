@@ -63,6 +63,8 @@ class HomeFragment : Fragment(R.layout.fragment_home) {
         setupCategories()
         setupBanners()
         setupPopularProducts()
+
+
     }
 
     private fun setupCategories(){

@@ -84,7 +84,7 @@ class MainActivity : AppCompatActivity() {
                 R.id.wishlistFragment -> {
                     showToolBar(ToolBarType.WISHLIST,"Wishlist")
                     setLightStatusBar(true)
-                    binding.curveBottomNav.visibility = View.VISIBLE
+                    binding.curveBottomNav.visibility = View.GONE
                 }
             }
         }
@@ -122,7 +122,11 @@ class MainActivity : AppCompatActivity() {
                 val toolbarBinding = ToolbarHomeBinding.inflate(layoutInflater)
                 binding.toolbarContainer.addView(toolbarBinding.root)
                 binding.appBarLayout.setBackgroundResource(R.drawable.toolbar_home_gradient_color)
-
+                toolbarBinding.wishlistBar.setOnClickListener {
+                    if(navController.currentDestination?.id == R.id.homeFragment){
+                        navController.navigate(R.id.action_homeFragment_to_wishlistFragment)
+                    }
+                }
             }
             ToolBarType.TITLE -> {
                 val toolbarBinding = TitleToolbarBinding.inflate(layoutInflater)
@@ -169,6 +173,7 @@ class MainActivity : AppCompatActivity() {
                 val toolbarBinding = WishlistToolbarBinding.inflate(layoutInflater)
                 binding.toolbarContainer.addView(toolbarBinding.root)
                 binding.appBarLayout.setBackgroundColor("#332962FF".toColorInt())
+                toolbarBinding.pageTitle.text = title
                 toolbarBinding.backArrow.setOnClickListener {
                     navController.popBackStack()
                 }

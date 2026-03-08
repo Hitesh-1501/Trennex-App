@@ -216,6 +216,10 @@ class ProductDetailFragment : Fragment(R.layout.fragment_product_detail), WishLi
         Toast.makeText(requireContext(), "Removed from Wishlist", Toast.LENGTH_SHORT).show()
     }
 
+    override fun goToWishlist() {
+        findNavController().navigate(R.id.action_productDetailFragment_to_wishlistFragment)
+    }
+
 //    @SuppressLint("ClickableViewAccessibility")
 //    private fun showWishlistPopup(anchorView: View){
 //        val popupBinding = WishlistDialogBinding.inflate(layoutInflater)

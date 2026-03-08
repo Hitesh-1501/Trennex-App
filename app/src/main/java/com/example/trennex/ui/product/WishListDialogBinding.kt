@@ -16,6 +16,7 @@ class WishListDialogBinding: DialogFragment() {
 
     interface WishlistActionListener {
         fun removeFromWishlist()
+        fun goToWishlist()
     }
     var listener: WishlistActionListener? = null
     companion object{
@@ -44,6 +45,10 @@ class WishListDialogBinding: DialogFragment() {
 
         binding.productCard.setOnClickListener {
             listener?.removeFromWishlist()
+            dismiss()
+        }
+        binding.goToWishlist.setOnClickListener {
+            listener?.goToWishlist()
             dismiss()
         }
         return dialog

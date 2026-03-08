@@ -31,8 +31,8 @@
 
     <ImageView
         android:id="@+id/ivedit"
-        android:layout_width="28dp"
-        android:layout_height="28dp"
+        android:layout_width="20dp"
+        android:layout_height="20dp"
         android:src="@drawable/ic_edit"
         app:layout_constraintStart_toEndOf="@+id/page_title"
         app:layout_constraintEnd_toStartOf="@+id/ivcart"
@@ -42,14 +42,14 @@
 
     <ImageView
         android:id="@+id/ivcart"
-        android:layout_width="28dp"
-        android:layout_height="28dp"
+        android:layout_width="20dp"
+        android:layout_height="20dp"
         android:src="@drawable/cart"
         app:layout_constraintStart_toEndOf="@+id/ivedit"
         android:layout_marginHorizontal="10dp"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintTop_toTopOf="parent"
         app:layout_constraintBottom_toBottomOf="parent"/>
-    
+
 
 </androidx.constraintlayout.widget.ConstraintLayout>
