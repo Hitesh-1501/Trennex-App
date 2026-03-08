@@ -27,6 +27,7 @@ import np.com.susanthapa.curved_bottom_navigation.CbnMenuItem
 import androidx.core.graphics.toColorInt
 import com.example.trennex.databinding.LayoutAddToCartBinding
 import com.example.trennex.databinding.ToolbarCartBinding
+import com.example.trennex.databinding.WishlistToolbarBinding
 
 
 class MainActivity : AppCompatActivity() {
@@ -80,6 +81,11 @@ class MainActivity : AppCompatActivity() {
                     setLightStatusBar(true)
                     binding.curveBottomNav.visibility = View.VISIBLE
                 }
+                R.id.wishlistFragment -> {
+                    showToolBar(ToolBarType.WISHLIST,"Wishlist")
+                    setLightStatusBar(true)
+                    binding.curveBottomNav.visibility = View.VISIBLE
+                }
             }
         }
     }
@@ -122,7 +128,7 @@ class MainActivity : AppCompatActivity() {
                 val toolbarBinding = TitleToolbarBinding.inflate(layoutInflater)
                 binding.toolbarContainer.addView(toolbarBinding.root)
                 toolbarBinding.pageTitle.text = title
-                binding.appBarLayout.setBackgroundColor(Color.parseColor("#332962FF"))
+                binding.appBarLayout.setBackgroundColor("#332962FF".toColorInt())
                 toolbarBinding.backArrow.setOnClickListener {
                     navController.popBackStack()
                 }
@@ -156,7 +162,16 @@ class MainActivity : AppCompatActivity() {
             ToolBarType.CART ->{
                 val toolbarBinding = ToolbarCartBinding.inflate(layoutInflater)
                 binding.toolbarContainer.addView(toolbarBinding.root)
+                binding.appBarLayout.setBackgroundColor(Color.WHITE)
                 toolbarBinding.backArrow.setOnClickListener { navController.popBackStack() }
+            }
+            ToolBarType.WISHLIST -> {
+                val toolbarBinding = WishlistToolbarBinding.inflate(layoutInflater)
+                binding.toolbarContainer.addView(toolbarBinding.root)
+                binding.appBarLayout.setBackgroundColor("#332962FF".toColorInt())
+                toolbarBinding.backArrow.setOnClickListener {
+                    navController.popBackStack()
+                }
             }
         }
 
