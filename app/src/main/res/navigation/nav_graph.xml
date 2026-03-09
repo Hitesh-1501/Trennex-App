@@ -76,7 +76,7 @@
     </fragment>
     <fragment
         android:id="@+id/categoryFragment"
-        android:name="com.example.trennex.categoryFragment"
+        android:name="com.example.trennex.ui.category.categoryFragment"
         android:label="fragment_category"
         tools:layout="@layout/fragment_category" />
     <fragment

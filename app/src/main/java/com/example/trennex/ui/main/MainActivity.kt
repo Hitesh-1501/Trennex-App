@@ -25,6 +25,7 @@ import com.example.trennex.databinding.ToolbarHomeBinding
 import com.example.trennex.databinding.ToolbarProductScreenBinding
 import np.com.susanthapa.curved_bottom_navigation.CbnMenuItem
 import androidx.core.graphics.toColorInt
+import com.example.trennex.databinding.CategoryToolbarBinding
 import com.example.trennex.databinding.LayoutAddToCartBinding
 import com.example.trennex.databinding.ToolbarCartBinding
 import com.example.trennex.databinding.WishlistToolbarBinding
@@ -85,6 +86,11 @@ class MainActivity : AppCompatActivity() {
                     showToolBar(ToolBarType.WISHLIST,"Wishlist")
                     setLightStatusBar(true)
                     binding.curveBottomNav.visibility = View.GONE
+                }
+                R.id.categoryFragment ->{
+                    showToolBar(ToolBarType.CATEGORIES)
+                    setLightStatusBar(true)
+                    binding.curveBottomNav.visibility = View.VISIBLE
                 }
             }
         }
@@ -178,8 +184,12 @@ class MainActivity : AppCompatActivity() {
                     navController.popBackStack()
                 }
             }
+            ToolBarType.CATEGORIES -> {
+                val toolbarBinding = CategoryToolbarBinding.inflate(layoutInflater)
+                binding.toolbarContainer.addView(toolbarBinding.root)
+                binding.appBarLayout.setBackgroundColor("#332962FF".toColorInt())
+            }
         }
-
     }
 
     private fun  initializeBottomMenu(){
