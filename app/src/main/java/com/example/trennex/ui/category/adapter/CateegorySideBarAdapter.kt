@@ -23,6 +23,7 @@ class CategorySideBarAdapter(
                 binding.categoryTabContainer.setBackgroundResource(R.drawable.tab_active)
             }else{
                 binding.categoryTabContainer.setBackgroundResource(R.drawable.tab_inactive)
+                binding.tvCategoryName.typeface = ResourcesCompat.getFont(binding.root.context, R.font.poppins_regular)
                 binding.activeIndicatorView.visibility = ViewGroup.GONE
             }
             binding.root.setOnClickListener {
