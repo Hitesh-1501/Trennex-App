@@ -12,6 +12,8 @@ import com.example.trennex.R
 import com.example.trennex.databinding.FragmentCategoryBinding
 import com.example.trennex.ui.category.adapter.CategorySideBarAdapter
 import com.example.trennex.ui.category.model.CategoryModel
+import com.example.trennex.ui.category.subcategories.FashionFragment
+import com.example.trennex.ui.category.subcategories.TopPicksFragment
 
 class categoryFragment : Fragment(R.layout.fragment_category) {
     private var _binding : FragmentCategoryBinding? = null
@@ -27,6 +29,7 @@ class categoryFragment : Fragment(R.layout.fragment_category) {
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
+        openFragment(TopPicksFragment())
         setUpSideBar()
     }
     fun setUpSideBar(){
@@ -44,9 +47,17 @@ class categoryFragment : Fragment(R.layout.fragment_category) {
         )
         binding.rvCategorySidebar.apply {
             adapter = CategorySideBarAdapter(list){
-                Toast.makeText(requireContext(), it.name,Toast.LENGTH_SHORT).show()
+                when(it.name){
+                    "Top Picks" -> openFragment(TopPicksFragment())
+                    "Fashion" -> openFragment(FashionFragment())
+                }
             }
             layoutManager = LinearLayoutManager(requireContext())
         }
+    }
+    private fun openFragment(fragment: Fragment){
+       childFragmentManager.beginTransaction()
+           .replace(R.id.categoryContentContainer,fragment)
+           .commit()
     }
 }

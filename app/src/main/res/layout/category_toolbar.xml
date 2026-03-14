@@ -7,8 +7,6 @@
     android:padding="12dp"
    >
 
-
-
     <com.google.android.material.card.MaterialCardView
         android:id="@+id/search_Bar"
         android:layout_width="0dp"
