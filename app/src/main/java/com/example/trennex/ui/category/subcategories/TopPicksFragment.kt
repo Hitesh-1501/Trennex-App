@@ -43,6 +43,7 @@ class TopPicksFragment : Fragment(R.layout.fragment_top_picks) {
         binding.rvFashion.apply {
             layoutManager = GridLayoutManager(requireContext(),4)
             adapter = TopPicksCategoryAdapter(topPicks)
+            setHasFixedSize(true)
         }
     }
 }
