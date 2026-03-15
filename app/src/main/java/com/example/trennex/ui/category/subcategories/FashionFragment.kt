@@ -43,7 +43,7 @@ class FashionFragment : Fragment() {
         binding.rvMenClothing.apply {
             layoutManager = GridLayoutManager(requireContext(),3)
             adapter = FashionCategoryAdapter(menClothing)
-            setHasFixedSize(true)
+            isNestedScrollingEnabled = false
         }
         val menFootwear = listOf(
             FashionCategoryModel("Sport shoes",R.drawable.shoes_sport),
@@ -55,7 +55,7 @@ class FashionFragment : Fragment() {
         binding.rvMenFootwear.apply {
             layoutManager = GridLayoutManager(requireContext(), 3)
             adapter = FashionCategoryAdapter(menFootwear)
-            setHasFixedSize(true)
+            isNestedScrollingEnabled = false
         }
         val womenClothing = listOf(
             FashionCategoryModel("Sarees",R.drawable.women_sarees),
@@ -71,7 +71,7 @@ class FashionFragment : Fragment() {
         binding.rvWomenClothing.apply {
             layoutManager = GridLayoutManager(requireContext(), 3)
             adapter = FashionCategoryAdapter(womenClothing)
-            setHasFixedSize(true)
+            isNestedScrollingEnabled = false
         }
 
         val womenFootwear = listOf(
@@ -85,7 +85,7 @@ class FashionFragment : Fragment() {
         binding.rvWomenFootwear.apply {
             layoutManager = GridLayoutManager(requireContext(), 3)
             adapter = FashionCategoryAdapter(womenFootwear)
-            setHasFixedSize(true)
+            isNestedScrollingEnabled = false
         }
         val backpacks = listOf(
             FashionCategoryModel("Backpacks",R.drawable.backpacks),
@@ -96,7 +96,7 @@ class FashionFragment : Fragment() {
         binding.rvBags.apply {
             layoutManager = GridLayoutManager(requireContext(), 3)
             adapter = FashionCategoryAdapter(backpacks)
-            setHasFixedSize(true)
+            isNestedScrollingEnabled  = false
         }
         val kids = listOf(
             FashionCategoryModel("Kid's Styles",R.drawable.kids_style),
@@ -108,7 +108,7 @@ class FashionFragment : Fragment() {
         binding.rvKids.apply {
             layoutManager = GridLayoutManager(requireContext(), 3)
             adapter = FashionCategoryAdapter(kids)
-            setHasFixedSize(true)
+            isNestedScrollingEnabled = false
         }
     }
 }
