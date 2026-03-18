@@ -12,6 +12,7 @@ import com.example.trennex.R
 import com.example.trennex.databinding.FragmentCategoryBinding
 import com.example.trennex.ui.category.adapter.CategorySideBarAdapter
 import com.example.trennex.ui.category.model.CategoryModel
+import com.example.trennex.ui.category.subcategories.ApplianceFragment
 import com.example.trennex.ui.category.subcategories.FashionFragment
 import com.example.trennex.ui.category.subcategories.TopPicksFragment
 
@@ -50,6 +51,8 @@ class categoryFragment : Fragment(R.layout.fragment_category) {
                 when(it.name){
                     "Top Picks" -> openFragment(TopPicksFragment())
                     "Fashion" -> openFragment(FashionFragment())
+                    "Appliances" -> openFragment(ApplianceFragment())
+
                 }
             }
             layoutManager = LinearLayoutManager(requireContext())
