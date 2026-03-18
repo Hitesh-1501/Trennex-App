@@ -106,4 +106,10 @@ class FashionFragment : Fragment() {
         return list
 
     }
+
+    override fun onDestroyView() {
+        super.onDestroyView()
+        _binding = null
+
+    }
 }
