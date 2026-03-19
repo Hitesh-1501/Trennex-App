@@ -23,7 +23,7 @@ class MobileFragment : Fragment() {
     }
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
-
+        setMobileCategory()
     }
 
     private fun setMobileCategory(){
@@ -46,7 +46,7 @@ class MobileFragment : Fragment() {
         )
 
         binding.rvMobiles.apply {
-            layoutManager = GridLayoutManager(requireContext(),4)
+            layoutManager = GridLayoutManager(requireContext(),3)
             adapter = MobileCategoryAdapter(mobileCategoryList)
         }
     }
