@@ -14,6 +14,7 @@ import com.example.trennex.ui.category.adapter.CategorySideBarAdapter
 import com.example.trennex.ui.category.model.CategoryModel
 import com.example.trennex.ui.category.subcategories.ApplianceFragment
 import com.example.trennex.ui.category.subcategories.FashionFragment
+import com.example.trennex.ui.category.subcategories.MobileFragment
 import com.example.trennex.ui.category.subcategories.TopPicksFragment
 
 class categoryFragment : Fragment(R.layout.fragment_category) {
@@ -52,7 +53,7 @@ class categoryFragment : Fragment(R.layout.fragment_category) {
                     "Top Picks" -> openFragment(TopPicksFragment())
                     "Fashion" -> openFragment(FashionFragment())
                     "Appliances" -> openFragment(ApplianceFragment())
-
+                    "Mobiles" -> openFragment(MobileFragment())
                 }
             }
             layoutManager = LinearLayoutManager(requireContext())
