@@ -50,7 +50,7 @@ class HomeCategoryFragment : Fragment() {
         list.add(HomeCategoryModel(TYPE_HOME_ITEM, R.drawable.kitchen_acc,"Gas,stoves & Accessories"))
         list.add(HomeCategoryModel(TYPE_HOME_ITEM, R.drawable.kitchen_cookware,"Cookware Essentials"))
         list.add(HomeCategoryModel(TYPE_HOME_ITEM, R.drawable.kitchen_dinning,"Dinning Serveware"))
-        list.add(HomeCategoryModel(TYPE_HOME_ITEM, R.drawable.kitchen_tools,"Kitchen Storage"))
+        list.add(HomeCategoryModel(TYPE_HOME_ITEM, R.drawable.kitchen__storage,"Kitchen Storage"))
         list.add(HomeCategoryModel(TYPE_HOME_ITEM, R.drawable.kitchen_tools,"Kitchen Tools"))
 
 
