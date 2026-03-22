@@ -16,6 +16,7 @@ import com.example.trennex.ui.category.subcategories.ApplianceFragment
 import com.example.trennex.ui.category.subcategories.BeautyFragment
 import com.example.trennex.ui.category.subcategories.ElectronicsFragment
 import com.example.trennex.ui.category.subcategories.FashionFragment
+import com.example.trennex.ui.category.subcategories.FurnitureFragment
 import com.example.trennex.ui.category.subcategories.HomeCategoryFragment
 import com.example.trennex.ui.category.subcategories.MobileFragment
 import com.example.trennex.ui.category.subcategories.TopPicksFragment
@@ -60,6 +61,7 @@ class categoryFragment : Fragment(R.layout.fragment_category) {
                     "Electronics" -> openFragment(ElectronicsFragment())
                     "Home" -> openFragment(HomeCategoryFragment())
                     "Beauty" -> openFragment(BeautyFragment())
+                    "Furniture" -> openFragment(FurnitureFragment())
                 }
             }
             layoutManager = LinearLayoutManager(requireContext())
