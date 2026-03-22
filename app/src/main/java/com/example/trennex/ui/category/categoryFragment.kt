@@ -13,6 +13,7 @@ import com.example.trennex.databinding.FragmentCategoryBinding
 import com.example.trennex.ui.category.adapter.CategorySideBarAdapter
 import com.example.trennex.ui.category.model.CategoryModel
 import com.example.trennex.ui.category.subcategories.ApplianceFragment
+import com.example.trennex.ui.category.subcategories.BeautyFragment
 import com.example.trennex.ui.category.subcategories.ElectronicsFragment
 import com.example.trennex.ui.category.subcategories.FashionFragment
 import com.example.trennex.ui.category.subcategories.HomeCategoryFragment
@@ -58,6 +59,7 @@ class categoryFragment : Fragment(R.layout.fragment_category) {
                     "Mobiles" -> openFragment(MobileFragment())
                     "Electronics" -> openFragment(ElectronicsFragment())
                     "Home" -> openFragment(HomeCategoryFragment())
+                    "Beauty" -> openFragment(BeautyFragment())
                 }
             }
             layoutManager = LinearLayoutManager(requireContext())
