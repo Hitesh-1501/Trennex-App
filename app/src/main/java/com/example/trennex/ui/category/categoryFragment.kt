@@ -19,6 +19,7 @@ import com.example.trennex.ui.category.subcategories.FashionFragment
 import com.example.trennex.ui.category.subcategories.FurnitureFragment
 import com.example.trennex.ui.category.subcategories.HomeCategoryFragment
 import com.example.trennex.ui.category.subcategories.MobileFragment
+import com.example.trennex.ui.category.subcategories.SportsFragment
 import com.example.trennex.ui.category.subcategories.TopPicksFragment
 import com.example.trennex.ui.category.subcategories.ToysFragment
 
@@ -64,7 +65,7 @@ class categoryFragment : Fragment(R.layout.fragment_category) {
                     "Beauty" -> openFragment(BeautyFragment())
                     "Furniture" -> openFragment(FurnitureFragment())
                     "Toys,Baby,Books" -> openFragment(ToysFragment())
-//                    "Sports" -> openFragment(SportsFragment())
+                    "Sports" -> openFragment(SportsFragment())
 
                 }
             }
