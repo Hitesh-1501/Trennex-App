@@ -16,7 +16,7 @@ import com.example.trennex.ui.category.adapter.FurnitureCategoryAdapter.Companio
 import com.example.trennex.ui.category.adapter.FurnitureCategoryAdapter.Companion.TYPE_FURNITURE_ITEM
 import com.example.trennex.ui.category.model.FurnitureCategoryModel
 
-class FurnitureFragment : Fragment() {
+class FurnitureFragment : Fragment(R.layout.fragment_furniture) {
     private var _binding : FragmentFurnitureBinding? = null
     private val binding get() = _binding!!
     override fun onCreateView(
@@ -34,7 +34,7 @@ class FurnitureFragment : Fragment() {
         val grid = GridLayoutManager(requireContext(),3)
         grid.spanSizeLookup = object : GridLayoutManager.SpanSizeLookup(){
             override fun getSpanSize(position: Int): Int{
-                return if(list[position].Type == TYPE_BEAUTY_ITEM) 1 else 3
+                return if(list[position].Type == TYPE_FURNITURE_ITEM) 1 else 3
             }
         }
         binding.rvFurniture.apply {

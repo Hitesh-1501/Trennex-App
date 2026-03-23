@@ -31,15 +31,15 @@ class FurnitureCategoryAdapter(
         val inflater = LayoutInflater.from(parent.context)
         when(viewType){
             TYPE_FURNITURE_BANNER -> {
-                val view = inflater.inflate(R.layout.item_beauty_banner,parent,false)
+                val view = inflater.inflate(R.layout.item_furniture_banner,parent,false)
                 return BannerVH(view)
             }
             TYPE_FURNITURE_HEADER -> {
-                val view = inflater.inflate(R.layout.item_beauty_header,parent,false)
+                val view = inflater.inflate(R.layout.item_furniture_header,parent,false)
                 return HeaderVH(view)
             }
             else  ->{
-                val view = inflater.inflate(R.layout.item_beauty_category,parent,false)
+                val view = inflater.inflate(R.layout.item_furniture_category,parent,false)
                 return ItemVH(view)
             }
         }
