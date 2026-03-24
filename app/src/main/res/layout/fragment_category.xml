@@ -7,7 +7,7 @@
         android:id="@+id/rvCategorySidebar"
         android:layout_width="100dp"
         android:layout_height="0dp"
-        android:background="#E0DBDB"
+        android:background="#F5F2F2"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toTopOf="parent" />

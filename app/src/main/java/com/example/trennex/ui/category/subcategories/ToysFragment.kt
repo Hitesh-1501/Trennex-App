@@ -35,7 +35,7 @@ class ToysFragment : Fragment(R.layout.fragment_toys) {
         val grid = GridLayoutManager(requireContext(),3)
         grid.spanSizeLookup = object : GridLayoutManager.SpanSizeLookup(){
             override fun getSpanSize(position: Int): Int{
-                return if(list[position].Type == TYPE_FURNITURE_ITEM) 1 else 3
+                return if(list[position].Type == TYPE_TOYS_ITEM) 1 else 3
             }
         }
         binding.rvToys.apply {
