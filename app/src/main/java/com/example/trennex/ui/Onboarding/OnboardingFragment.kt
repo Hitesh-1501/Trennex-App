@@ -26,7 +26,7 @@ class OnboardingFragment : Fragment(R.layout.fragment_onboarding) {
         return binding.root
     }
 
-    override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
+     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
         val window = activity?.window
         if (window != null) {
