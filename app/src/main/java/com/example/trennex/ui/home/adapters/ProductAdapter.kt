@@ -3,6 +3,7 @@ package com.example.trennex.ui.home.adapters
 import android.view.LayoutInflater
 import android.view.ViewGroup
 import androidx.recyclerview.widget.RecyclerView
+import com.bumptech.glide.Glide
 import com.example.trennex.databinding.ItemProductBinding
 import com.example.trennex.ui.home.model.ProductModel
 
@@ -23,9 +24,11 @@ class ProductAdapter(
         position: Int
     ) {
        val item = products[position]
-       holder.binding.ivProduct.setImageResource(item.productImage)
-       holder.binding.tvProductTitle.text = item.productName
-       holder.binding.tvProductPrice.text = "₹${item.productPrice}"
+        Glide.with(holder.itemView.context)
+            .load(item.image)
+            .into(holder.binding.ivProduct)
+       holder.binding.tvProductTitle.text = item.name
+       holder.binding.tvProductPrice.text = "₹${item.price}"
 
        holder.itemView.setOnClickListener {
            onProductClick()

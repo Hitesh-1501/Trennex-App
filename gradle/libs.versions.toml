@@ -1,6 +1,7 @@
 [versions]
 agp = "8.13.1"
 curved_bottom_navigation = "0.7.0"
+glide = "5.0.5"
 kotlin = "2.0.21"
 lifecycle = "2.8.4"
 fragment = "1.8.2"
@@ -30,6 +31,7 @@ androidx-navigation-ui = { group = "androidx.navigation", name = "navigation-ui-
 # State (Coroutines + StateFlow)
 converter-gson = { module = "com.squareup.retrofit2:converter-gson", version.ref = "retrofit" }
 curved_bottom_navigation = { module = "np.com.susanthapa:curved_bottom_navigation", version.ref = "curved_bottom_navigation" }
+glide = { module = "com.github.bumptech.glide:glide", version.ref = "glide" }
 kotlinx-coroutines-core = { group = "org.jetbrains.kotlinx", name = "kotlinx-coroutines-core", version.ref = "coroutines" }
 kotlinx-coroutines-android = { group = "org.jetbrains.kotlinx", name = "kotlinx-coroutines-android", version.ref = "coroutines" }
 

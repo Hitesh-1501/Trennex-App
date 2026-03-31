@@ -10,6 +10,10 @@ import android.view.MotionEvent
 import android.view.View
 import android.view.ViewGroup
 import android.widget.Toast
+import androidx.fragment.app.viewModels
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.lifecycleScope
+import androidx.lifecycle.repeatOnLifecycle
 import androidx.navigation.fragment.findNavController
 import androidx.recyclerview.widget.GridLayoutManager
 import androidx.recyclerview.widget.LinearLayoutManager
@@ -22,13 +26,15 @@ import com.example.trennex.ui.home.adapters.ProductAdapter
 import com.example.trennex.ui.home.model.BannerModel
 import com.example.trennex.ui.home.model.CategoryModel
 import com.example.trennex.ui.home.model.ProductModel
+import com.example.trennex.viewmodel.ProductViewModel
 import com.google.android.material.tabs.TabLayoutMediator
-
+import kotlinx.coroutines.launch
 
 
 class HomeFragment : Fragment(R.layout.fragment_home) {
     private var _binding: FragmentHomeBinding? = null
     private val binding get()  = _binding!!
+    private val viewModel:  ProductViewModel by viewModels()
     override fun onCreateView(
         inflater: LayoutInflater, container: ViewGroup?,
         savedInstanceState: Bundle?
@@ -62,8 +68,28 @@ class HomeFragment : Fragment(R.layout.fragment_home) {
         super.onViewCreated(view, savedInstanceState)
         setupCategories()
         setupBanners()
-        setupPopularProducts()
-
+        viewModel.fetchProducts()
+        viewLifecycleOwner.lifecycleScope.launch {
+            viewLifecycleOwner.repeatOnLifecycle(Lifecycle.State.STARTED){
+                viewModel.products.collect { apiList ->
+                    val list = apiList.map {
+                        ProductModel(
+                            id = it.id,
+                            image = it.thumbnail,
+                            name  = it.title,
+                            price = it.price.toString()
+                        )
+                    }
+                    binding.rvProducts.apply {
+                        layoutManager = GridLayoutManager(requireContext(),3)
+                        isNestedScrollingEnabled = false
+                        adapter = ProductAdapter(list) {
+                            findNavController().navigate(R.id.action_homeFragment_to_productDetailFragment)
+                        }
+                    }
+                }
+            }
+        }
 
     }
 
@@ -145,24 +171,24 @@ class HomeFragment : Fragment(R.layout.fragment_home) {
             }
     }
 
-    private fun setupPopularProducts(){
-        val products = listOf<ProductModel>(
-            ProductModel(1,R.drawable.product_image,"U.S Polo Jacket","2000"),
-            ProductModel(2,R.drawable.tshirt,"Mortex Blue Jacket","1000"),
-            ProductModel(3,R.drawable.printeed_tshirt,"Roadster printed..","600"),
-            ProductModel(4,R.drawable.samsung_mobile,"Samsung S24 onyx Black","40,999"),
-            ProductModel(5,R.drawable.tv,"Lg  Smart  Tv 55 inch ","90,000"),
-            ProductModel(6,R.drawable.watch,"Fastrack watch","800"),
-            ProductModel(7,R.drawable.laptop,"Asus A15 Laptop","55,000")
-        )
-        binding.rvProducts.apply {
-            layoutManager = GridLayoutManager(requireContext(),3)
-            binding.rvProducts.isNestedScrollingEnabled = false
-            adapter = ProductAdapter(products){
-                findNavController().navigate(R.id.action_homeFragment_to_productDetailFragment)
-            }
-        }
-    }
+//    private fun setupPopularProducts(){
+//        val products = listOf<ProductModel>(
+//            ProductModel(1,R.drawable.product_image,"U.S Polo Jacket","2000"),
+//            ProductModel(2,R.drawable.tshirt,"Mortex Blue Jacket","1000"),
+//            ProductModel(3,R.drawable.printeed_tshirt,"Roadster printed..","600"),
+//            ProductModel(4,R.drawable.samsung_mobile,"Samsung S24 onyx Black","40,999"),
+//            ProductModel(5,R.drawable.tv,"Lg  Smart  Tv 55 inch ","90,000"),
+//            ProductModel(6,R.drawable.watch,"Fastrack watch","800"),
+//            ProductModel(7,R.drawable.laptop,"Asus A15 Laptop","55,000")
+//        )
+//        binding.rvProducts.apply {
+//            layoutManager = GridLayoutManager(requireContext(),3)
+//            binding.rvProducts.isNestedScrollingEnabled = false
+//            adapter = ProductAdapter(products){
+//                findNavController().navigate(R.id.action_homeFragment_to_productDetailFragment)
+//            }
+//        }
+//    }
     override fun onDestroyView() {
         super.onDestroyView()
         _binding = null

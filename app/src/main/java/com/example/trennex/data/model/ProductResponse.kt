@@ -6,4 +6,3 @@ data class ProductResponse(
     val price: Double,
     val thumbnail: String
 )
-
