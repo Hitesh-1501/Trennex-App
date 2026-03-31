@@ -70,4 +70,8 @@ dependencies {
     // UI
     implementation(libs.androidx.recyclerview)
     implementation(libs.curved.bottom.navigation)
+
+    implementation(libs.retrofit)
+    implementation(libs.converter.gson)
+    implementation(libs.logging.interceptor)
 }
