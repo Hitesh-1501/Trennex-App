@@ -33,7 +33,15 @@ import com.example.trennex.ui.product.model.VariantModel
 import com.google.android.material.tabs.TabLayoutMediator
 import com.google.android.material.transition.Hold
 import androidx.core.graphics.drawable.toDrawable
+import androidx.fragment.app.viewModels
+import androidx.lifecycle.lifecycleScope
+import androidx.lifecycle.repeatOnLifecycle
+import androidx.navigation.fragment.navArgs
 import androidx.viewpager2.widget.ViewPager2
+import com.bumptech.glide.Glide
+import com.example.trennex.data.model.ProductResponse
+import com.example.trennex.viewmodel.ProductDetailViewModel
+import kotlinx.coroutines.launch
 
 
 class ProductDetailFragment : Fragment(R.layout.fragment_product_detail), WishListDialogBinding.WishlistActionListener, AddToCartSheet.AddToCartActionListener{
@@ -54,6 +62,14 @@ class ProductDetailFragment : Fragment(R.layout.fragment_product_detail), WishLi
     private var selectedColorPosition = 0
     private var selectedVariantPosition = 0
     private var bannerMediator: TabLayoutMediator? = null
+
+
+    private val viewModel : ProductDetailViewModel by viewModels()
+
+    private val args: ProductDetailFragmentArgs by navArgs()
+
+    private var baseTitle = ""
+    private var baseDescription = ""
 
     val variants = listOf(
         VariantModel(1,"128GB + 8GB","₹40,999","₹75,000",true),
@@ -96,6 +112,34 @@ class ProductDetailFragment : Fragment(R.layout.fragment_product_detail), WishLi
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
+        val id = args.productId
+        viewModel.fetchProductDetail(id)
+
+        viewLifecycleOwner.lifecycleScope.launch {
+            viewLifecycleOwner.repeatOnLifecycle(androidx.lifecycle.Lifecycle.State.STARTED){
+                viewModel.products.collect { response ->
+                    response?.let {product ->
+                        val price = product.price
+                        val discount = product.discountPercentage
+                        val mrp = price / (1 - discount / 100)
+                        baseTitle = product.title
+                        baseDescription = product.description
+                        binding.tvTitle.text = product.title
+                        binding.tvPrice.text = "₹$price"
+                        binding.tvMrp.text = "₹$mrp"
+                        binding.tvProductTitle.text = product.description
+                        binding.tvMrp.paintFlags =
+                            binding.tvMrp.paintFlags or android.graphics.Paint.STRIKE_THRU_TEXT_FLAG
+                        Glide.with(requireContext())
+                            .load(product.thumbnail)
+                            .into(binding.productBanners.getChildAt(0) as ImageView)
+                        updateMainTitle()
+                    }
+                }
+            }
+        }
+
+
         setupImageBanner()
         binding.productBanners.offscreenPageLimit = 1
         binding.productBanners.setPageTransformer { page , position ->
@@ -379,8 +423,9 @@ class ProductDetailFragment : Fragment(R.layout.fragment_product_detail), WishLi
     }
 
     private fun updateMainTitle(){
-        val title = "Galaxy S24 5G Snapdragon ($selectedColor, $selectedVariant)"
+        val title = "$baseDescription($selectedColor, $selectedVariant)"
         binding.tvProductTitle.text = title
+        binding.tvTitle.text = baseTitle
     }
 
     override fun onDestroy() {
