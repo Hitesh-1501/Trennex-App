@@ -7,4 +7,8 @@ class ProductRepository {
     suspend fun getProducts(): List<ProductResponse>{
         return RetrofitInstance.api.getProducts().products
     }
+
+    suspend fun getProductDetail(id: Int) : ProductResponse{
+        return RetrofitInstance.api.getProductDetail(id)
+    }
 }
