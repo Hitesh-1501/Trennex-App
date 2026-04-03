@@ -6,10 +6,11 @@ import android.view.ViewGroup
 import android.widget.ImageView
 import androidx.core.view.ViewCompat
 import androidx.recyclerview.widget.RecyclerView
+import com.bumptech.glide.Glide
 import com.example.trennex.databinding.ItemProductBannerBinding
 
 class ProductImageAdapter(
-    private var images: List<Int>,
+    private var images: List<String>,
     private val onImgClick : (ImageView, Int) -> Unit
 ): RecyclerView.Adapter<ProductImageAdapter.ProductImageViewHolder>(){
     override fun onCreateViewHolder(
@@ -26,7 +27,9 @@ class ProductImageAdapter(
     ) {
         val item = images[position]
         ViewCompat.setTransitionName(holder.binding.imgProducts,null)
-        holder.binding.imgProducts.setImageResource(item)
+        Glide.with(holder.itemView.context)
+            .load(item)
+            .into(holder.binding.imgProducts)
         holder.itemView.setOnClickListener {
             ViewCompat.setTransitionName(holder.binding.imgProducts,"product_image")
             onImgClick(holder.binding.imgProducts,position)
@@ -38,7 +41,7 @@ class ProductImageAdapter(
     }
 
     @SuppressLint("NotifyDataSetChanged")
-    fun updateImages(newImages : List<Int>){
+    fun updateImages(newImages : List<String>){
         images  = newImages
         notifyDataSetChanged()
     }

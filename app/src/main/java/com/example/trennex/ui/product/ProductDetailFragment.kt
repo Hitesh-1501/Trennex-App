@@ -50,7 +50,7 @@ class ProductDetailFragment : Fragment(R.layout.fragment_product_detail), WishLi
     private lateinit var imageAdapter: ProductImageAdapter
     private lateinit var colorAdapter: ColorVariantAdapter
     private lateinit var  variantAdapter : VariantAdapter
-    private var currentImages:List<Int> = emptyList()
+    private var currentImages:List<String> = emptyList()
     private var isSpecExpandable = false
     private var isReviewExpandable = false
     private var isWishlisted = false
@@ -76,32 +76,32 @@ class ProductDetailFragment : Fragment(R.layout.fragment_product_detail), WishLi
         VariantModel(2,"256GB + 8GB","₹45,999","₹79,000")
     )
 
-    private val colorImageMap = mapOf(
-        "Onyx Black" to listOf(
-            R.drawable.product_img,
-            R.drawable.product_img_two,
-            R.drawable.product_img_three,
-            R.drawable.product_img_four
-        ),
-        "Amber Yellow" to listOf(
-            R.drawable.amber_yellow_banner,
-            R.drawable.product_img_two,
-            R.drawable.product_img_three,
-            R.drawable.product_img_four
-        ),
-        "Cobalt Violet" to listOf(
-            R.drawable.cobalt_violet_banner,
-            R.drawable.product_img_two,
-            R.drawable.product_img_three,
-            R.drawable.product_img_four
-        ),
-        "Marble Gray" to listOf(
-            R.drawable.marble_gray_banner,
-            R.drawable.product_img_two,
-            R.drawable.product_img_three,
-            R.drawable.product_img_four
-        )
-    )
+//    private val colorImageMap = mapOf(
+//        "Onyx Black" to listOf(
+//            R.drawable.product_img,
+//            R.drawable.product_img_two,
+//            R.drawable.product_img_three,
+//            R.drawable.product_img_four
+//        ),
+//        "Amber Yellow" to listOf(
+//            R.drawable.amber_yellow_banner,
+//            R.drawable.product_img_two,
+//            R.drawable.product_img_three,
+//            R.drawable.product_img_four
+//        ),
+//        "Cobalt Violet" to listOf(
+//            R.drawable.cobalt_violet_banner,
+//            R.drawable.product_img_two,
+//            R.drawable.product_img_three,
+//            R.drawable.product_img_four
+//        ),
+//        "Marble Gray" to listOf(
+//            R.drawable.marble_gray_banner,
+//            R.drawable.product_img_two,
+//            R.drawable.product_img_three,
+//            R.drawable.product_img_four
+//        )
+//    )
     override fun onCreateView(
         inflater: LayoutInflater, container: ViewGroup?,
         savedInstanceState: Bundle?
@@ -121,18 +121,20 @@ class ProductDetailFragment : Fragment(R.layout.fragment_product_detail), WishLi
                     response?.let {product ->
                         val price = product.price
                         val discount = product.discountPercentage
-                        val mrp = price / (1 - discount / 100)
+                        val mrp = price / (1.0 - discount / 100.0)
                         baseTitle = product.title
                         baseDescription = product.description
                         binding.tvTitle.text = product.title
                         binding.tvPrice.text = "₹$price"
-                        binding.tvMrp.text = "₹$mrp"
+                        binding.tvMrp.text = "₹${String.format("%.2f", mrp)}"
                         binding.tvProductTitle.text = product.description
                         binding.tvMrp.paintFlags =
                             binding.tvMrp.paintFlags or android.graphics.Paint.STRIKE_THRU_TEXT_FLAG
-                        Glide.with(requireContext())
-                            .load(product.thumbnail)
-                            .into(binding.productBanners.getChildAt(0) as ImageView)
+                        val imageList = product.images
+                        currentImages = imageList
+                        imageAdapter.updateImages(imageList)
+                        binding.productBanners.setCurrentItem(0,false)
+                        attachBannerDots()
                         updateMainTitle()
                     }
                 }
@@ -193,11 +195,11 @@ class ProductDetailFragment : Fragment(R.layout.fragment_product_detail), WishLi
             ?.getLiveData<String>("selected_color")
             ?.observe(viewLifecycleOwner){color ->
                 selectedColor = color
-                val index = colorImageMap.keys.indexOf(color)
-                selectedColorPosition = index
+//                val index = colorImageMap.keys.indexOf(color)
+//                selectedColorPosition = index
                 updateMainTitle()
                 colorAdapter.setSelectedColorPosition(selectedColorPosition)
-                updateProductImages(color)
+//                updateProductImages(color)
                 binding.tvSelectedColor.text = color
             }
 
@@ -316,9 +318,7 @@ class ProductDetailFragment : Fragment(R.layout.fragment_product_detail), WishLi
 //    }
 
     private fun setupImageBanner() {
-
-        currentImages = colorImageMap["Onyx Black"]!!
-
+        currentImages = emptyList()
         imageAdapter = ProductImageAdapter(currentImages) { clickedImg, _ ->
             openFullScreen(clickedImg, currentBannerPosition, currentImages)
         }
@@ -351,7 +351,7 @@ class ProductDetailFragment : Fragment(R.layout.fragment_product_detail), WishLi
             selectedColor = selected.modelName
             selectedColorPosition = position
             updateMainTitle()
-            updateProductImages(selected.modelName)
+//            updateProductImages(selected.modelName)
         })
         binding.rvColorVariants.apply {
             layoutManager = LinearLayoutManager(requireContext(), LinearLayoutManager.HORIZONTAL,false)
@@ -360,16 +360,16 @@ class ProductDetailFragment : Fragment(R.layout.fragment_product_detail), WishLi
         colorAdapter.setSelectedColorPosition(selectedColorPosition)
     }
 
-    private fun updateProductImages(colorName : String){
-        val newImages = colorImageMap[colorName] ?: return
-        currentImages  = newImages
-        currentBannerPosition = 0
-        imageAdapter.updateImages(newImages)
-        binding.productBanners.setCurrentItem(0,false)
-        attachBannerDots()
-    }
+//    private fun updateProductImages(colorName : String){
+//        val newImages = colorImageMap[colorName] ?: return
+//        currentImages  = newImages
+//        currentBannerPosition = 0
+//        imageAdapter.updateImages(newImages)
+//        binding.productBanners.setCurrentItem(0,false)
+//        attachBannerDots()
+//    }
 
-    private fun openFullScreen(imageView: ImageView, position : Int,images: List<Int>){
+    private fun openFullScreen(imageView: ImageView, position : Int,images: List<String>){
         exitTransition = Hold().apply {
             duration = 300L
         }
@@ -382,7 +382,7 @@ class ProductDetailFragment : Fragment(R.layout.fragment_product_detail), WishLi
         )
         val bundle = bundleOf(
             "start_position" to position,
-            "images" to images.toIntArray(),
+            "images" to images.toTypedArray(),
             "selected_color" to selectedColor,
             "selected_variant_pos" to selectedVariantPosition
         )
