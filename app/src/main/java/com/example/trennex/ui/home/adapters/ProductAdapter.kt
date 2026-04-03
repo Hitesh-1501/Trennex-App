@@ -9,7 +9,7 @@ import com.example.trennex.ui.home.model.ProductModel
 
 class ProductAdapter(
     private val products: List<ProductModel>,
-    private val onProductClick : () -> Unit
+    private val onProductClick : (ProductModel) -> Unit
 ): RecyclerView.Adapter<ProductAdapter.ProductVieewHolder>(){
     override fun onCreateViewHolder(
         parent: ViewGroup,
@@ -31,7 +31,7 @@ class ProductAdapter(
        holder.binding.tvProductPrice.text = "₹${item.price}"
 
        holder.itemView.setOnClickListener {
-           onProductClick()
+           onProductClick(item)
        }
     }
 

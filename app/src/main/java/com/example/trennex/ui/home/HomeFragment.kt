@@ -83,8 +83,9 @@ class HomeFragment : Fragment(R.layout.fragment_home) {
                     binding.rvProducts.apply {
                         layoutManager = GridLayoutManager(requireContext(),3)
                         isNestedScrollingEnabled = false
-                        adapter = ProductAdapter(list) {
-                            findNavController().navigate(R.id.action_homeFragment_to_productDetailFragment)
+                        adapter = ProductAdapter(list) {product->
+                            val action = HomeFragmentDirections.actionHomeFragmentToProductDetailFragment(product.id)
+                            findNavController().navigate(action)
                         }
                     }
                 }

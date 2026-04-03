@@ -95,6 +95,12 @@
         android:name="com.example.trennex.ui.product.ProductDetailFragment"
         android:label="fragment_product_detail"
         tools:layout="@layout/fragment_product_detail" >
+
+        <argument
+            android:name="productId"
+            app:argType="integer"
+            android:defaultValue="0"/>
+
         <action
             android:id="@+id/action_productDetailFragment_to_imagePreviewFragment"
             app:destination="@id/imagePreviewFragment" />
