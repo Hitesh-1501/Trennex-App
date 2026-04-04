@@ -4,9 +4,10 @@ import android.view.ViewGroup
 import android.widget.ImageView
 import androidx.core.view.ViewCompat
 import androidx.recyclerview.widget.RecyclerView
+import com.bumptech.glide.Glide
 
 class FullImageAdapter(
-    private val images: List<Int>,
+    private val images: List<String>,
     private val startPosition : Int
 ): RecyclerView.Adapter<FullImageAdapter.ImageVH>(){
     override fun onCreateViewHolder(
@@ -27,7 +28,9 @@ class FullImageAdapter(
         holder: ImageVH,
         position: Int
     ) {
-        holder.img.setImageResource(images[position])
+        Glide.with(holder.img.context)
+            .load(images[position])
+            .into(holder.img)
         ViewCompat.setTransitionName(holder.img,null)
         if(position == startPosition){
             ViewCompat.setTransitionName(holder.img,"product_image")

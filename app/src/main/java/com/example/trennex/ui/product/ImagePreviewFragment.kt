@@ -51,7 +51,7 @@ class ImagePreviewFragment : Fragment(R.layout.fragment_image_preview) {
         }
 
         val startPosition = arguments?.getInt("start_position") ?:0
-        val images = arguments?.getIntArray("images")?.toList() ?: emptyList()
+        val images = arguments?.getStringArray("images")?.toList() ?: emptyList()
 
         binding.imgPreview.adapter = FullImageAdapter(images,startPosition)
         binding.imgPreview.setCurrentItem(startPosition,false)

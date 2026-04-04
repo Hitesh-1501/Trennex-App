@@ -132,7 +132,7 @@
                         android:textColor="@color/black"/>
 
                     <TextView
-                        android:id="@+id/tvProductTitle"
+                        android:id="@+id/tvDescription"
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
                         android:text="Galaxy S24 5G Snapdragon (Onyx Black, 128 GB) (8 GB RAM)"

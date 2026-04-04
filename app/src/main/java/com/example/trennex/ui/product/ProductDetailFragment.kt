@@ -1,18 +1,11 @@
 package com.example.trennex.ui.product
 
-import android.annotation.SuppressLint
-import android.content.Context
-import android.graphics.Color
-import android.graphics.drawable.ColorDrawable
 import android.os.Bundle
 import androidx.fragment.app.Fragment
 import android.view.LayoutInflater
-import android.view.MotionEvent
 import android.view.View
 import android.view.ViewGroup
-import android.view.WindowManager
 import android.widget.ImageView
-import android.widget.PopupWindow
 import android.widget.Toast
 import androidx.core.os.bundleOf
 import androidx.core.view.size
@@ -20,7 +13,6 @@ import androidx.navigation.fragment.FragmentNavigatorExtras
 import androidx.navigation.fragment.findNavController
 import androidx.recyclerview.widget.LinearLayoutManager
 import com.example.trennex.R
-import com.example.trennex.databinding.FragmentHomeBinding
 import com.example.trennex.databinding.FragmentProductDetailBinding
 import com.example.trennex.databinding.WishlistDialogBinding
 import com.example.trennex.ui.product.adapter.ColorVariantAdapter
@@ -76,32 +68,6 @@ class ProductDetailFragment : Fragment(R.layout.fragment_product_detail), WishLi
         VariantModel(2,"256GB + 8GB","₹45,999","₹79,000")
     )
 
-//    private val colorImageMap = mapOf(
-//        "Onyx Black" to listOf(
-//            R.drawable.product_img,
-//            R.drawable.product_img_two,
-//            R.drawable.product_img_three,
-//            R.drawable.product_img_four
-//        ),
-//        "Amber Yellow" to listOf(
-//            R.drawable.amber_yellow_banner,
-//            R.drawable.product_img_two,
-//            R.drawable.product_img_three,
-//            R.drawable.product_img_four
-//        ),
-//        "Cobalt Violet" to listOf(
-//            R.drawable.cobalt_violet_banner,
-//            R.drawable.product_img_two,
-//            R.drawable.product_img_three,
-//            R.drawable.product_img_four
-//        ),
-//        "Marble Gray" to listOf(
-//            R.drawable.marble_gray_banner,
-//            R.drawable.product_img_two,
-//            R.drawable.product_img_three,
-//            R.drawable.product_img_four
-//        )
-//    )
     override fun onCreateView(
         inflater: LayoutInflater, container: ViewGroup?,
         savedInstanceState: Bundle?
@@ -127,7 +93,7 @@ class ProductDetailFragment : Fragment(R.layout.fragment_product_detail), WishLi
                         binding.tvTitle.text = product.title
                         binding.tvPrice.text = "₹$price"
                         binding.tvMrp.text = "₹${String.format("%.2f", mrp)}"
-                        binding.tvProductTitle.text = product.description
+                        binding.tvDescription.text = product.description
                         binding.tvMrp.paintFlags =
                             binding.tvMrp.paintFlags or android.graphics.Paint.STRIKE_THRU_TEXT_FLAG
                         val imageList = product.images
@@ -266,56 +232,6 @@ class ProductDetailFragment : Fragment(R.layout.fragment_product_detail), WishLi
         findNavController().navigate(R.id.action_productDetailFragment_to_wishlistFragment)
     }
 
-//    @SuppressLint("ClickableViewAccessibility")
-//    private fun showWishlistPopup(anchorView: View){
-//        val popupBinding = WishlistDialogBinding.inflate(layoutInflater)
-//        val widthInPx = (300 * resources.displayMetrics.density).toInt()
-//        val popupWindow = PopupWindow(
-//            popupBinding.root,
-//            widthInPx,
-//            ViewGroup.LayoutParams.WRAP_CONTENT,
-//            true
-//        )
-//        popupWindow.setBackgroundDrawable(Color.TRANSPARENT.toDrawable())
-//        popupWindow.isOutsideTouchable = false
-//        popupWindow.isClippingEnabled  = false
-//        popupWindow.isFocusable = true
-//        popupWindow.setTouchInterceptor { _, event ->
-//            event.action == MotionEvent.ACTION_OUTSIDE
-//        }
-//        popupWindow.animationStyle = R.style.PopupAnimation
-//        popupWindow.elevation = 10f
-//        popupBinding.root.measure(
-//            View.MeasureSpec.makeMeasureSpec(widthInPx,View.MeasureSpec.EXACTLY),
-//            View.MeasureSpec.makeMeasureSpec(0, View.MeasureSpec.UNSPECIFIED)
-//        )
-//        val popupHeight = popupBinding.root.measuredHeight
-//        val xOffset = anchorView.width / 2
-//        val yOffset = -(popupHeight + anchorView.height)
-//
-//        popupBinding.closeIv.setOnClickListener {
-//            popupWindow.dismiss()
-//        }
-//
-//        popupBinding.goToWishlist.setOnClickListener {
-//            isWishlisted = false
-//            binding.wishlist.setImageResource(R.drawable.wishlist_product)
-//            popupWindow.dismiss()
-//        }
-//
-//        popupWindow.showAsDropDown(anchorView,xOffset,yOffset)
-//        dimBehind(popupWindow)
-//    }
-//
-//    private fun dimBehind(popupWindow: PopupWindow){
-//        val container = popupWindow.contentView.rootView
-//        val wm = requireContext().getSystemService(Context.WINDOW_SERVICE) as WindowManager
-//        val params = container.layoutParams as WindowManager.LayoutParams
-//        params.flags = params.flags or WindowManager.LayoutParams.FLAG_DIM_BEHIND
-//        params.dimAmount = 0.5f
-//        wm.updateViewLayout(container,params)
-//
-//    }
 
     private fun setupImageBanner() {
         currentImages = emptyList()
@@ -351,7 +267,7 @@ class ProductDetailFragment : Fragment(R.layout.fragment_product_detail), WishLi
             selectedColor = selected.modelName
             selectedColorPosition = position
             updateMainTitle()
-//            updateProductImages(selected.modelName)
+
         })
         binding.rvColorVariants.apply {
             layoutManager = LinearLayoutManager(requireContext(), LinearLayoutManager.HORIZONTAL,false)
@@ -359,15 +275,6 @@ class ProductDetailFragment : Fragment(R.layout.fragment_product_detail), WishLi
         }
         colorAdapter.setSelectedColorPosition(selectedColorPosition)
     }
-
-//    private fun updateProductImages(colorName : String){
-//        val newImages = colorImageMap[colorName] ?: return
-//        currentImages  = newImages
-//        currentBannerPosition = 0
-//        imageAdapter.updateImages(newImages)
-//        binding.productBanners.setCurrentItem(0,false)
-//        attachBannerDots()
-//    }
 
     private fun openFullScreen(imageView: ImageView, position : Int,images: List<String>){
         exitTransition = Hold().apply {
@@ -411,8 +318,7 @@ class ProductDetailFragment : Fragment(R.layout.fragment_product_detail), WishLi
             binding.tvVariant.text = it
             updateMainTitle()
         },{ variant , position ->
-            binding.tvPrice.text = variant.Price
-            binding.tvMrp.text = variant.mrpPrice
+            binding.tvVariant.text = variant.variant
             selectedVariantPosition = position
         })
         binding.rvVariants.apply {
@@ -423,8 +329,8 @@ class ProductDetailFragment : Fragment(R.layout.fragment_product_detail), WishLi
     }
 
     private fun updateMainTitle(){
-        val title = "$baseDescription($selectedColor, $selectedVariant)"
-        binding.tvProductTitle.text = title
+        val description = "$baseDescription($selectedColor, $selectedVariant)"
+        binding.tvDescription.text = description
         binding.tvTitle.text = baseTitle
     }
 
