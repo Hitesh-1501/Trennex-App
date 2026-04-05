@@ -7,5 +7,6 @@ data class ProductResponse(
     val price: Double,
     val images: List<String>,
     val discountPercentage: Double,
-    val thumbnail: String
+    val thumbnail: String,
+    val reviews: List<ReviewResponse>
 )

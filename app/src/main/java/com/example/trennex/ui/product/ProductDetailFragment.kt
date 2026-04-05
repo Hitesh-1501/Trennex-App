@@ -1,5 +1,6 @@
 package com.example.trennex.ui.product
 
+import android.content.res.ColorStateList
 import android.os.Bundle
 import androidx.fragment.app.Fragment
 import android.view.LayoutInflater
@@ -25,6 +26,7 @@ import com.example.trennex.ui.product.model.VariantModel
 import com.google.android.material.tabs.TabLayoutMediator
 import com.google.android.material.transition.Hold
 import androidx.core.graphics.drawable.toDrawable
+import androidx.core.graphics.toColorInt
 import androidx.fragment.app.viewModels
 import androidx.lifecycle.lifecycleScope
 import androidx.lifecycle.repeatOnLifecycle
@@ -102,6 +104,7 @@ class ProductDetailFragment : Fragment(R.layout.fragment_product_detail), WishLi
                         binding.productBanners.setCurrentItem(0,false)
                         attachBannerDots()
                         updateMainTitle()
+                        setUpReviews(product)
                     }
                 }
             }
@@ -115,7 +118,6 @@ class ProductDetailFragment : Fragment(R.layout.fragment_product_detail), WishLi
         }
         setupColorVariants()
         setUpVariants()
-        setUpReviews()
         setupwishList()
         setUpCart()
 
@@ -299,19 +301,42 @@ class ProductDetailFragment : Fragment(R.layout.fragment_product_detail), WishLi
                 null,
                 extras)
     }
-    private fun setUpReviews(){
-        val reviews = listOf(
-            ReviewModel(4.5f, "1 month ago", "Excellent performance and great display."),
-            ReviewModel(4.1f, "2 months ago", "Camera quality is outstanding."),
-            ReviewModel(3.5f, "3 months ago", "Battery life is good for daily usage.")
-        )
-        binding.rvReviews.apply {
-            layoutManager = LinearLayoutManager(requireContext(), LinearLayoutManager.VERTICAL,false)
-            adapter = ReviewAdapter(reviews)
-            isNestedScrollingEnabled = false
+    private fun setUpReviews(product : ProductResponse){
+        val reviews = product.reviews
+        val reviewsList = reviews.map {
+            ReviewModel(
+                it.ratings.toFloat(),
+                it.date,
+                it.comment,
+                it.reviewerName
+            )
         }
+        binding.tvReviews.text = "${reviewsList.size} Reviews"
+        val averageRatings = reviewsList.map { it.rating }.average()
+        binding.totalRatings.text = String.format("%.1f", averageRatings)
+        val limitedReviews = reviewsList.take(4)
+        val adapter = ReviewAdapter(limitedReviews)
+        binding.rvReviews.adapter = adapter
+        var isExpandable = false
+        binding.tvViewAll.setOnClickListener {
+            if(!isExpandable){
+                adapter.updateList(reviewsList)
+                binding.tvViewAll.text = "Show less"
+            }else{
+                adapter.updateList(reviewsList.take(4))
+                binding.tvViewAll.text = "Show ${reviewsList.size - 4} More "
+            }
+            isExpandable = !isExpandable
+        }
+        val backgroundColor = when{
+            averageRatings >= 4.0 -> "#21AD60".toColorInt()
+            averageRatings >= 3.0 -> "#FBC02D".toColorInt()
+            else -> "#D32F2F".toColorInt()
+        }
+        binding.llReview.backgroundTintList = ColorStateList.valueOf(backgroundColor)
+        binding.averageRatings.text = String.format("%.1f", averageRatings)
+        binding.ratings.text = "| ${reviewsList.size}"
     }
-
     private fun setUpVariants(){
         variantAdapter = VariantAdapter(variants = variants,{
             selectedVariant = it

@@ -58,6 +58,7 @@
 
 
                 <LinearLayout
+                    android:id="@+id/ll_review"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:orientation="horizontal"
@@ -71,6 +72,7 @@
                     android:layout_marginTop="8dp">
 
                     <TextView
+                        android:id="@+id/averageRatings"
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
                         android:includeFontPadding="false"
@@ -81,6 +83,7 @@
 
 
                     <TextView
+                        android:id="@+id/ratings"
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
                         android:text=" | 51"
@@ -702,7 +705,7 @@
                         android:orientation="horizontal">
 
                         <TextView
-                            android:id="@+id/reviews_rating"
+                            android:id="@+id/totalRatings"
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
                             android:background="@drawable/rating_bg"
@@ -731,56 +734,6 @@
                             android:textColor="@color/textPrimary"/>
 
                     </LinearLayout>
-                    
-                    <HorizontalScrollView
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:layout_marginTop="12dp"
-                        android:scrollbars="none">
-
-                        <LinearLayout
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            android:orientation="horizontal">
-
-
-                            <ImageView
-                                android:layout_width="70dp"
-                                android:layout_height="70dp"
-                                android:src="@drawable/sample_img"
-                                android:scaleType="centerCrop"
-                                android:layout_marginEnd="12dp"/>
-
-                            <ImageView
-                                android:layout_width="70dp"
-                                android:layout_height="70dp"
-                                android:src="@drawable/sample_img"
-                                android:scaleType="centerCrop"
-                                android:layout_marginEnd="12dp"/>
-
-                            <FrameLayout
-                                android:layout_width="70dp"
-                                android:layout_height="70dp">
-
-                                <ImageView
-                                    android:layout_width="match_parent"
-                                    android:layout_height="match_parent"
-                                    android:scaleType="centerCrop"
-                                    android:src="@drawable/sample_img" />
-
-                                <TextView
-                                    android:layout_width="match_parent"
-                                    android:layout_height="match_parent"
-                                    android:text="+10"
-                                    android:textSize="16sp"
-                                    android:textStyle="bold"
-                                    android:textColor="@android:color/white"
-                                    android:gravity="center"
-                                    android:background="@drawable/media_overlay" />
-
-                            </FrameLayout>
-                        </LinearLayout>
-                    </HorizontalScrollView>
 
                     <androidx.recyclerview.widget.RecyclerView
                         android:id="@+id/rvReviews"
@@ -794,7 +747,7 @@
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
                         android:layout_marginTop="12dp"
-                        android:text="View all 20 reviews >"
+                        android:text="View all 20 reviews>"
                         android:textColor="@color/colorPrimary" />
 
                 </LinearLayout>
