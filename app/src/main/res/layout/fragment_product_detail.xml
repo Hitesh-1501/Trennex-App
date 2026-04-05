@@ -735,6 +735,7 @@
 
                     </LinearLayout>
 
+
                     <androidx.recyclerview.widget.RecyclerView
                         android:id="@+id/rvReviews"
                         android:layout_width="match_parent"

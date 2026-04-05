@@ -2,6 +2,7 @@ package com.example.trennex.ui.product
 
 import android.content.res.ColorStateList
 import android.os.Bundle
+import android.util.Log
 import androidx.fragment.app.Fragment
 import android.view.LayoutInflater
 import android.view.View
@@ -64,6 +65,7 @@ class ProductDetailFragment : Fragment(R.layout.fragment_product_detail), WishLi
 
     private var baseTitle = ""
     private var baseDescription = ""
+    private lateinit var reviewAdapter: ReviewAdapter
 
     val variants = listOf(
         VariantModel(1,"128GB + 8GB","₹40,999","₹75,000",true),
@@ -82,6 +84,10 @@ class ProductDetailFragment : Fragment(R.layout.fragment_product_detail), WishLi
         super.onViewCreated(view, savedInstanceState)
         val id = args.productId
         viewModel.fetchProductDetail(id)
+        reviewAdapter = ReviewAdapter(emptyList())
+        binding.rvReviews.isNestedScrollingEnabled = false
+        binding.rvReviews.layoutManager = LinearLayoutManager(requireContext())
+        binding.rvReviews.adapter = reviewAdapter
 
         viewLifecycleOwner.lifecycleScope.launch {
             viewLifecycleOwner.repeatOnLifecycle(androidx.lifecycle.Lifecycle.State.STARTED){
@@ -109,8 +115,6 @@ class ProductDetailFragment : Fragment(R.layout.fragment_product_detail), WishLi
                 }
             }
         }
-
-
         setupImageBanner()
         binding.productBanners.offscreenPageLimit = 1
         binding.productBanners.setPageTransformer { page , position ->
@@ -305,25 +309,35 @@ class ProductDetailFragment : Fragment(R.layout.fragment_product_detail), WishLi
         val reviews = product.reviews
         val reviewsList = reviews.map {
             ReviewModel(
-                it.ratings.toFloat(),
+                it.rating.toFloat(),
                 it.date,
                 it.comment,
                 it.reviewerName
             )
         }
-        binding.tvReviews.text = "${reviewsList.size} Reviews"
-        val averageRatings = reviewsList.map { it.rating }.average()
+        Log.d("REVIEW_CHECK", "Reviews size: ${product.reviews.size}")
+        binding.tvRatings.text = "${reviewsList.size} Ratings"
+        binding.tvReviews.text = "| ${reviewsList.size} Reviews"
+        val averageRatings = if(reviewsList.isNotEmpty()){
+            reviewsList.map { it.rating }.average()
+        }else 0.0
         binding.totalRatings.text = String.format("%.1f", averageRatings)
         val limitedReviews = reviewsList.take(4)
-        val adapter = ReviewAdapter(limitedReviews)
-        binding.rvReviews.adapter = adapter
+        reviewAdapter.updateList(limitedReviews)
+
+        if (reviewsList.size <= 4) {
+            binding.tvViewAll.visibility = View.GONE
+        } else {
+            binding.tvViewAll.visibility = View.VISIBLE
+            binding.tvViewAll.text = "Show ${reviewsList.size - 4} More"
+        }
         var isExpandable = false
         binding.tvViewAll.setOnClickListener {
             if(!isExpandable){
-                adapter.updateList(reviewsList)
+                reviewAdapter.updateList(reviewsList)
                 binding.tvViewAll.text = "Show less"
             }else{
-                adapter.updateList(reviewsList.take(4))
+                reviewAdapter.updateList(reviewsList.take(4))
                 binding.tvViewAll.text = "Show ${reviewsList.size - 4} More "
             }
             isExpandable = !isExpandable
@@ -334,6 +348,7 @@ class ProductDetailFragment : Fragment(R.layout.fragment_product_detail), WishLi
             else -> "#D32F2F".toColorInt()
         }
         binding.llReview.backgroundTintList = ColorStateList.valueOf(backgroundColor)
+        binding.totalRatings.backgroundTintList = ColorStateList.valueOf(backgroundColor)
         binding.averageRatings.text = String.format("%.1f", averageRatings)
         binding.ratings.text = "| ${reviewsList.size}"
     }

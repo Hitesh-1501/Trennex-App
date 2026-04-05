@@ -59,8 +59,8 @@ class ReviewAdapter(
         val months = days / 30
         return when {
             months > 0 -> "$months months ago"
-            days > 0 -> "$days day ago"
-            hours > 0 -> "$hours hour ago"
+            days > 0 -> "$days days ago"
+            hours > 0 -> "$hours hours ago"
             minutes > 0 -> "$minutes min ago"
             else -> "Just now"
         }
