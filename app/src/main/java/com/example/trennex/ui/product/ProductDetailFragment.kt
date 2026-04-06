@@ -108,6 +108,10 @@ class ProductDetailFragment : Fragment(R.layout.fragment_product_detail), WishLi
                         currentImages = imageList
                         imageAdapter.updateImages(imageList)
                         binding.productBanners.setCurrentItem(0,false)
+                        binding.tvDelivery.text = product.shippingInformation
+                        binding.tvPriceDetails.text = product.price.toString()
+                        binding.tvManufacture.text = product.warrantyInformation
+                        binding.tvReturnPolicy.text = product.returnPolicy
                         attachBannerDots()
                         updateMainTitle()
                         setUpReviews(product)
