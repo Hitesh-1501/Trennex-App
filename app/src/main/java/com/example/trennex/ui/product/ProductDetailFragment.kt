@@ -35,8 +35,11 @@ import androidx.navigation.fragment.navArgs
 import androidx.viewpager2.widget.ViewPager2
 import com.bumptech.glide.Glide
 import com.example.trennex.data.model.ProductResponse
+import com.example.trennex.ui.product.model.SpecDetailAdapter
+import com.example.trennex.ui.product.model.SpecDetailItem
 import com.example.trennex.viewmodel.ProductDetailViewModel
 import kotlinx.coroutines.launch
+import kotlin.math.abs
 
 
 class ProductDetailFragment : Fragment(R.layout.fragment_product_detail), WishListDialogBinding.WishlistActionListener, AddToCartSheet.AddToCartActionListener{
@@ -66,6 +69,7 @@ class ProductDetailFragment : Fragment(R.layout.fragment_product_detail), WishLi
     private var baseTitle = ""
     private var baseDescription = ""
     private lateinit var reviewAdapter: ReviewAdapter
+    private lateinit var topFeaturesAdapter: SpecDetailAdapter
 
     val variants = listOf(
         VariantModel(1,"128GB + 8GB","₹40,999","₹75,000",true),
@@ -88,6 +92,11 @@ class ProductDetailFragment : Fragment(R.layout.fragment_product_detail), WishLi
         binding.rvReviews.isNestedScrollingEnabled = false
         binding.rvReviews.layoutManager = LinearLayoutManager(requireContext())
         binding.rvReviews.adapter = reviewAdapter
+
+        topFeaturesAdapter = SpecDetailAdapter()
+        binding.rvTopFeatures.layoutManager = LinearLayoutManager(requireContext())
+        binding.rvTopFeatures.adapter = topFeaturesAdapter
+
 
         viewLifecycleOwner.lifecycleScope.launch {
             viewLifecycleOwner.repeatOnLifecycle(androidx.lifecycle.Lifecycle.State.STARTED){
@@ -114,6 +123,7 @@ class ProductDetailFragment : Fragment(R.layout.fragment_product_detail), WishLi
                         binding.tvReturnPolicy.text = product.returnPolicy
                         attachBannerDots()
                         updateMainTitle()
+                        bindTopFeatures(product)
                         setUpReviews(product)
                     }
                 }
@@ -122,12 +132,17 @@ class ProductDetailFragment : Fragment(R.layout.fragment_product_detail), WishLi
         setupImageBanner()
         binding.productBanners.offscreenPageLimit = 1
         binding.productBanners.setPageTransformer { page , position ->
-            page.alpha = 0.5f +(1-kotlin.math.abs(position))
+            page.alpha = 0.5f +(1- abs(position))
         }
         setupColorVariants()
         setUpVariants()
         setupwishList()
         setUpCart()
+
+        binding.btnShowMoreSpecs.setOnClickListener {
+            val direction = ProductDetailFragmentDirections.actionProductDetailFragmentToProductSpecFragment(productId = args.productId)
+            findNavController().navigate(direction)
+        }
 
         binding.specheader.setOnClickListener {
             isSpecExpandable = !isSpecExpandable
@@ -376,6 +391,26 @@ class ProductDetailFragment : Fragment(R.layout.fragment_product_detail), WishLi
         val description = "$baseDescription($selectedColor, $selectedVariant)"
         binding.tvDescription.text = description
         binding.tvTitle.text = baseTitle
+    }
+
+    private fun bindTopFeatures(product: ProductResponse){
+        val dimensions = product.dimensions
+        val dimensionValue = listOfNotNull(
+            dimensions?.width?.let { "W: $it" },
+            dimensions?.height?.let { "H: $it" },
+            dimensions?.depth?.let { "D: $it" }
+        ).joinToString(" | ")
+        val topFeatures = listOf(
+            SpecDetailItem("Brand",product.brand.orEmpty()),
+            SpecDetailItem("Dimensions",dimensionValue),
+            SpecDetailItem("Category", product.category.orEmpty()),
+            SpecDetailItem("Shipping", product.shippingInformation),
+            SpecDetailItem("Warranty", product.warrantyInformation),
+            SpecDetailItem("Price", "₹${product.price}")
+        ).filter {
+            it.value.isNotBlank()
+        }
+        topFeaturesAdapter.submitList(topFeatures.take(5))
     }
 
     override fun onDestroy() {
