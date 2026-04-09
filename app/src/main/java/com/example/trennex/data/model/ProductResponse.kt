@@ -11,5 +11,12 @@ data class ProductResponse(
     val reviews: List<ReviewResponse>,
     val shippingInformation: String,
     val warrantyInformation: String,
-    val returnPolicy: String
+    val returnPolicy: String,
+    val category: String? = null,
+    val brand: String? = null,
+    val sku: String? = null,
+    val availabilityStatus: String? = null,
+    val weight: Int? = null,
+    val tags: List<String>? = null,
+    val dimensions: ProductDimensions? = null
 )
