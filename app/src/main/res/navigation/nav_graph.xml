@@ -110,6 +110,9 @@
         <action
             android:id="@+id/action_productDetailFragment_to_wishlistFragment"
             app:destination="@id/wishlistFragment" />
+        <action
+            android:id="@+id/action_productDetailFragment_to_productSpecFragment"
+            app:destination="@id/productSpecFragment" />
     </fragment>
     <fragment
         android:id="@+id/imagePreviewFragment"
@@ -125,4 +128,17 @@
             android:id="@+id/action_wishlistFragment_to_cartFragment"
             app:destination="@id/cartFragment" />
     </fragment>
+    <fragment
+        android:id="@+id/productSpecFragment"
+        android:name="com.example.trennex.ui.product.ProductSpecFragment"
+        android:label="fragment_product_spec"
+        tools:layout="@layout/fragment_product_spec">
+
+        <argument
+            android:name="productId"
+            app:argType="integer"
+            android:defaultValue="0"/>
+
+    </fragment>
+
 </navigation>

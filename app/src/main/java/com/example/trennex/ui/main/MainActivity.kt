@@ -92,6 +92,11 @@ class MainActivity : AppCompatActivity() {
                     setLightStatusBar(true)
                     binding.curveBottomNav.visibility = View.VISIBLE
                 }
+                R.id.productSpecFragment -> {
+                    showToolBar(ToolBarType.TITLE,"All Details")
+                    setLightStatusBar(true)
+                    binding.curveBottomNav.visibility = View.GONE
+                }
             }
         }
     }
