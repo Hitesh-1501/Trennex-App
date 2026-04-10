@@ -4,6 +4,7 @@ import android.annotation.SuppressLint
 import android.view.LayoutInflater
 import android.view.ViewGroup
 import androidx.recyclerview.widget.RecyclerView
+import com.bumptech.glide.Glide
 import com.example.trennex.R
 import com.example.trennex.databinding.ItemColorVariantBinding
 import com.example.trennex.ui.product.model.ProductColorModel
@@ -36,7 +37,9 @@ class ColorVariantAdapter(
         position: Int
     ) {
         val item = colorVariantList[position]
-        holder.binding.colorVariants.setImageResource(item.img)
+        Glide.with(holder.binding.colorVariants.context)
+            .load(item.imageUrl)
+            .into(holder.binding.colorVariants)
         if(position == selectedPosition){
             holder.binding.productLayout.setBackgroundResource(R.drawable.bg_product_color_selected)
         }else{

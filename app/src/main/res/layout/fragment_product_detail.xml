@@ -186,6 +186,7 @@
                 android:layout_marginTop="16dp">
 
                 <LinearLayout
+                    android:id="@+id/layoutColorSection"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:layout_gravity="center_vertical"
@@ -219,6 +220,7 @@
 
 
                 <LinearLayout
+                    android:id="@+id/layoutVariantSection"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:layout_marginTop="16dp"

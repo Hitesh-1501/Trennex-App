@@ -10,13 +10,11 @@ import android.view.ViewGroup
 import android.widget.ImageView
 import android.widget.Toast
 import androidx.core.os.bundleOf
-import androidx.core.view.size
 import androidx.navigation.fragment.FragmentNavigatorExtras
 import androidx.navigation.fragment.findNavController
 import androidx.recyclerview.widget.LinearLayoutManager
 import com.example.trennex.R
 import com.example.trennex.databinding.FragmentProductDetailBinding
-import com.example.trennex.databinding.WishlistDialogBinding
 import com.example.trennex.ui.product.adapter.ColorVariantAdapter
 import com.example.trennex.ui.product.adapter.ProductImageAdapter
 import com.example.trennex.ui.product.adapter.ReviewAdapter
@@ -26,14 +24,12 @@ import com.example.trennex.ui.product.model.ReviewModel
 import com.example.trennex.ui.product.model.VariantModel
 import com.google.android.material.tabs.TabLayoutMediator
 import com.google.android.material.transition.Hold
-import androidx.core.graphics.drawable.toDrawable
 import androidx.core.graphics.toColorInt
 import androidx.fragment.app.viewModels
 import androidx.lifecycle.lifecycleScope
 import androidx.lifecycle.repeatOnLifecycle
 import androidx.navigation.fragment.navArgs
 import androidx.viewpager2.widget.ViewPager2
-import com.bumptech.glide.Glide
 import com.example.trennex.data.model.ProductResponse
 import com.example.trennex.ui.product.model.SpecDetailAdapter
 import com.example.trennex.ui.product.model.SpecDetailItem
@@ -55,8 +51,8 @@ class ProductDetailFragment : Fragment(R.layout.fragment_product_detail), WishLi
     private var isCart = false
 
     private var currentBannerPosition = 0
-    private var selectedColor = "Onyx Black"
-    private var selectedVariant = "128GB + 8GB"
+    private var selectedColor = ""
+    private var selectedVariant = ""
     private var selectedColorPosition = 0
     private var selectedVariantPosition = 0
     private var bannerMediator: TabLayoutMediator? = null
@@ -71,16 +67,22 @@ class ProductDetailFragment : Fragment(R.layout.fragment_product_detail), WishLi
     private lateinit var reviewAdapter: ReviewAdapter
     private lateinit var topFeaturesAdapter: SpecDetailAdapter
 
-    val variants = listOf(
-        VariantModel(1,"128GB + 8GB","₹40,999","₹75,000",true),
-        VariantModel(2,"256GB + 8GB","₹45,999","₹79,000")
-    )
+    private var currentVariants : List<VariantModel> = emptyList()
+    private var currentColorOptions: List<ProductColorModel> = emptyList()
 
     override fun onCreateView(
         inflater: LayoutInflater, container: ViewGroup?,
         savedInstanceState: Bundle?
     ): View? {
         _binding = FragmentProductDetailBinding.inflate(layoutInflater)
+        savedInstanceState?.let {
+            currentBannerPosition = it.getInt("banner_position",0)
+            selectedColor = it.getString("selected_color", "")
+            selectedVariant = it.getString("selected_variant", "")
+            selectedColorPosition = it.getInt("selected_color_position", 0)
+            selectedVariantPosition = it.getInt("selected_variant_position", 0)
+        }
+
         return binding.root
     }
 
@@ -125,6 +127,9 @@ class ProductDetailFragment : Fragment(R.layout.fragment_product_detail), WishLi
                         updateMainTitle()
                         bindTopFeatures(product)
                         setUpReviews(product)
+                        configureVariantAndColorData(product,mrp)
+                        setupColorVariants()
+                        setUpVariants()
                     }
                 }
             }
@@ -134,8 +139,7 @@ class ProductDetailFragment : Fragment(R.layout.fragment_product_detail), WishLi
         binding.productBanners.setPageTransformer { page , position ->
             page.alpha = 0.5f +(1- abs(position))
         }
-        setupColorVariants()
-        setUpVariants()
+
         setupwishList()
         setUpCart()
 
@@ -185,13 +189,18 @@ class ProductDetailFragment : Fragment(R.layout.fragment_product_detail), WishLi
             ?.savedStateHandle
             ?.getLiveData<String>("selected_color")
             ?.observe(viewLifecycleOwner){color ->
-                selectedColor = color
-//                val index = colorImageMap.keys.indexOf(color)
-//                selectedColorPosition = index
+                selectedColor = color.orEmpty()
                 updateMainTitle()
                 colorAdapter.setSelectedColorPosition(selectedColorPosition)
-//                updateProductImages(color)
                 binding.tvSelectedColor.text = color
+            }
+
+        findNavController().currentBackStackEntry
+            ?.savedStateHandle
+            ?.getLiveData<Int>("selected_color_position")
+            ?.observe(viewLifecycleOwner){position ->
+                selectedColorPosition = position
+                colorAdapter.setSelectedColorPosition(selectedColorPosition)
             }
 
         findNavController().currentBackStackEntry
@@ -200,11 +209,13 @@ class ProductDetailFragment : Fragment(R.layout.fragment_product_detail), WishLi
             ?.observe(viewLifecycleOwner){variantPosition ->
                 selectedVariantPosition = variantPosition
                 variantAdapter.setSelectedVariantPosition(selectedVariantPosition)
-                val currentVariant = variants[variantPosition]
-                selectedVariant = currentVariant.variant
-                binding.tvVariant.text = currentVariant.variant
-                binding.tvPrice.text = currentVariant.Price
-                binding.tvMrp.text = currentVariant.mrpPrice
+                val currentVariant = currentVariants.getOrNull(variantPosition)
+                currentVariant?.let {
+                    selectedVariant = it.variant
+                    binding.tvVariant.text = it.variant
+                    binding.tvPrice.text = it.Price
+                    binding.tvMrp.text = it.mrpPrice
+                }
                 updateMainTitle()
             }
 
@@ -284,14 +295,7 @@ class ProductDetailFragment : Fragment(R.layout.fragment_product_detail), WishLi
     }
 
     private fun setupColorVariants(){
-        val variants = listOf(
-            ProductColorModel(1,R.drawable.samsung_mobile,"Onyx Black",true),
-            ProductColorModel(2,R.drawable.amber_yellow,"Amber Yellow"),
-            ProductColorModel(2,R.drawable.cobalt_violet,"Cobalt Violet"),
-            ProductColorModel(2,R.drawable.marble_gray,"Marble Gray"),
-
-        )
-        colorAdapter = ColorVariantAdapter(colorVariantList = variants,{
+        colorAdapter = ColorVariantAdapter(colorVariantList = currentColorOptions,{
             binding.tvSelectedColor.text = it }, {selected ,position->
             selectedColor = selected.modelName
             selectedColorPosition = position
@@ -302,7 +306,9 @@ class ProductDetailFragment : Fragment(R.layout.fragment_product_detail), WishLi
             layoutManager = LinearLayoutManager(requireContext(), LinearLayoutManager.HORIZONTAL,false)
             adapter = colorAdapter
         }
-        colorAdapter.setSelectedColorPosition(selectedColorPosition)
+        if(currentColorOptions.isNotEmpty()){
+            colorAdapter.setSelectedColorPosition(selectedColorPosition)
+        }
     }
 
     private fun openFullScreen(imageView: ImageView, position : Int,images: List<String>){
@@ -320,6 +326,7 @@ class ProductDetailFragment : Fragment(R.layout.fragment_product_detail), WishLi
             "start_position" to position,
             "images" to images.toTypedArray(),
             "selected_color" to selectedColor,
+            "selected_color_position" to selectedColorPosition,
             "selected_variant_pos" to selectedVariantPosition
         )
         findNavController()
@@ -376,25 +383,96 @@ class ProductDetailFragment : Fragment(R.layout.fragment_product_detail), WishLi
         binding.ratings.text = "| ${reviewsList.size}"
     }
     private fun setUpVariants(){
-        variantAdapter = VariantAdapter(variants = variants,{
+        variantAdapter = VariantAdapter(variants = currentVariants,{
             selectedVariant = it
             binding.tvVariant.text = it
             updateMainTitle()
         },{ variant , position ->
             binding.tvVariant.text = variant.variant
             selectedVariantPosition = position
+            binding.tvPrice.text = variant.Price
+            binding.tvMrp.text = variant.mrpPrice
         })
         binding.rvVariants.apply {
             layoutManager = LinearLayoutManager(requireContext(), LinearLayoutManager.HORIZONTAL,false)
             adapter = variantAdapter
         }
-        variantAdapter.setSelectedVariantPosition(selectedVariantPosition)
+        if(currentVariants.isNotEmpty()){
+            variantAdapter.setSelectedVariantPosition(selectedVariantPosition)
+        }
+
     }
 
     private fun updateMainTitle(){
-        val description = "$baseDescription($selectedColor, $selectedVariant)"
+        val selectedInfo = listOfNotNull(
+            selectedColor.takeIf { it.isNotBlank() },
+            selectedVariant.takeIf { it.isNotBlank() }
+        )
+        val description = if(selectedInfo.isEmpty()){
+            baseDescription
+        }else{
+            "$baseDescription (${selectedInfo.joinToString {", "}})"
+        }
         binding.tvDescription.text = description
         binding.tvTitle.text = baseTitle
+    }
+
+
+    private fun configureVariantAndColorData(product: ProductResponse, mrp: Double){
+        currentColorOptions = product.colors.orEmpty()
+            .distinct()
+            .mapIndexed { index , colorName ->
+                ProductColorModel(
+                    id = index+1,
+                    imageUrl = product.thumbnail,
+                    modelName = colorName
+                )
+            }
+        currentVariants = product.variants.orEmpty()
+            .distinct()
+            .mapIndexed { index, variantName ->
+                VariantModel(
+                    id = index + 1,
+                    variant = variantName,
+                    Price = "₹${product.price}",
+                    mrpPrice = "₹${String.format("%.2f", mrp)}"
+                )
+            }
+        val hasColors = currentColorOptions.isNotEmpty()
+        val hasVariants = currentVariants.isNotEmpty()
+        binding.layoutColorSection.visibility = if(hasColors) View.VISIBLE else View.GONE
+        binding.rvColorVariants.visibility = if(hasColors) View.VISIBLE else View.GONE
+        binding.layoutVariantSection.visibility = if (hasVariants) View.VISIBLE else View.GONE
+        binding.rvVariants.visibility = if (hasVariants) View.VISIBLE else View.GONE
+        binding.layoutVaiants.visibility = if(hasColors || hasVariants) View.VISIBLE else View.GONE
+
+        if(hasColors){
+            selectedColorPosition = selectedColorPosition.coerceIn(0,currentColorOptions.lastIndex)
+            selectedColor =  selectedColor.ifBlank { currentColorOptions[selectedColorPosition].modelName }
+            binding.tvSelectedColor.text = selectedColor
+        }else{
+            selectedColor = ""
+        }
+        if (hasVariants) {
+            selectedVariantPosition = selectedVariantPosition.coerceIn(0, currentVariants.lastIndex)
+            val selectedVariantModel = currentVariants[selectedVariantPosition]
+            selectedVariant = selectedVariant.ifBlank { selectedVariantModel.variant }
+            binding.tvVariant.text = selectedVariantModel.variant
+            binding.tvPrice.text = selectedVariantModel.Price
+            binding.tvMrp.text = selectedVariantModel.mrpPrice
+        } else {
+            selectedVariant = ""
+            selectedVariantPosition = 0
+        }
+    }
+
+    override fun onSaveInstanceState(outState: Bundle) {
+        super.onSaveInstanceState(outState)
+        outState.putInt("banner_position", currentBannerPosition)
+        outState.putString("selected_color", selectedColor)
+        outState.putString("selected_variant", selectedVariant)
+        outState.putInt("selected_color_position", selectedColorPosition)
+        outState.putInt("selected_variant_position", selectedVariantPosition)
     }
 
     private fun bindTopFeatures(product: ProductResponse){

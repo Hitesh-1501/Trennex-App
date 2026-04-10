@@ -1,5 +1,7 @@
 package com.example.trennex.data.model
 
+import com.google.gson.annotations.SerializedName
+
 data class ProductResponse(
     val id: Int,
     val title: String,
@@ -18,5 +20,9 @@ data class ProductResponse(
     val availabilityStatus: String? = null,
     val weight: Int? = null,
     val tags: List<String>? = null,
-    val dimensions: ProductDimensions? = null
+    val dimensions: ProductDimensions? = null,
+    @SerializedName(value = "colors", alternate =  ["colorOptions"])
+    val colors: List<String>? = null,
+    @SerializedName(value = "variants", alternate = ["storageOptions", "sizeOptions"])
+    val variants: List<String>? = null
 )
