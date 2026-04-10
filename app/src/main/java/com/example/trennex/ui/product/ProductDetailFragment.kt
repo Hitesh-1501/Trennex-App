@@ -216,7 +216,10 @@ class ProductDetailFragment : Fragment(R.layout.fragment_product_detail), WishLi
             if(!isCart) {
                 isCart = true
                 binding.addToCart.setImageResource(R.drawable.cart_filled)
-                val addToCartSheet = AddToCartSheet()
+                val addToCartSheet = AddToCartSheet.newInstance(
+                   imageUrl = currentImages.firstOrNull(),
+                   productTitle = baseTitle
+                )
                 addToCartSheet.listener = this
                 addToCartSheet.show(parentFragmentManager, "add_to_cart_sheet")
                 Toast.makeText(requireContext(),"Added to cart", Toast.LENGTH_SHORT).show()
@@ -239,7 +242,8 @@ class ProductDetailFragment : Fragment(R.layout.fragment_product_detail), WishLi
                 binding.wishlist.getLocationOnScreen(location)
                 val dialog = WishListDialogBinding.newInstance(
                     location[0],
-                    location[1]
+                    location[1],
+                    currentImages.firstOrNull()
                 )
                 dialog.listener = this
                 dialog.show(parentFragmentManager,"wishlist_dialog")
