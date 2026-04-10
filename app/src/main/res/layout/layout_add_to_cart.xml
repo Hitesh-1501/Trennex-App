@@ -52,6 +52,7 @@
             android:text="S24(Onyx Black , 128 GB)"
             android:textColor="@color/textPrimary"
             android:layout_marginTop="4dp"
+            android:maxLines="2"
             android:layout_marginStart="10dp"
             app:layout_constraintStart_toEndOf="@+id/productImg"
             app:layout_constraintTop_toBottomOf="@+id/tv_add"
@@ -61,12 +62,9 @@
             android:id="@+id/img_close"
             android:layout_width="24dp"
             android:layout_height="24dp"
-            android:layout_marginStart="150dp"
-            android:layout_marginEnd="10dp"
             app:layout_constraintEnd_toEndOf="parent"
             app:layout_constraintBottom_toBottomOf="parent"
             app:layout_constraintTop_toTopOf="parent"
-            app:layout_constraintStart_toEndOf="@id/tv_product_detail"
             android:src="@drawable/baseline_close_24" />
 
     </androidx.constraintlayout.widget.ConstraintLayout>
