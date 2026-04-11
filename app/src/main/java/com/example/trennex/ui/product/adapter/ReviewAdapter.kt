@@ -34,6 +34,10 @@ class ReviewAdapter(
         holder.binding.tvReviewDate.text = getTimeAgo(item.time)
         holder.binding.tvReviewContent.text = item.comment
         holder.binding.tvUserName.text = item.reviewerName
+        holder.binding.tvUserInitial.text = item.reviewerName
+            .trim()
+            .firstOrNull()
+            ?.uppercase() ?: "U"
 
         val backgroundColor = when{
             item.rating >= 4.0 -> "#21AD60".toColorInt()
