@@ -66,27 +66,40 @@ class HomeFragment : Fragment(R.layout.fragment_home) {
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
-        setupCategories()
         setupBanners()
         viewModel.fetchProducts()
+        viewModel.fetchCategories()
         viewLifecycleOwner.lifecycleScope.launch {
             viewLifecycleOwner.repeatOnLifecycle(Lifecycle.State.STARTED){
-                viewModel.products.collect { apiList ->
-                    val list = apiList.map {
-                        ProductModel(
-                            id = it.id,
-                            image = it.thumbnail,
-                            name  = it.title,
-                            price = it.price.toString()
-                        )
-                    }
-                    binding.rvProducts.apply {
-                        layoutManager = GridLayoutManager(requireContext(),3)
-                        isNestedScrollingEnabled = false
-                        adapter = ProductAdapter(list) {product->
-                            val action = HomeFragmentDirections.actionHomeFragmentToProductDetailFragment(product.id)
-                            findNavController().navigate(action)
+                launch {
+                    viewModel.products.collect { apiList ->
+                        val list = apiList.map {
+                            ProductModel(
+                                id = it.id,
+                                image = it.thumbnail,
+                                name  = it.title,
+                                price = it.price.toString()
+                            )
                         }
+                        binding.rvProducts.apply {
+                            layoutManager = GridLayoutManager(requireContext(),3)
+                            isNestedScrollingEnabled = false
+                            adapter = ProductAdapter(list) {product->
+                                val action = HomeFragmentDirections.actionHomeFragmentToProductDetailFragment(product.id)
+                                findNavController().navigate(action)
+                            }
+                        }
+                    }
+                }
+                launch {
+                    viewModel.categories.collect {categoryList ->
+                        val categories  = categoryList.mapIndexed { index, name ->
+                            CategoryModel(
+                                id = index,
+                                title = name
+                            )
+                        }
+                        setupCategories(categories)
                     }
                 }
             }
@@ -94,19 +107,19 @@ class HomeFragment : Fragment(R.layout.fragment_home) {
 
     }
 
-    private fun setupCategories(){
-        val categories = listOf<CategoryModel>(
-            CategoryModel(1,R.drawable.for_you,"For you"),
-            CategoryModel(2,R.drawable.fashion_category,"Fashion"),
-            CategoryModel(3,R.drawable.electronics,"Electronics"),
-            CategoryModel(4,R.drawable.mobile,"Mobiles"),
-            CategoryModel(5,R.drawable.appliances,"Appliances"),
-            CategoryModel(6,R.drawable.beauty,"Beauty"),
-            CategoryModel(7,R.drawable.home_category,"Home"),
-            CategoryModel(8,R.drawable.furniture,"Furniture"),
-            CategoryModel(9,R.drawable.toys,"Toys"),
-            CategoryModel(10,R.drawable.sports,"Sports"),
-        )
+    private fun setupCategories(categories: List<CategoryModel>){
+//        val categories = listOf<CategoryModel>(
+//            CategoryModel(1,R.drawable.for_you,"For you"),
+//            CategoryModel(2,R.drawable.fashion_category,"Fashion"),
+//            CategoryModel(3,R.drawable.electronics,"Electronics"),
+//            CategoryModel(4,R.drawable.mobile,"Mobiles"),
+//            CategoryModel(5,R.drawable.appliances,"Appliances"),
+//            CategoryModel(6,R.drawable.beauty,"Beauty"),
+//            CategoryModel(7,R.drawable.home_category,"Home"),
+//            CategoryModel(8,R.drawable.furniture,"Furniture"),
+//            CategoryModel(9,R.drawable.toys,"Toys"),
+//            CategoryModel(10,R.drawable.sports,"Sports"),
+//        )
         binding.rvCategories.apply {
             layoutManager = LinearLayoutManager(requireContext(), LinearLayoutManager.HORIZONTAL,false)
             adapter = CategoryAdapter(categories){
