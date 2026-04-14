@@ -25,12 +25,12 @@ class CategoryAdapter(
         position: Int
     ) {
         val item = list[position]
-        holder.binding.categoryImg.setImageResource(item.icon)
+//        holder.binding.categoryImg.setImageResource(item.icon)
         holder.binding.categoryTitle.text = item.title
         val isSelected = (position == selectedPosition)
         holder.binding.categoryLayout.isSelected = isSelected
         holder.binding.categoryTitle.isSelected = isSelected
-        holder.binding.categoryImg.isSelected = isSelected
+//        holder.binding.categoryImg.isSelected = isSelected
         holder.itemView.setOnClickListener {
             val currentPosition = holder.bindingAdapterPosition
             if(selectedPosition != currentPosition){
