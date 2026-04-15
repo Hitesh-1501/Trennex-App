@@ -33,6 +33,7 @@ import androidx.viewpager2.widget.ViewPager2
 import com.example.trennex.data.model.ProductResponse
 import com.example.trennex.ui.product.model.SpecDetailAdapter
 import com.example.trennex.ui.product.model.SpecDetailItem
+import com.example.trennex.utils.CurrencyFormator
 import com.example.trennex.viewmodel.ProductDetailViewModel
 import kotlinx.coroutines.launch
 import kotlin.math.abs
@@ -110,8 +111,8 @@ class ProductDetailFragment : Fragment(R.layout.fragment_product_detail), WishLi
                         baseTitle = product.title
                         baseDescription = product.description
                         binding.tvTitle.text = product.title
-                        binding.tvPrice.text = "₹$price"
-                        binding.tvMrp.text = "₹${String.format("%.2f", mrp)}"
+                        binding.tvPrice.text = CurrencyFormator.formatInr(price)
+                        binding.tvMrp.text = CurrencyFormator.formatInr(mrp)
                         binding.tvDescription.text = product.description
                         binding.tvMrp.paintFlags =
                             binding.tvMrp.paintFlags or android.graphics.Paint.STRIKE_THRU_TEXT_FLAG
@@ -120,7 +121,7 @@ class ProductDetailFragment : Fragment(R.layout.fragment_product_detail), WishLi
                         imageAdapter.updateImages(imageList)
                         binding.productBanners.setCurrentItem(0,false)
                         binding.tvDelivery.text = product.shippingInformation
-                        binding.tvPriceDetails.text = product.price.toString()
+                        binding.tvPriceDetails.text = CurrencyFormator.formatInr(product.price)
                         binding.tvManufacture.text = product.warrantyInformation
                         binding.tvReturnPolicy.text = product.returnPolicy
                         attachBannerDots()
@@ -434,8 +435,8 @@ class ProductDetailFragment : Fragment(R.layout.fragment_product_detail), WishLi
                 VariantModel(
                     id = index + 1,
                     variant = variantName,
-                    Price = "₹${product.price}",
-                    mrpPrice = "₹${String.format("%.2f", mrp)}"
+                    Price = CurrencyFormator.formatInr(product.price),
+                    mrpPrice = CurrencyFormator.formatInr(mrp)
                 )
             }
         val hasColors = currentColorOptions.isNotEmpty()
@@ -488,7 +489,7 @@ class ProductDetailFragment : Fragment(R.layout.fragment_product_detail), WishLi
             SpecDetailItem("Category", product.category.orEmpty()),
             SpecDetailItem("Shipping", product.shippingInformation),
             SpecDetailItem("Warranty", product.warrantyInformation),
-            SpecDetailItem("Price", "₹${product.price}")
+            SpecDetailItem("Price", CurrencyFormator.formatInr(product.price))
         ).filter {
             it.value.isNotBlank()
         }
