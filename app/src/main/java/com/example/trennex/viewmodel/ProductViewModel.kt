@@ -17,8 +17,8 @@ class ProductViewModel: ViewModel() {
     private val _products = MutableStateFlow<List<ProductResponse>>(emptyList())
     val products : StateFlow<List<ProductResponse>> = _products.asStateFlow()
 
-    private val _categories = MutableStateFlow<List<String>>(emptyList())
-    val categories : StateFlow<List<String>> = _categories.asStateFlow()
+    private val _categories = MutableStateFlow<List<CategoryApiResponse>>(emptyList())
+    val categories : StateFlow<List<CategoryApiResponse>> = _categories.asStateFlow()
     fun fetchProducts(){
         viewModelScope.launch {
             try {
@@ -34,7 +34,16 @@ class ProductViewModel: ViewModel() {
         viewModelScope.launch {
             try {
                 val data = repository.getCategory()
-                _categories.value = data.map{ it.name}
+                _categories.value = data
+            }catch (e: Exception){
+                e.printStackTrace()
+            }
+        }
+    }
+    fun fetchProductsByCategory(slug: String){
+        viewModelScope.launch {
+            try {
+                _products.value = repository.getProductByCategory(slug)
             }catch (e: Exception){
                 e.printStackTrace()
             }

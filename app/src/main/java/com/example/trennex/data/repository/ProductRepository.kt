@@ -1,6 +1,7 @@
 package com.example.trennex.data.repository
 
 import com.example.trennex.data.model.CategoryApiResponse
+import com.example.trennex.data.model.ProductListResponse
 import com.example.trennex.data.model.ProductResponse
 import com.example.trennex.data.remote.network.RetrofitInstance
 
@@ -14,6 +15,10 @@ class ProductRepository {
     }
     suspend fun getCategory(): List<CategoryApiResponse> {
         return RetrofitInstance.api.getCategories()
+    }
+
+    suspend fun getProductByCategory(slug: String): List<ProductResponse>{
+        return RetrofitInstance.api.getProductByCategory(slug).products
     }
 
 }
