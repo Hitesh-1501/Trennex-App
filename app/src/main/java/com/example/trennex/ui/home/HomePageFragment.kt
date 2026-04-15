@@ -6,6 +6,7 @@ import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import androidx.core.os.bundleOf
+import com.bumptech.glide.Glide
 import com.example.trennex.R
 import com.example.trennex.databinding.FragmentHomePageBinding
 
@@ -22,12 +23,16 @@ class HomePageFragment : Fragment(R.layout.fragment_home_page) {
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
-        val banner = requireArguments().getInt("banner")
-        binding.pageBanner.setImageResource(banner)
+        val banner = requireArguments().getString("banner").orEmpty()
+        Glide.with(this)
+            .load(banner)
+            .placeholder(R.drawable.banner_drawable)
+            .error(R.drawable.banner_drawable)
+            .into(binding.pageBanner)
     }
 
     companion object {
-        fun newInstance(banner: Int): HomePageFragment {
+        fun newInstance(banner: String): HomePageFragment {
             val fragment = HomePageFragment()
             fragment.arguments = bundleOf(
                 "banner" to banner

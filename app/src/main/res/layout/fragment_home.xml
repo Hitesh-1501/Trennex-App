@@ -34,24 +34,24 @@
                 android:id="@+id/rvBanners"
                 android:layout_width="match_parent"
                 android:layout_marginHorizontal="8dp"
-                android:layout_height="220dp"
+                android:layout_height="180dp"
                 android:layout_marginTop="8dp"
                 android:clipChildren="false"
                 android:clipToPadding="false"
                 android:overScrollMode="never"/>
-            
+
             <com.google.android.material.tabs.TabLayout
                 android:id="@+id/bannerIndicator"
                 android:layout_width="wrap_content"
-                android:layout_height="20dp"
+                android:layout_height="14dp"
                 android:layout_gravity="center"
-                android:gravity="center_horizontal"
-                app:tabIndicatorHeight="0dp"
                 android:layout_marginTop="4dp"
                 android:layout_marginBottom="0dp"
-                app:tabPaddingStart="4dp"
+                android:background="@android:color/transparent"
+                android:gravity="center_horizontal"
+                app:tabIndicatorHeight="0dp"
                 app:tabPaddingEnd="4dp"
-                android:background="@android:color/transparent"/>
+                app:tabPaddingStart="4dp" />
 
 
             <TextView

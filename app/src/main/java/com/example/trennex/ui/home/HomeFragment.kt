@@ -35,6 +35,7 @@ class HomeFragment : Fragment(R.layout.fragment_home) {
     private var _binding: FragmentHomeBinding? = null
     private val binding get()  = _binding!!
     private val viewModel:  ProductViewModel by viewModels()
+    private var bannerMediator: TabLayoutMediator? = null
     override fun onCreateView(
         inflater: LayoutInflater, container: ViewGroup?,
         savedInstanceState: Bundle?
@@ -45,6 +46,7 @@ class HomeFragment : Fragment(R.layout.fragment_home) {
     }
 
     private val bannerHandler = Handler(Looper.getMainLooper())
+    private var bannerPageCallbacks: ViewPager2.OnPageChangeCallback? = null
     private val bannerRunnable = object : Runnable{
         override fun run() {
             val nextItem = binding.rvBanners.currentItem+1
@@ -66,7 +68,6 @@ class HomeFragment : Fragment(R.layout.fragment_home) {
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
-        setupBanners()
         viewModel.fetchProducts()
         viewModel.fetchCategories()
         viewLifecycleOwner.lifecycleScope.launch {
@@ -78,26 +79,25 @@ class HomeFragment : Fragment(R.layout.fragment_home) {
                                 id = it.id,
                                 image = it.thumbnail,
                                 name  = it.title,
-                                price = it.price.toString()
+                                price = it.price
                             )
                         }
-                        binding.rvProducts.apply {
-                            layoutManager = GridLayoutManager(requireContext(),3)
-                            isNestedScrollingEnabled = false
-                            adapter = ProductAdapter(list) {product->
-                                val action = HomeFragmentDirections.actionHomeFragmentToProductDetailFragment(product.id)
-                                findNavController().navigate(action)
-                            }
-                        }
+                        setupProducts(list)
+                        setupBanners(apiList.map{ it.thumbnail }.filter { it.isNotBlank() })
                     }
                 }
                 launch {
                     viewModel.categories.collect {categoryList ->
-                        val categories  = categoryList.mapIndexed { index, name ->
-                            CategoryModel(
-                                id = index,
-                                title = name
-                            )
+                        val categories = buildList {
+                                add(CategoryModel(id = 0, title = "All",slug = null))
+                                addAll(categoryList.mapIndexed { index , category->
+                                    CategoryModel(
+                                        id = index + 1,
+                                        title = category.name,
+                                        slug = category.slug
+                                    )
+                                })
+
                         }
                         setupCategories(categories)
                     }
@@ -108,52 +108,68 @@ class HomeFragment : Fragment(R.layout.fragment_home) {
     }
 
     private fun setupCategories(categories: List<CategoryModel>){
-//        val categories = listOf<CategoryModel>(
-//            CategoryModel(1,R.drawable.for_you,"For you"),
-//            CategoryModel(2,R.drawable.fashion_category,"Fashion"),
-//            CategoryModel(3,R.drawable.electronics,"Electronics"),
-//            CategoryModel(4,R.drawable.mobile,"Mobiles"),
-//            CategoryModel(5,R.drawable.appliances,"Appliances"),
-//            CategoryModel(6,R.drawable.beauty,"Beauty"),
-//            CategoryModel(7,R.drawable.home_category,"Home"),
-//            CategoryModel(8,R.drawable.furniture,"Furniture"),
-//            CategoryModel(9,R.drawable.toys,"Toys"),
-//            CategoryModel(10,R.drawable.sports,"Sports"),
-//        )
         binding.rvCategories.apply {
             layoutManager = LinearLayoutManager(requireContext(), LinearLayoutManager.HORIZONTAL,false)
             adapter = CategoryAdapter(categories){
                 Toast.makeText(context, "Selected: ${it.title}", Toast.LENGTH_SHORT).show()
+                if(it.slug.isNullOrBlank()){
+                    viewModel.fetchProducts()
+                }else{
+                    viewModel.fetchProductsByCategory(it.slug)
+                }
             }
         }
     }
+
+    private fun setupProducts(list: List<ProductModel>){
+        binding.rvProducts.apply {
+            layoutManager = GridLayoutManager(requireContext(),3)
+            isNestedScrollingEnabled = false
+            adapter = ProductAdapter(list) {product->
+                val action = HomeFragmentDirections.actionHomeFragmentToProductDetailFragment(product.id)
+                findNavController().navigate(action)
+            }
+        }
+    }
+
     @SuppressLint("ClickableViewAccessibility")
-    private fun setupBanners() {
-        val Banners = listOf<BannerModel>(
-            BannerModel(1,R.drawable.samsung_banner),
-            BannerModel(2,R.drawable.shoes_banner),
-            BannerModel(3,R.drawable.samsung_banner),
-            BannerModel(4,R.drawable.shoes_banner),
-        )
+    private fun setupBanners(images: List<String>) {
+        bannerPageCallbacks?.let { binding.rvBanners.unregisterOnPageChangeCallback(it) }
+        bannerMediator?.detach()
+
+        if(images.isEmpty()){
+            return
+        }
+        val banner = images.take(5).mapIndexed { index, image ->
+            BannerModel(index + 1 , image)
+        }
+
+        if(banner.size == 1){
+            val adapter = HomeFragmentPagerAdapter(this,banner)
+            binding.rvBanners.adapter = adapter
+            binding.bannerIndicator.removeAllTabs()
+            return
+        }
+
         val bannerList = mutableListOf<BannerModel>()
-        bannerList.add(Banners.last())
-        bannerList.addAll(Banners)
-        bannerList.add(Banners.first())
+        bannerList.add(banner.last())
+        bannerList.addAll(banner)
+        bannerList.add(banner.first())
         val adapter = HomeFragmentPagerAdapter(this, bannerList)
         binding.rvBanners.adapter = adapter
         binding.rvBanners.setCurrentItem(1, false)
-        TabLayoutMediator(binding.bannerIndicator, binding.rvBanners) { tab, position ->
+        bannerMediator =  TabLayoutMediator(binding.bannerIndicator, binding.rvBanners) { tab, position ->
             if (position == 0 || position == bannerList.size - 1) {
                 tab.view.visibility = View.GONE
             }
-        }.attach()
+        }
+        bannerMediator?.attach()
         for (i in 0 until binding.bannerIndicator.tabCount) {
             val tab = binding.bannerIndicator.getTabAt(i)
             tab?.customView =
                 layoutInflater.inflate(R.layout.banner_dot_tab, binding.bannerIndicator, false)
         }
-        binding.rvBanners.registerOnPageChangeCallback(
-            object : ViewPager2.OnPageChangeCallback() {
+        val callback = object : ViewPager2.OnPageChangeCallback() {
 
                 override fun onPageScrollStateChanged(state: Int) {
                     if (state == ViewPager2.SCROLL_STATE_IDLE) {
@@ -173,38 +189,25 @@ class HomeFragment : Fragment(R.layout.fragment_home) {
                     }
                 }
             }
-        )
+        bannerPageCallbacks = callback
+        binding.rvBanners.registerOnPageChangeCallback(callback)
         binding.rvBanners.getChildAt(0)
-            .setOnTouchListener { _,event ->
-                when(event.action){
-                    MotionEvent.ACTION_DOWN -> bannerHandler.removeCallbacks(bannerRunnable)
-                    MotionEvent.ACTION_UP, MotionEvent.ACTION_CANCEL ->
-                        bannerHandler.postDelayed(bannerRunnable,3000)
+                .setOnTouchListener { _,event ->
+                    when(event.action){
+                        MotionEvent.ACTION_DOWN -> bannerHandler.removeCallbacks(bannerRunnable)
+                        MotionEvent.ACTION_UP, MotionEvent.ACTION_CANCEL ->
+                            bannerHandler.postDelayed(bannerRunnable,3000)
+                    }
+                    false
                 }
-                false
-            }
     }
 
-//    private fun setupPopularProducts(){
-//        val products = listOf<ProductModel>(
-//            ProductModel(1,R.drawable.product_image,"U.S Polo Jacket","2000"),
-//            ProductModel(2,R.drawable.tshirt,"Mortex Blue Jacket","1000"),
-//            ProductModel(3,R.drawable.printeed_tshirt,"Roadster printed..","600"),
-//            ProductModel(4,R.drawable.samsung_mobile,"Samsung S24 onyx Black","40,999"),
-//            ProductModel(5,R.drawable.tv,"Lg  Smart  Tv 55 inch ","90,000"),
-//            ProductModel(6,R.drawable.watch,"Fastrack watch","800"),
-//            ProductModel(7,R.drawable.laptop,"Asus A15 Laptop","55,000")
-//        )
-//        binding.rvProducts.apply {
-//            layoutManager = GridLayoutManager(requireContext(),3)
-//            binding.rvProducts.isNestedScrollingEnabled = false
-//            adapter = ProductAdapter(products){
-//                findNavController().navigate(R.id.action_homeFragment_to_productDetailFragment)
-//            }
-//        }
-//    }
     override fun onDestroyView() {
         super.onDestroyView()
+        bannerPageCallbacks?.let { binding.rvBanners.unregisterOnPageChangeCallback(it) }
+        bannerPageCallbacks = null
+        bannerMediator?.detach()
+        bannerMediator = null
         _binding = null
     }
 }
