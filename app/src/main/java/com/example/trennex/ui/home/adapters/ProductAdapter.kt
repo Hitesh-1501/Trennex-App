@@ -6,6 +6,7 @@ import androidx.recyclerview.widget.RecyclerView
 import com.bumptech.glide.Glide
 import com.example.trennex.databinding.ItemProductBinding
 import com.example.trennex.ui.home.model.ProductModel
+import com.example.trennex.utils.CurrencyFormator
 
 class ProductAdapter(
     private val products: List<ProductModel>,
@@ -23,12 +24,12 @@ class ProductAdapter(
         holder: ProductVieewHolder,
         position: Int
     ) {
-       val item = products[position]
+        val item = products[position]
         Glide.with(holder.itemView.context)
             .load(item.image)
             .into(holder.binding.ivProduct)
-       holder.binding.tvProductTitle.text = item.name
-       holder.binding.tvProductPrice.text = "₹${item.price}"
+        holder.binding.tvProductTitle.text = item.name
+        holder.binding.tvProductPrice.text = CurrencyFormator.formatInr(item.price)
 
        holder.itemView.setOnClickListener {
            onProductClick(item)
