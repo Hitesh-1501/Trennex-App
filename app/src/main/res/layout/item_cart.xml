@@ -121,6 +121,7 @@
                 android:src="@drawable/return_policy"/>
 
             <TextView
+                android:id="@+id/tvReturnPolicy"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:text=" 10 days return available"
@@ -146,6 +147,7 @@
                 android:src="@drawable/delivery_icon"/>
 
             <TextView
+                android:id="@+id/tvDeliveryDetails"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:text=" Delivery by 11 Jan 2026"
