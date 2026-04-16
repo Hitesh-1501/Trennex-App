@@ -31,6 +31,8 @@ import androidx.lifecycle.repeatOnLifecycle
 import androidx.navigation.fragment.navArgs
 import androidx.viewpager2.widget.ViewPager2
 import com.example.trennex.data.model.ProductResponse
+import com.example.trennex.ui.cart.CartStore
+import com.example.trennex.ui.cart.model.CartItemModel
 import com.example.trennex.ui.product.model.SpecDetailAdapter
 import com.example.trennex.ui.product.model.SpecDetailItem
 import com.example.trennex.utils.CurrencyFormator
@@ -71,6 +73,18 @@ class ProductDetailFragment : Fragment(R.layout.fragment_product_detail), WishLi
     private var currentVariants : List<VariantModel> = emptyList()
     private var currentColorOptions: List<ProductColorModel> = emptyList()
 
+
+
+
+    private var cartProductId: Int = 0
+    private var cartPrice: Double = 0.0
+    private var cartMrp: Double = 0.0
+    private var cartRating: Double = 0.0
+    private var cartRatingCount: Int = 0
+    private var cartReturnPolicy: String = ""
+    private var cartDeliveryDetails: String = ""
+
+
     override fun onCreateView(
         inflater: LayoutInflater, container: ViewGroup?,
         savedInstanceState: Bundle?
@@ -108,6 +122,12 @@ class ProductDetailFragment : Fragment(R.layout.fragment_product_detail), WishLi
                         val price = product.price
                         val discount = product.discountPercentage
                         val mrp = price / (1.0 - discount / 100.0)
+                        cartProductId = product.id
+                        cartPrice = price
+                        cartMrp = mrp
+                        cartRatingCount = product.reviews.size
+                        cartReturnPolicy = product.returnPolicy
+                        cartDeliveryDetails = product.shippingInformation
                         baseTitle = product.title
                         baseDescription = product.description
                         binding.tvTitle.text = product.title
@@ -223,26 +243,6 @@ class ProductDetailFragment : Fragment(R.layout.fragment_product_detail), WishLi
         binding.tvMrp.paintFlags = binding.tvMrp.paintFlags or android.graphics.Paint.STRIKE_THRU_TEXT_FLAG
     }
 
-    private fun setUpCart(){
-        binding.addToCart.setOnClickListener {
-            if(!isCart) {
-                isCart = true
-                binding.addToCart.setImageResource(R.drawable.cart_filled)
-                val addToCartSheet = AddToCartSheet.newInstance(
-                   imageUrl = currentImages.firstOrNull(),
-                   productTitle = baseTitle
-                )
-                addToCartSheet.listener = this
-                addToCartSheet.show(parentFragmentManager, "add_to_cart_sheet")
-                Toast.makeText(requireContext(),"Added to cart", Toast.LENGTH_SHORT).show()
-            }else{
-                findNavController().navigate(R.id.action_productDetailFragment_to_cartFragment)
-            }
-        }
-    }
-    override fun gotoCart() {
-        findNavController().navigate(R.id.action_productDetailFragment_to_cartFragment)
-    }
     private fun setupwishList(){
         binding.wishlist.setOnClickListener {
             if(!isWishlisted){
@@ -353,6 +353,7 @@ class ProductDetailFragment : Fragment(R.layout.fragment_product_detail), WishLi
             reviewsList.map { it.rating }.average()
         }else 0.0
         binding.totalRatings.text = String.format("%.1f", averageRatings)
+        cartRating = averageRatings
         val limitedReviews = reviewsList.take(4)
         reviewAdapter.updateList(limitedReviews)
 
@@ -383,6 +384,44 @@ class ProductDetailFragment : Fragment(R.layout.fragment_product_detail), WishLi
         binding.averageRatings.text = String.format("%.1f", averageRatings)
         binding.ratings.text = "| ${reviewsList.size}"
     }
+
+    private fun setUpCart(){
+        binding.addToCart.setOnClickListener {
+            if(!isCart) {
+                isCart = true
+                binding.addToCart.setImageResource(R.drawable.cart_filled)
+                CartStore.addItem(
+                    CartItemModel(
+                        id = cartProductId,
+                        title = baseTitle,
+                        description = baseDescription,
+                        mrp = cartMrp,
+                        price = cartPrice,
+                        rating = cartRating,
+                        ratingCount = cartRatingCount,
+                        returnPolicy = cartReturnPolicy,
+                        deliveryDetails = cartDeliveryDetails,
+                        imageUrl = currentImages.firstOrNull(),
+                        quantity = 1,
+                        isSelected = true
+                    )
+                )
+                val addToCartSheet = AddToCartSheet.newInstance(
+                    imageUrl = currentImages.firstOrNull(),
+                    productTitle = baseTitle
+                )
+                addToCartSheet.listener = this
+                addToCartSheet.show(parentFragmentManager, "add_to_cart_sheet")
+                Toast.makeText(requireContext(),"Added to cart", Toast.LENGTH_SHORT).show()
+            }else{
+                findNavController().navigate(R.id.action_productDetailFragment_to_cartFragment)
+            }
+        }
+    }
+    override fun gotoCart() {
+        findNavController().navigate(R.id.action_productDetailFragment_to_cartFragment)
+    }
+
     private fun setUpVariants(){
         variantAdapter = VariantAdapter(variants = currentVariants,{
             selectedVariant = it
