@@ -66,6 +66,7 @@ class cartFragment : Fragment(R.layout.fragment_cart) {
         val hasItems = state.totalItems > 0
         binding.layoutEmptyCart.root.visibility = if (hasItems) View.GONE else View.VISIBLE
         binding.cartScrollView.visibility = if (hasItems) View.VISIBLE else View.GONE
+        binding.bottomCheckoutLayout.visibility = if (hasItems) View.VISIBLE else View.GONE
 
         (activity as? MainActivity)?.toggleCartProgress(hasItems)
         if(hasItems){
