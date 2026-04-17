@@ -75,7 +75,6 @@ class ProductDetailFragment : Fragment(R.layout.fragment_product_detail), WishLi
 
 
 
-
     private var cartProductId: Int = 0
     private var cartPrice: Double = 0.0
     private var cartMrp: Double = 0.0

@@ -111,7 +111,6 @@ class HomeFragment : Fragment(R.layout.fragment_home) {
         binding.rvCategories.apply {
             layoutManager = LinearLayoutManager(requireContext(), LinearLayoutManager.HORIZONTAL,false)
             adapter = CategoryAdapter(categories){
-                Toast.makeText(context, "Selected: ${it.title}", Toast.LENGTH_SHORT).show()
                 if(it.slug.isNullOrBlank()){
                     viewModel.fetchProducts()
                 }else{
