@@ -70,6 +70,14 @@
         <item name="android:windowExitAnimation">@anim/fade_out_wishlist</item>
 
     </style>
-    
+
+    <style name="ThemeOverlay.TrenNex.PopupMenu" parent="ThemeOverlay.MaterialComponents.Light">
+        <item name="android:popupBackground">@drawable/bg_popup_menu</item>
+        <item name="popupMenuStyle">@style/Widget.TrenNex.PopupMenu</item>
+    </style>
+
+    <style name="Widget.TrenNex.PopupMenu" parent="Widget.MaterialComponents.PopupMenu">
+        <item name="android:popupBackground">@drawable/bg_popup_menu</item>
+    </style>
 
 </resources>

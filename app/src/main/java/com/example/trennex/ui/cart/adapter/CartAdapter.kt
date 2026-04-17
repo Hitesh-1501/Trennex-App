@@ -2,6 +2,7 @@ package com.example.trennex.ui.cart.adapter
 
 import android.annotation.SuppressLint
 import android.graphics.Paint
+import android.view.ContextThemeWrapper
 import android.view.LayoutInflater
 import android.view.ViewGroup
 import androidx.appcompat.widget.PopupMenu
@@ -69,7 +70,10 @@ class CartAdapter(
             }
 
             tvQty.setOnClickListener {
-                val popupMenu = PopupMenu(it.context,it)
+                val popupMenu = PopupMenu(
+                    ContextThemeWrapper(it.context, R.style.ThemeOverlay_TrenNex_PopupMenu),
+                    it
+                )
                 (1..5).forEach { qty->
                     popupMenu.menu.add(0,qty,qty,"Qty: $qty")
                 }
