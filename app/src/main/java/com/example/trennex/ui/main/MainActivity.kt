@@ -29,11 +29,16 @@ import com.example.trennex.databinding.CategoryToolbarBinding
 import com.example.trennex.databinding.LayoutAddToCartBinding
 import com.example.trennex.databinding.ToolbarCartBinding
 import com.example.trennex.databinding.WishlistToolbarBinding
+import androidx.core.view.isVisible
+import androidx.lifecycle.lifecycleScope
+import com.example.trennex.ui.cart.CartStore
+import kotlinx.coroutines.launch
 
 
 class MainActivity : AppCompatActivity() {
     private lateinit var binding: ActivityMainBinding
     private lateinit var  navController: NavController
+    private var latestCartCount: Int = 0
     override fun onCreate(savedInstanceState: Bundle?) {
         enableEdgeToEdge()
         WindowCompat.setDecorFitsSystemWindows(window, false)
@@ -48,6 +53,7 @@ class MainActivity : AppCompatActivity() {
         initializeBottomMenu()
 
         binding.curveBottomNav.setupWithNavController(navController)
+        observeCartCount()
 
         navController.addOnDestinationChangedListener {_, destination, _ ->
             when(destination.id){
@@ -98,8 +104,32 @@ class MainActivity : AppCompatActivity() {
                     binding.curveBottomNav.visibility = View.GONE
                 }
             }
+            renderCartBadge()
         }
     }
+
+    private fun observeCartCount(){
+        lifecycleScope.launch {
+            CartStore.totalQuantity.collect { count->
+                latestCartCount = count
+                renderCartBadge()
+            }
+        }
+    }
+
+
+    private fun renderCartBadge(){
+        val badge = binding.tvCartCountBadge
+        val show = binding.curveBottomNav.isVisible && latestCartCount > 0
+        if(show){
+            badge.text = if(latestCartCount > 99) "99+" else latestCartCount.toString()
+            badge.visibility = View.VISIBLE
+        }else{
+            badge.visibility = View.GONE
+        }
+    }
+
+
     override fun onSupportNavigateUp(): Boolean {
         return navController.navigateUp() || super.onSupportNavigateUp()
     }
