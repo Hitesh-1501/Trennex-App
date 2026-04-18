@@ -1,60 +1,69 @@
 package com.example.trennex.ui.cart
 
+import android.content.Context
+import com.example.trennex.data.local.cart.AppDatabase
+import com.example.trennex.repository.cart.CartRepository
 import com.example.trennex.ui.cart.model.CartItemModel
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.distinctUntilChanged
+import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.update
+import kotlinx.coroutines.launch
 
 object CartStore {
-    private val _items = MutableStateFlow<List<CartItemModel>>(emptyList())
-    val items: StateFlow<List<CartItemModel>> = _items.asStateFlow()
+    private val scope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
+
+    @Volatile
+    private var cartRepository: CartRepository? = null
+
+    private fun repo(): CartRepository{
+        return  requireNotNull(cartRepository){
+            "CartStore not initialized. Call CartStore.initialize(context) from Application.onCreate()."
+        }
+    }
+    fun initialize(context: Context){
+        if(cartRepository != null) return
+        synchronized(this){
+            if(cartRepository == null) {
+                cartRepository = CartRepository(AppDatabase.getInstance(context).cartDao())
+            }
+        }
+    }
+
+    val items: Flow<List<CartItemModel>>
+        get() = repo().observeItems()
+
+    val totalQuantity: Flow<Int>
+        get() = items
+            .map{list -> list.sumOf { it.quantity }}
+            .distinctUntilChanged()
 
     fun addItem(item: CartItemModel){
-        _items.update {current ->
-            val index = current.indexOfFirst {
-                it.id == item.id
-            }
-            if(index == -1){
-                current + item.copy(quantity = item.quantity.coerceAtLeast(1), isSelected = true)
-            }else{
-                current.toMutableList().apply {
-                    val existing = this[index]
-                    this[index] = existing.copy(
-                        title = item.title,
-                        description = item.description,
-                        mrp = item.mrp,
-                        price = item.price,
-                        rating = item.rating,
-                        ratingCount = item.ratingCount,
-                        returnPolicy = item.returnPolicy,
-                        deliveryDetails = item.deliveryDetails,
-                        imageUrl = item.imageUrl,
-                        imageRes = item.imageRes,
-                        quantity = existing.quantity + item.quantity.coerceAtLeast(1),
-                        isSelected = true
-                    )
-                }
-            }
+        scope.launch {
+            repo().addItem(item)
         }
     }
+
 
     fun toggleSelection(itemId: Int , selected: Boolean){
-        _items.update {list->
-            list.map { if(it.id == itemId) it.copy(isSelected = selected) else it }
+        scope.launch {
+            repo().toggleSelection(itemId,selected)
         }
     }
-
-
     fun toggleSelectAll(selected: Boolean){
-        _items.update {list->
-            list.map { it.copy(isSelected = selected) }
-        }
+       scope.launch {
+           repo().toggleAllSelection(selected)
+       }
     }
     fun updateQuantity(itemId: Int, quantity: Int) {
-        val safeQuantity = quantity.coerceAtLeast(1)
-        _items.update { list ->
-            list.map { if (it.id == itemId) it.copy(quantity = safeQuantity) else it }
-        }
+       scope.launch {
+           repo().updateQuantity(itemId,quantity)
+       }
     }
 }
