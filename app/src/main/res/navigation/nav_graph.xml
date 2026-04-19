@@ -89,7 +89,12 @@
         android:id="@+id/cartFragment"
         android:name="com.example.trennex.ui.cart.cartFragment"
         android:label="fragment_cart"
-        tools:layout="@layout/fragment_cart" />
+        tools:layout="@layout/fragment_cart">
+
+        <action
+            android:id="@+id/action_cartFragment_to_productDetailFragment"
+            app:destination="@id/productDetailFragment" />
+    </fragment>
     <fragment
         android:id="@+id/productDetailFragment"
         android:name="com.example.trennex.ui.product.ProductDetailFragment"
