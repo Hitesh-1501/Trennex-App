@@ -9,6 +9,7 @@ import androidx.fragment.app.viewModels
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.lifecycleScope
 import androidx.lifecycle.repeatOnLifecycle
+import androidx.navigation.fragment.findNavController
 import androidx.recyclerview.widget.LinearLayoutManager
 import com.example.trennex.R
 import com.example.trennex.databinding.FragmentCartBinding
@@ -28,7 +29,11 @@ class cartFragment : Fragment(R.layout.fragment_cart) {
     private val cartAdapter by lazy {
         CartAdapter(
             onItemSelectionChanged = {itemId, selected -> viewModel.toggleItem(itemId, selected)},
-            onQuantitySelected = {itemId, quantity -> viewModel.updateQuantity(itemId, quantity)}
+            onQuantitySelected = {itemId, quantity -> viewModel.updateQuantity(itemId, quantity)},
+            onItemClicked =  {item->
+                val direction = cartFragmentDirections.actionCartFragmentToProductDetailFragment(item.id)
+                findNavController().navigate(direction)
+            }
         )
     }
 

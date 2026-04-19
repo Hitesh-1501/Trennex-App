@@ -162,7 +162,7 @@ class ProductDetailFragment : Fragment(R.layout.fragment_product_detail), WishLi
 
         setupwishList()
         setUpCart()
-
+        observeCartState()
         binding.btnShowMoreSpecs.setOnClickListener {
             val direction = ProductDetailFragmentDirections.actionProductDetailFragmentToProductSpecFragment(productId = args.productId)
             findNavController().navigate(direction)
@@ -388,7 +388,7 @@ class ProductDetailFragment : Fragment(R.layout.fragment_product_detail), WishLi
         binding.addToCart.setOnClickListener {
             if(!isCart) {
                 isCart = true
-                binding.addToCart.setImageResource(R.drawable.cart_filled)
+                updateCartIcon()
                 CartStore.addItem(
                     CartItemModel(
                         id = cartProductId,
@@ -419,6 +419,23 @@ class ProductDetailFragment : Fragment(R.layout.fragment_product_detail), WishLi
     }
     override fun gotoCart() {
         findNavController().navigate(R.id.action_productDetailFragment_to_cartFragment)
+    }
+
+    private fun observeCartState(){
+        viewLifecycleOwner.lifecycleScope.launch {
+            viewLifecycleOwner.repeatOnLifecycle(androidx.lifecycle.Lifecycle.State.STARTED){
+                CartStore.items.collect {items->
+                    isCart = items.any{it.id == args.productId}
+                    updateCartIcon()
+                }
+            }
+        }
+    }
+
+    private fun updateCartIcon(){
+        binding.addToCart.setImageResource(
+            if(isCart) R.drawable.cart_filled else R.drawable.cart
+        )
     }
 
     private fun setUpVariants(){

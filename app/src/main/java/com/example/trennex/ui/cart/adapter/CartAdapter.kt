@@ -16,7 +16,8 @@ import kotlin.math.roundToInt
 
 class CartAdapter(
     private val onItemSelectionChanged:(itemId: Int,selected: Boolean) -> Unit,
-    private val onQuantitySelected:(itemId: Int,quantity: Int) -> Unit
+    private val onQuantitySelected:(itemId: Int,quantity: Int) -> Unit,
+    private val onItemClicked: (item: CartItemModel) -> Unit
 ): RecyclerView.Adapter<CartAdapter.CartViewHolder>(){
 
     private val cartItems = mutableListOf<CartItemModel>()
@@ -82,6 +83,9 @@ class CartAdapter(
                     true
                 }
                 popupMenu.show()
+            }
+            root.setOnClickListener {
+                onItemClicked(item)
             }
         }
     }
