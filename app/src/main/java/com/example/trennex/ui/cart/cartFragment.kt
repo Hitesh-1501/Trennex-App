@@ -30,6 +30,7 @@ class cartFragment : Fragment(R.layout.fragment_cart) {
         CartAdapter(
             onItemSelectionChanged = {itemId, selected -> viewModel.toggleItem(itemId, selected)},
             onQuantitySelected = {itemId, quantity -> viewModel.updateQuantity(itemId, quantity)},
+            onItemRemoveClicked = {itemId -> viewModel.removeItem(itemId)},
             onItemClicked =  {item->
                 val direction = cartFragmentDirections.actionCartFragmentToProductDetailFragment(item.id)
                 findNavController().navigate(direction)

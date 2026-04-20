@@ -17,6 +17,7 @@ import kotlin.math.roundToInt
 class CartAdapter(
     private val onItemSelectionChanged:(itemId: Int,selected: Boolean) -> Unit,
     private val onQuantitySelected:(itemId: Int,quantity: Int) -> Unit,
+    private val onItemRemoveClicked: (itemId: Int) -> Unit,
     private val onItemClicked: (item: CartItemModel) -> Unit
 ): RecyclerView.Adapter<CartAdapter.CartViewHolder>(){
 
@@ -68,6 +69,9 @@ class CartAdapter(
             checkItem.isChecked = item.isSelected
             checkItem.setOnCheckedChangeListener { _,isChecked ->
                 onItemSelectionChanged(item.id,isChecked)
+            }
+            ivClose.setOnClickListener {
+                onItemRemoveClicked(item.id)
             }
 
             tvQty.setOnClickListener {
