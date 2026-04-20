@@ -66,4 +66,9 @@ object CartStore {
            repo().updateQuantity(itemId,quantity)
        }
     }
+    fun removeItem(itemId: Int){
+        scope.launch {
+            repo().removeItem(itemId)
+        }
+    }
 }

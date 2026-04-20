@@ -53,6 +53,10 @@ class CartRepository(
         dao.updateQuantity(itemId,quantity.coerceAtLeast(1))
     }
 
+    suspend fun removeItem(itemId: Int){
+        dao.removeItem(itemId)
+    }
+
     private fun CartItemEntity.toModel(): CartItemModel{
         return CartItemModel(
             id = id,

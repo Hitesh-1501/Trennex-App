@@ -18,4 +18,5 @@ class CartViewModel: ViewModel() {
     fun toggleAll(selected: Boolean) = CartStore.toggleSelectAll(selected)
     fun toggleItem(itemId: Int, selected: Boolean) = CartStore.toggleSelection(itemId, selected)
     fun updateQuantity(itemId: Int, quantity: Int) = CartStore.updateQuantity(itemId, quantity)
+    fun removeItem(itemId: Int) = CartStore.removeItem(itemId)
 }
