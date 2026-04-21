@@ -5,6 +5,8 @@ import androidx.fragment.app.Fragment
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
+import android.widget.TextView
+import android.widget.Toast
 import androidx.fragment.app.viewModels
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.lifecycleScope
@@ -18,6 +20,8 @@ import com.example.trennex.ui.cart.model.CartItemModel
 import com.example.trennex.ui.main.MainActivity
 import com.example.trennex.ui.main.ToolBarType
 import com.example.trennex.utils.CurrencyFormator
+import com.google.android.material.bottomsheet.BottomSheetDialog
+import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import kotlinx.coroutines.launch
 
 class cartFragment : Fragment(R.layout.fragment_cart) {
@@ -59,6 +63,15 @@ class cartFragment : Fragment(R.layout.fragment_cart) {
             viewModel.toggleAll(isChecked)
         }
 
+        binding.ivDelete.setOnClickListener {
+            val selectedCount = viewModel.uiState.value.selectedItems
+            if(selectedCount == 0){
+                Toast.makeText(requireContext(), "Please select at least one item", Toast.LENGTH_SHORT).show()
+            }else{
+                showDeleteSelectedDialog(selectedCount)
+            }
+        }
+
         viewLifecycleOwner.lifecycleScope.launch {
             viewLifecycleOwner.repeatOnLifecycle(Lifecycle.State.STARTED){
                 viewModel.uiState.collect(::render)
@@ -95,8 +108,28 @@ class cartFragment : Fragment(R.layout.fragment_cart) {
         binding.tvDiscount.text = "-${CurrencyFormator.formatInr(state.totalDiscount)}"
         binding.tvTotalAmount.text = CurrencyFormator.formatInr(state.totalPrice)
 
+    }
 
+    private fun showDeleteSelectedDialog(selectedCount: Int){
+        val itemText = if(selectedCount == 1) "item" else "items"
+        val bottomSheetDialog = BottomSheetDialog(requireContext())
+        val sheetView = layoutInflater.inflate(R.layout.dialog__remove_selected_item,null)
+        sheetView.findViewById<TextView>(R.id.tvRemoveTitle).text = "Remove $selectedCount $itemText"
+        sheetView.findViewById<TextView>(R.id.tvRemoveMessage).text =
+            "Are you sure you want to remove $selectedCount $itemText from cart?"
+        sheetView.findViewById<android.widget.ImageView>(R.id.ivCloseBottomSheet).setOnClickListener {
+            bottomSheetDialog.dismiss()
+        }
+        sheetView.findViewById<TextView>(R.id.tvCancelAction).setOnClickListener {
+            bottomSheetDialog.dismiss()
+        }
+        sheetView.findViewById<TextView>(R.id.tvRemoveAction).setOnClickListener {
+            viewModel.deleteSelectedItems()
+            bottomSheetDialog.dismiss()
+        }
 
+        bottomSheetDialog.setContentView(sheetView)
+        bottomSheetDialog.show()
     }
 
     override fun onDestroy() {
