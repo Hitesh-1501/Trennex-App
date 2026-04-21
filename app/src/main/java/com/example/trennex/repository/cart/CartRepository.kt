@@ -57,6 +57,10 @@ class CartRepository(
         dao.removeItem(itemId)
     }
 
+    suspend fun deleteSelectedItems(){
+        dao.deleteSelectedItems()
+    }
+
     private fun CartItemEntity.toModel(): CartItemModel{
         return CartItemModel(
             id = id,

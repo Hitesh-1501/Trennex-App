@@ -71,4 +71,10 @@ object CartStore {
             repo().removeItem(itemId)
         }
     }
+
+    fun deleteSelectedItems(){
+        scope.launch {
+            repo().deleteSelectedItems()
+        }
+    }
 }
