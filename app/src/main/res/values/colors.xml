@@ -28,4 +28,7 @@
     <color name="ripplePrimary">#2962FF20</color>
     <color name="colorProgress">#21AD60</color>
 
+    <color name="strokecolor">#1A000000</color>
+    <color name="wishlist_border_color">#E6EAF2</color>
+
 </resources>
