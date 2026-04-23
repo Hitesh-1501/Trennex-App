@@ -5,16 +5,23 @@ import androidx.fragment.app.Fragment
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.lifecycleScope
+import androidx.lifecycle.repeatOnLifecycle
 import androidx.recyclerview.widget.GridLayoutManager
 import com.example.trennex.R
 import com.example.trennex.databinding.FragmentWishlistBinding
 import com.example.trennex.ui.wishlist.adapter.WishlistAdapter
 import com.example.trennex.ui.wishlist.model.WishlistItemsModel
+import kotlinx.coroutines.launch
 
 
 class WishlistFragment : Fragment(R.layout.fragment_wishlist) {
-    private var _binding : FragmentWishlistBinding? = null
+    private var _binding: FragmentWishlistBinding? = null
     private val binding get() = _binding!!
+
+    private val wishlistAdapter by lazy { WishlistAdapter(emptyList()) }
+
 
     override fun onCreateView(
         inflater: LayoutInflater, container: ViewGroup?,
@@ -26,20 +33,16 @@ class WishlistFragment : Fragment(R.layout.fragment_wishlist) {
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
-        setUpRecycleView()
+        binding.rvwishlist.adapter = wishlistAdapter
+
+        viewLifecycleOwner.lifecycleScope.launch {
+            viewLifecycleOwner.repeatOnLifecycle(Lifecycle.State.STARTED) {
+                WishListStore.items.collect { items ->
+                    wishlistAdapter.submitList(items)
+                }
+            }
+        }
     }
-
-    private fun setUpRecycleView(){
-        val items  = listOf(
-            WishlistItemsModel(1,R.drawable.samsung_transperent,"Samsung S24 Onyx Black","40,999"),
-            WishlistItemsModel(1,R.drawable.trennex_tshirt,"TreNex Men's solid white tshirt","499"),
-            WishlistItemsModel(1,R.drawable.lenovo_laptop,"Lenovo Yoga i5 laptop","51,999"),
-        )
-
-        binding.rvwishlist.layoutManager = GridLayoutManager(requireContext(),2)
-        binding.rvwishlist.adapter = WishlistAdapter(items)
-    }
-
     override fun onDestroyView() {
         super.onDestroyView()
         _binding = null
