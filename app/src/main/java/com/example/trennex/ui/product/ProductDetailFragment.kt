@@ -35,6 +35,8 @@ import com.example.trennex.ui.cart.CartStore
 import com.example.trennex.ui.cart.model.CartItemModel
 import com.example.trennex.ui.product.model.SpecDetailAdapter
 import com.example.trennex.ui.product.model.SpecDetailItem
+import com.example.trennex.ui.wishlist.WishListStore
+import com.example.trennex.ui.wishlist.model.WishlistItemsModel
 import com.example.trennex.utils.CurrencyFormator
 import com.example.trennex.viewmodel.ProductDetailViewModel
 import kotlinx.coroutines.launch
@@ -82,6 +84,7 @@ class ProductDetailFragment : Fragment(R.layout.fragment_product_detail), WishLi
     private var cartRatingCount: Int = 0
     private var cartReturnPolicy: String = ""
     private var cartDeliveryDetails: String = ""
+    private var currentProduct: ProductResponse? = null
 
 
     override fun onCreateView(
@@ -118,6 +121,12 @@ class ProductDetailFragment : Fragment(R.layout.fragment_product_detail), WishLi
             viewLifecycleOwner.repeatOnLifecycle(androidx.lifecycle.Lifecycle.State.STARTED){
                 viewModel.products.collect { response ->
                     response?.let {product ->
+                        currentProduct = product
+                        isWishlisted = WishListStore.contains(product.id)
+                        binding.wishlist.setImageResource(
+                            if (isWishlisted) R.drawable.wishlist_filled else R.drawable.wishlist_product
+                        )
+
                         val price = product.price
                         val discount = product.discountPercentage
                         val mrp = price / (1.0 - discount / 100.0)
@@ -244,6 +253,19 @@ class ProductDetailFragment : Fragment(R.layout.fragment_product_detail), WishLi
 
     private fun setupwishList(){
         binding.wishlist.setOnClickListener {
+            val product = currentProduct
+            if(product == null){
+                Toast.makeText(requireContext(), "Product details not loaded yet", Toast.LENGTH_SHORT).show()
+                return@setOnClickListener
+            }
+            WishListStore.addOrUpdate(
+                WishlistItemsModel(
+                    id = product.id,
+                    imageUrl = product.thumbnail,
+                    title = product.title,
+                    price = product.price
+                )
+            )
             if(!isWishlisted){
                 isWishlisted = true
                 binding.wishlist.setImageResource(R.drawable.wishlist_filled)
