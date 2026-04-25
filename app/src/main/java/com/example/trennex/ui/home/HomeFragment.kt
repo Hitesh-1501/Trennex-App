@@ -26,7 +26,7 @@ import com.example.trennex.ui.home.adapters.ProductAdapter
 import com.example.trennex.ui.home.model.BannerModel
 import com.example.trennex.ui.home.model.CategoryModel
 import com.example.trennex.ui.home.model.ProductModel
-import com.example.trennex.viewmodel.ProductViewModel
+import com.example.trennex.viewmodel.product.ProductViewModel
 import com.google.android.material.tabs.TabLayoutMediator
 import kotlinx.coroutines.launch
 

@@ -1,4 +1,4 @@
-package com.example.trennex.ui.wishlist
+package com.example.trennex.utils.wishlist
 
 import com.example.trennex.ui.wishlist.model.WishlistItemsModel
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -19,10 +19,6 @@ object WishListStore {
                 current + item
             }
         }
-    }
-
-    fun removeById(productId: Int) {
-        _items.update { current -> current.filterNot { it.id == productId } }
     }
 
     fun contains(productId: Int): Boolean = _items.value.any { it.id == productId }

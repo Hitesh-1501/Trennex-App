@@ -1,7 +1,8 @@
-package com.example.trennex.ui.auth.login
+package com.example.trennex.viewmodel.auth
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.example.trennex.ui.auth.login.LoginUIState
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow

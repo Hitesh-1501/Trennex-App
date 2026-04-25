@@ -31,7 +31,7 @@ import com.example.trennex.databinding.ToolbarCartBinding
 import com.example.trennex.databinding.WishlistToolbarBinding
 import androidx.core.view.isVisible
 import androidx.lifecycle.lifecycleScope
-import com.example.trennex.ui.cart.CartStore
+import com.example.trennex.utils.cart.CartStore
 import kotlinx.coroutines.launch
 
 

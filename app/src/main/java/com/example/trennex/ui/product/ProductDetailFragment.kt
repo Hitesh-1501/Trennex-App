@@ -31,14 +31,14 @@ import androidx.lifecycle.repeatOnLifecycle
 import androidx.navigation.fragment.navArgs
 import androidx.viewpager2.widget.ViewPager2
 import com.example.trennex.data.model.ProductResponse
-import com.example.trennex.ui.cart.CartStore
+import com.example.trennex.utils.cart.CartStore
 import com.example.trennex.ui.cart.model.CartItemModel
 import com.example.trennex.ui.product.model.SpecDetailAdapter
 import com.example.trennex.ui.product.model.SpecDetailItem
-import com.example.trennex.ui.wishlist.WishListStore
+import com.example.trennex.utils.wishlist.WishListStore
 import com.example.trennex.ui.wishlist.model.WishlistItemsModel
 import com.example.trennex.utils.CurrencyFormator
-import com.example.trennex.viewmodel.ProductDetailViewModel
+import com.example.trennex.viewmodel.product.ProductDetailViewModel
 import kotlinx.coroutines.launch
 import kotlin.math.abs
 

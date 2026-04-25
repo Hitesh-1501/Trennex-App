@@ -9,10 +9,12 @@ import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.lifecycleScope
 import androidx.lifecycle.repeatOnLifecycle
 import androidx.recyclerview.widget.GridLayoutManager
+import androidx.recyclerview.widget.LinearLayoutManager
 import com.example.trennex.R
 import com.example.trennex.databinding.FragmentWishlistBinding
 import com.example.trennex.ui.wishlist.adapter.WishlistAdapter
 import com.example.trennex.ui.wishlist.model.WishlistItemsModel
+import com.example.trennex.utils.wishlist.WishListStore
 import kotlinx.coroutines.launch
 
 
@@ -33,6 +35,7 @@ class WishlistFragment : Fragment(R.layout.fragment_wishlist) {
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
+        binding.rvwishlist.layoutManager = GridLayoutManager(requireContext(),2)
         binding.rvwishlist.adapter = wishlistAdapter
 
         viewLifecycleOwner.lifecycleScope.launch {

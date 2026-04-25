@@ -1,7 +1,9 @@
-package com.example.trennex.ui.cart
+package com.example.trennex.viewmodel.cart
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.example.trennex.utils.cart.CartStore
+import com.example.trennex.ui.cart.CartUiState
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.map
@@ -12,7 +14,7 @@ class CartViewModel: ViewModel() {
         .map(CartUiState.Companion::from)
         .stateIn(
             scope = viewModelScope,
-            started = SharingStarted.WhileSubscribed(5000),
+            started = SharingStarted.Companion.WhileSubscribed(5000),
             initialValue = CartUiState()
         )
     fun toggleAll(selected: Boolean) = CartStore.toggleSelectAll(selected)

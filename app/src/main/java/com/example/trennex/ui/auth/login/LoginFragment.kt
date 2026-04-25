@@ -17,6 +17,7 @@ import androidx.navigation.fragment.findNavController
 import com.example.trennex.R
 import com.example.trennex.databinding.FragmentLoginBinding
 import com.example.trennex.databinding.FragmentOnboardingBinding
+import com.example.trennex.viewmodel.auth.LoginViewModel
 import kotlinx.coroutines.launch
 
 class LoginFragment : Fragment(R.layout.fragment_login) {

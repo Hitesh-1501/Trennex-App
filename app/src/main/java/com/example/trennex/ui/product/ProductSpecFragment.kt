@@ -18,7 +18,7 @@ import com.example.trennex.data.model.ProductResponse
 import com.example.trennex.databinding.FragmentProductSpecBinding
 import com.example.trennex.ui.product.model.SpecDetailAdapter
 import com.example.trennex.ui.product.model.SpecDetailItem
-import com.example.trennex.viewmodel.ProductDetailViewModel
+import com.example.trennex.viewmodel.product.ProductDetailViewModel
 import com.google.android.material.chip.Chip
 import kotlinx.coroutines.launch
 

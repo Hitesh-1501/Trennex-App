@@ -1,4 +1,4 @@
-package com.example.trennex.ui.cart
+package com.example.trennex.utils.cart
 
 import android.content.Context
 import com.example.trennex.data.local.cart.AppDatabase
@@ -8,12 +8,8 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.flow.Flow
-import kotlinx.coroutines.flow.MutableStateFlow
-import kotlinx.coroutines.flow.StateFlow
-import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.map
-import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 
 object CartStore {
@@ -22,7 +18,7 @@ object CartStore {
     @Volatile
     private var cartRepository: CartRepository? = null
 
-    private fun repo(): CartRepository{
+    private fun repo(): CartRepository {
         return  requireNotNull(cartRepository){
             "CartStore not initialized. Call CartStore.initialize(context) from Application.onCreate()."
         }
@@ -31,7 +27,8 @@ object CartStore {
         if(cartRepository != null) return
         synchronized(this){
             if(cartRepository == null) {
-                cartRepository = CartRepository(AppDatabase.getInstance(context).cartDao())
+                cartRepository =
+                    CartRepository(AppDatabase.Companion.getInstance(context).cartDao())
             }
         }
     }
@@ -41,7 +38,7 @@ object CartStore {
 
     val totalQuantity: Flow<Int>
         get() = items
-            .map{list -> list.sumOf { it.quantity }}
+            .map { list -> list.sumOf { it.quantity }}
             .distinctUntilChanged()
 
     fun addItem(item: CartItemModel){

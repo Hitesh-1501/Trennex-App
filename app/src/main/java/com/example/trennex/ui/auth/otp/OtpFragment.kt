@@ -22,6 +22,7 @@ import kotlinx.coroutines.launch
 import kotlin.random.Random
 import androidx.core.view.isVisible
 import androidx.navigation.fragment.findNavController
+import com.example.trennex.viewmodel.auth.OtpViewModel
 
 class OtpFragment : Fragment(R.layout.fragment_otp) {
     private var _binding: FragmentOtpBinding? = null
