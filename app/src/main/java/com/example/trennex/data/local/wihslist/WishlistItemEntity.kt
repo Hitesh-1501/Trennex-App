@@ -1,0 +1,13 @@
+package com.example.trennex.data.local.wihslist
+
+import androidx.room.Entity
+import androidx.room.PrimaryKey
+
+@Entity(tableName = "wishlist_items")
+data class WishlistItemEntity(
+    @PrimaryKey
+    val id: Int,
+    val imageUrl: String,
+    val title: String,
+    val price: Double
+)
