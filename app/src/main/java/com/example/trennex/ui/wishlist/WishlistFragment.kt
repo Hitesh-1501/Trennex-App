@@ -8,6 +8,7 @@ import android.view.ViewGroup
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.lifecycleScope
 import androidx.lifecycle.repeatOnLifecycle
+import androidx.navigation.fragment.findNavController
 import androidx.recyclerview.widget.GridLayoutManager
 import com.example.trennex.R
 import com.example.trennex.databinding.FragmentWishlistBinding
@@ -20,7 +21,13 @@ class WishlistFragment : Fragment(R.layout.fragment_wishlist) {
     private var _binding: FragmentWishlistBinding? = null
     private val binding get() = _binding!!
 
-    private val wishlistAdapter by lazy { WishlistAdapter(emptyList()) }
+    private val wishlistAdapter by lazy { WishlistAdapter(
+        emptyList(),
+        onItemClicked = {
+            val direction = WishlistFragmentDirections.actionWishlistFragmentToProductDetailFragment(it.id)
+            findNavController().navigate(direction)
+        })
+    }
 
 
     override fun onCreateView(

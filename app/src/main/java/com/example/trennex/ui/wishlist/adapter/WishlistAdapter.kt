@@ -12,6 +12,7 @@ import com.example.trennex.utils.CurrencyFormator
 
 class WishlistAdapter(
     private var items : List<WishlistItemsModel>,
+    private val onItemClicked: (WishlistItemsModel) -> Unit
 ): RecyclerView.Adapter<WishlistAdapter.WishlistVH>(){
 
     inner class WishlistVH(val binding: ItemWishlistProductBinding) : RecyclerView.ViewHolder(binding.root)
@@ -30,6 +31,9 @@ class WishlistAdapter(
             .placeholder(R.drawable.placeholder)
             .error(R.drawable.placeholder)
             .into(holder.binding.ivProduct)
+        holder.binding.root.setOnClickListener {
+            onItemClicked(item)
+        }
     }
 
     override fun getItemCount(): Int {
