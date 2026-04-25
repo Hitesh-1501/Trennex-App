@@ -26,6 +26,7 @@ import com.google.android.material.tabs.TabLayoutMediator
 import com.google.android.material.transition.Hold
 import androidx.core.graphics.toColorInt
 import androidx.fragment.app.viewModels
+import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.lifecycleScope
 import androidx.lifecycle.repeatOnLifecycle
 import androidx.navigation.fragment.navArgs
@@ -122,11 +123,6 @@ class ProductDetailFragment : Fragment(R.layout.fragment_product_detail), WishLi
                 viewModel.products.collect { response ->
                     response?.let {product ->
                         currentProduct = product
-                        isWishlisted = WishListStore.contains(product.id)
-                        binding.wishlist.setImageResource(
-                            if (isWishlisted) R.drawable.wishlist_filled else R.drawable.wishlist_product
-                        )
-
                         val price = product.price
                         val discount = product.discountPercentage
                         val mrp = price / (1.0 - discount / 100.0)
@@ -170,6 +166,7 @@ class ProductDetailFragment : Fragment(R.layout.fragment_product_detail), WishLi
         }
 
         setupwishList()
+        observeWishlistState()
         setUpCart()
         observeCartState()
         binding.btnShowMoreSpecs.setOnClickListener {
@@ -258,15 +255,15 @@ class ProductDetailFragment : Fragment(R.layout.fragment_product_detail), WishLi
                 Toast.makeText(requireContext(), "Product details not loaded yet", Toast.LENGTH_SHORT).show()
                 return@setOnClickListener
             }
-            WishListStore.addOrUpdate(
-                WishlistItemsModel(
-                    id = product.id,
-                    imageUrl = product.thumbnail,
-                    title = product.title,
-                    price = product.price
-                )
-            )
             if(!isWishlisted){
+                WishListStore.addOrUpdate(
+                    WishlistItemsModel(
+                        id = product.id,
+                        imageUrl = product.thumbnail,
+                        title = product.title,
+                        price = product.price
+                    )
+                )
                 isWishlisted = true
                 binding.wishlist.setImageResource(R.drawable.wishlist_filled)
                 Toast.makeText(requireContext(),"Added to Wishlist", Toast.LENGTH_SHORT).show()
@@ -285,6 +282,9 @@ class ProductDetailFragment : Fragment(R.layout.fragment_product_detail), WishLi
     }
 
     override fun removeFromWishlist() {
+        currentProduct?.let {
+            WishListStore.removeItem(it.id)
+        }
         isWishlisted = false
         binding.wishlist.setImageResource(R.drawable.wishlist_product)
         Toast.makeText(requireContext(), "Removed from Wishlist", Toast.LENGTH_SHORT).show()
@@ -294,6 +294,18 @@ class ProductDetailFragment : Fragment(R.layout.fragment_product_detail), WishLi
         findNavController().navigate(R.id.action_productDetailFragment_to_wishlistFragment)
     }
 
+    private fun observeWishlistState(){
+        viewLifecycleOwner.lifecycleScope.launch {
+            viewLifecycleOwner.repeatOnLifecycle(Lifecycle.State.STARTED){
+                WishListStore.items.collect {items->
+                    isWishlisted = items.any{it.id == args.productId}
+                    binding.wishlist.setImageResource(
+                        if(isWishlisted) R.drawable.wishlist_filled else R.drawable.wishlist_product
+                    )
+                }
+            }
+        }
+    }
 
     private fun setupImageBanner() {
         currentImages = emptyList()
