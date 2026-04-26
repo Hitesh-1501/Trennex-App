@@ -2,7 +2,6 @@ package com.example.trennex.ui.main
 
 import android.content.res.ColorStateList
 import android.graphics.Color
-import android.graphics.Color.parseColor
 import android.os.Bundle
 import android.view.View
 import android.widget.ImageView
@@ -26,7 +25,6 @@ import com.example.trennex.databinding.ToolbarProductScreenBinding
 import np.com.susanthapa.curved_bottom_navigation.CbnMenuItem
 import androidx.core.graphics.toColorInt
 import com.example.trennex.databinding.CategoryToolbarBinding
-import com.example.trennex.databinding.LayoutAddToCartBinding
 import com.example.trennex.databinding.ToolbarCartBinding
 import com.example.trennex.databinding.WishlistToolbarBinding
 import androidx.core.view.isVisible
@@ -262,7 +260,6 @@ class MainActivity : AppCompatActivity() {
         binding.curveBottomNav.setMenuItems(menuItems, 0)
 
     }
-
     fun toggleCartProgress(isVisible : Boolean){
         val container = binding.toolbarContainer.findViewById<View>(R.id.progressContainer)
         container?.visibility = if(isVisible) View.VISIBLE else View.GONE
