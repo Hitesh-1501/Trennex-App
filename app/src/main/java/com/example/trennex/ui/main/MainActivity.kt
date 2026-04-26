@@ -218,6 +218,11 @@ class MainActivity : AppCompatActivity() {
                 toolbarBinding.backArrow.setOnClickListener {
                     navController.popBackStack()
                 }
+                toolbarBinding.ivcart.setOnClickListener {
+                    if(navController.currentDestination?.id == R.id.wishlistFragment){
+                        navController.navigate(R.id.action_wishlistFragment_to_cartFragment)
+                    }
+                }
             }
             ToolBarType.CATEGORIES -> {
                 val toolbarBinding = CategoryToolbarBinding.inflate(layoutInflater)

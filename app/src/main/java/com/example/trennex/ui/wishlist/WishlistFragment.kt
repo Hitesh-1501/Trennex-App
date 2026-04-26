@@ -74,6 +74,11 @@ class WishlistFragment : Fragment(R.layout.fragment_wishlist) {
             viewLifecycleOwner.repeatOnLifecycle(Lifecycle.State.STARTED) {
                 WishListStore.items.collect { items ->
                     wishlistAdapter.submitList(items)
+                    val itemCount = items.size
+                    val countLabel = if(itemCount == 1) "1 item" else "$itemCount items"
+                    binding.tvWishlistItemCount.text = countLabel
+                    binding.emptyStateContainer.visibility = if (itemCount == 0) View.VISIBLE else View.GONE
+                    binding.nestedScrollView.visibility = if (itemCount == 0) View.GONE else View.VISIBLE
                 }
             }
         }
