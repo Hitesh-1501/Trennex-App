@@ -1,11 +1,16 @@
 package com.example.trennex.ui.wishlist
 
+import android.content.Intent
 import android.os.Bundle
 import androidx.fragment.app.Fragment
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
+import android.widget.ImageView
+import android.widget.TextView
 import android.widget.Toast
+import androidx.activity.addCallback
+import androidx.appcompat.app.AlertDialog
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.lifecycleScope
 import androidx.lifecycle.repeatOnLifecycle
@@ -14,6 +19,7 @@ import androidx.recyclerview.widget.GridLayoutManager
 import com.example.trennex.R
 import com.example.trennex.databinding.FragmentWishlistBinding
 import com.example.trennex.ui.cart.model.CartItemModel
+import com.example.trennex.ui.main.MainActivity
 import com.example.trennex.ui.wishlist.adapter.WishlistAdapter
 import com.example.trennex.utils.cart.CartStore
 import com.example.trennex.utils.wishlist.WishListStore
@@ -53,6 +59,9 @@ class WishlistFragment : Fragment(R.layout.fragment_wishlist) {
         },
         onRemoveClicked = {
             WishListStore.removeItem(it.id)
+        },
+        onSelectionChanged = {selectedCount ->
+            updateSelectionToolbarState(selectedCount)
         })
     }
 
@@ -67,6 +76,8 @@ class WishlistFragment : Fragment(R.layout.fragment_wishlist) {
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
+        setupWishlistToolbar()
+        setupBackPressForSelectionMode()
         binding.rvwishlist.layoutManager = GridLayoutManager(requireContext(),2)
         binding.rvwishlist.adapter = wishlistAdapter
 
@@ -83,6 +94,129 @@ class WishlistFragment : Fragment(R.layout.fragment_wishlist) {
             }
         }
     }
+
+    private fun setupWishlistToolbar(){
+        val toolbarRoot = (requireActivity() as? MainActivity)?.findViewById<View>(R.id.toolbarContainer)?:return
+        val backArrow = toolbarRoot.findViewById<ImageView>(R.id.back_arrow) ?: return
+        val titleText = toolbarRoot.findViewById<TextView>(R.id.page_title) ?: return
+        val editDeleteIcon = toolbarRoot.findViewById<ImageView>(R.id.ivedit) ?: return
+        val cartShareIcon = toolbarRoot.findViewById<ImageView>(R.id.ivcart) ?: return
+
+        titleText.text = "Wishlist"
+        editDeleteIcon.setImageResource(R.drawable.ic_edit)
+        cartShareIcon.setImageResource(R.drawable.cart)
+        editDeleteIcon.isEnabled = true
+        cartShareIcon.isEnabled = true
+        editDeleteIcon.alpha = 1f
+        cartShareIcon.alpha = 1f
+
+        editDeleteIcon.setOnClickListener {
+            if(!wishlistAdapter.isSelectionMode()){
+                wishlistAdapter.setSelectionMode(true)
+                titleText.text = "Items Selected"
+                editDeleteIcon.setImageResource(R.drawable.wishlist_delete)
+                cartShareIcon.setImageResource(R.drawable.wishlist_share)
+                updateSelectionToolbarState(0)
+            }else{
+                showDeleteConfirmationDialog()
+            }
+        }
+        cartShareIcon.setOnClickListener {
+            if (wishlistAdapter.isSelectionMode()) {
+                shareSelectedWishlistItems()
+            } else if (findNavController().currentDestination?.id == R.id.wishlistFragment) {
+                findNavController().navigate(R.id.action_wishlistFragment_to_cartFragment)
+            }
+        }
+        backArrow.setOnClickListener {
+            if(wishlistAdapter.isSelectionMode()){
+                existSelectionMode()
+            }else{
+                findNavController().popBackStack()
+            }
+        }
+    }
+
+    private fun setupBackPressForSelectionMode(){
+        requireActivity().onBackPressedDispatcher.addCallback(viewLifecycleOwner){
+            if(wishlistAdapter.isSelectionMode()){
+                existSelectionMode()
+            }else{
+                isEnabled = false
+                requireActivity().onBackPressedDispatcher.onBackPressed()
+            }
+        }
+    }
+
+
+    private fun updateSelectionToolbarState(selectedCount: Int){
+        val toolbarRoot = (requireActivity() as? MainActivity)?.findViewById<View>(R.id.toolbarContainer) ?: return
+        val editDeleteIcon = toolbarRoot.findViewById<ImageView>(R.id.ivedit) ?: return
+        val cartShareIcon = toolbarRoot.findViewById<ImageView>(R.id.ivcart) ?: return
+        if(!wishlistAdapter.isSelectionMode()){
+            return
+        }
+        val enableActions = selectedCount > 0
+        editDeleteIcon.isEnabled = enableActions
+        cartShareIcon.isEnabled = enableActions
+        editDeleteIcon.alpha = if (enableActions) 1f else 0.4f
+        cartShareIcon.alpha = if (enableActions) 1f else 0.4f
+    }
+
+    private fun existSelectionMode(){
+        val toolbarRoot = (requireActivity() as? MainActivity)?.findViewById<View>(R.id.toolbarContainer) ?: return
+        val titleText = toolbarRoot.findViewById<TextView>(R.id.page_title) ?: return
+        val editDeleteIcon = toolbarRoot.findViewById<ImageView>(R.id.ivedit) ?: return
+        val cartShareIcon = toolbarRoot.findViewById<ImageView>(R.id.ivcart) ?: return
+        wishlistAdapter.setSelectionMode(false)
+        wishlistAdapter.clearSelection()
+        titleText.text = "Wishlist"
+        editDeleteIcon.setImageResource(R.drawable.ic_edit)
+        cartShareIcon.setImageResource(R.drawable.cart)
+        editDeleteIcon.isEnabled = true
+        cartShareIcon.isEnabled = true
+        editDeleteIcon.alpha = 1f
+        cartShareIcon.alpha = 1f
+    }
+
+    private fun showDeleteConfirmationDialog(){
+        val selectedItems = wishlistAdapter.getSelectedItems()
+        val count = selectedItems.size
+        val msg = if(count == 1) "item" else "items"
+        if(selectedItems.isEmpty()) return
+        AlertDialog.Builder(requireContext())
+            .setTitle("Remove From Wishlist")
+            .setMessage("Are you sure want to remove $count $msg from your wishlist.")
+            .setNegativeButton("Cancel",  null)
+            .setPositiveButton("Remove"){_,_->
+                selectedItems.forEach {
+                    WishListStore.removeItem(it.id)
+                    existSelectionMode()
+                }
+            }
+            .show()
+    }
+
+    fun shareSelectedWishlistItems(){
+        val selectedItems = wishlistAdapter.getSelectedItems()
+        if(selectedItems.isEmpty()) return
+        val shareText = buildString {
+            append("My selected wishlist items:\n")
+            selectedItems.forEachIndexed { index,item->
+                append("${index + 1}. ${item.title} - ₹${item.price}\\n")
+            }
+        }
+        startActivity(
+            Intent.createChooser(
+                Intent(Intent.ACTION_SEND).apply {
+                    type = "text/plain"
+                    putExtra(Intent.EXTRA_TEXT,shareText)
+                },
+                "Share Wishlist items"
+            )
+        )
+    }
+
     override fun onDestroyView() {
         super.onDestroyView()
         _binding = null
