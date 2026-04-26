@@ -261,7 +261,13 @@ class ProductDetailFragment : Fragment(R.layout.fragment_product_detail), WishLi
                         id = product.id,
                         imageUrl = product.thumbnail,
                         title = product.title,
-                        price = product.price
+                        description = product.description,
+                        mrp = cartMrp,
+                        price = product.price,
+                        rating = cartRating,
+                        ratingCount = cartRatingCount,
+                        returnPolicy = cartReturnPolicy,
+                        deliveryDetails = cartDeliveryDetails
                     )
                 )
                 isWishlisted = true

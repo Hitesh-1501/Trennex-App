@@ -28,7 +28,13 @@ class WishlistRepository(
             id = id,
             imageUrl = imageUrl,
             title = title,
-            price = price
+            description = description,
+            mrp = mrp,
+            price = price,
+            rating = rating,
+            ratingCount = ratingCount,
+            returnPolicy = returnPolicy,
+            deliveryDetails = deliveryDetails
         )
     }
 
@@ -37,7 +43,13 @@ class WishlistRepository(
             id = id,
             imageUrl = imageUrl,
             title = title,
-            price = price
+            description = description,
+            mrp = mrp,
+            price = price,
+            rating = rating,
+            ratingCount = ratingCount,
+            returnPolicy = returnPolicy,
+            deliveryDetails = deliveryDetails
         )
     }
 }

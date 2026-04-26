@@ -5,6 +5,7 @@ import androidx.fragment.app.Fragment
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
+import android.widget.Toast
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.lifecycleScope
 import androidx.lifecycle.repeatOnLifecycle
@@ -12,7 +13,9 @@ import androidx.navigation.fragment.findNavController
 import androidx.recyclerview.widget.GridLayoutManager
 import com.example.trennex.R
 import com.example.trennex.databinding.FragmentWishlistBinding
+import com.example.trennex.ui.cart.model.CartItemModel
 import com.example.trennex.ui.wishlist.adapter.WishlistAdapter
+import com.example.trennex.utils.cart.CartStore
 import com.example.trennex.utils.wishlist.WishListStore
 import kotlinx.coroutines.launch
 
@@ -26,6 +29,30 @@ class WishlistFragment : Fragment(R.layout.fragment_wishlist) {
         onItemClicked = {
             val direction = WishlistFragmentDirections.actionWishlistFragmentToProductDetailFragment(it.id)
             findNavController().navigate(direction)
+        },
+        onAddToCartClicked = {
+            CartStore.addItem(
+                CartItemModel(
+                    id = it.id,
+                    title = it.title,
+                    description = it.description,
+                    mrp = it.mrp,
+                    price = it.price,
+                    rating = it.rating,
+                    ratingCount = it.ratingCount,
+                    returnPolicy = it.returnPolicy,
+                    deliveryDetails = it.deliveryDetails,
+                    imageUrl = it.imageUrl,
+                    quantity = 1,
+                    isSelected = true
+
+                )
+            )
+            WishListStore.removeItem(it.id)
+            Toast.makeText(requireContext(), "Added to cart", Toast.LENGTH_SHORT).show()
+        },
+        onRemoveClicked = {
+            WishListStore.removeItem(it.id)
         })
     }
 

@@ -12,7 +12,9 @@ import com.example.trennex.utils.CurrencyFormator
 
 class WishlistAdapter(
     private var items : List<WishlistItemsModel>,
-    private val onItemClicked: (WishlistItemsModel) -> Unit
+    private val onItemClicked: (WishlistItemsModel) -> Unit,
+    private val onAddToCartClicked: (WishlistItemsModel) -> Unit,
+    private val onRemoveClicked: (WishlistItemsModel) -> Unit
 ): RecyclerView.Adapter<WishlistAdapter.WishlistVH>(){
 
     inner class WishlistVH(val binding: ItemWishlistProductBinding) : RecyclerView.ViewHolder(binding.root)
@@ -33,6 +35,12 @@ class WishlistAdapter(
             .into(holder.binding.ivProduct)
         holder.binding.root.setOnClickListener {
             onItemClicked(item)
+        }
+        holder.binding.btnAddToCart.setOnClickListener {
+            onAddToCartClicked(item)
+        }
+        holder.binding.ivRemove.setOnClickListener {
+            onRemoveClicked(item)
         }
     }
 
