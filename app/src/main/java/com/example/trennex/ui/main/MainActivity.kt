@@ -101,6 +101,11 @@ class MainActivity : AppCompatActivity() {
                     setLightStatusBar(true)
                     binding.curveBottomNav.visibility = View.GONE
                 }
+                R.id.collectionFragment -> {
+                    showToolBar(ToolBarType.TITLE,"Collections")
+                    setLightStatusBar(true)
+                    binding.curveBottomNav.visibility = View.GONE
+                }
             }
             renderCartBadge()
         }

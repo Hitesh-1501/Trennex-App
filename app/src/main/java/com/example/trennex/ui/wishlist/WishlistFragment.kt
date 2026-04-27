@@ -11,6 +11,7 @@ import android.widget.TextView
 import android.widget.Toast
 import androidx.activity.addCallback
 import androidx.appcompat.app.AlertDialog
+import androidx.core.content.ContextCompat
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.lifecycleScope
 import androidx.lifecycle.repeatOnLifecycle
@@ -30,7 +31,6 @@ import kotlinx.coroutines.launch
 class WishlistFragment : Fragment(R.layout.fragment_wishlist) {
     private var _binding: FragmentWishlistBinding? = null
     private val binding get() = _binding!!
-
     private var wishlistCount: Int = 0
 
     private val wishlistAdapter by lazy { WishlistAdapter(
@@ -84,6 +84,12 @@ class WishlistFragment : Fragment(R.layout.fragment_wishlist) {
         binding.rvwishlist.layoutManager = GridLayoutManager(requireContext(),2)
         binding.rvwishlist.adapter = wishlistAdapter
 
+        binding.btnMyCollection.setOnClickListener {
+            if(binding.btnMyCollection.isEnabled && findNavController().currentDestination?.id == R.id.wishlistFragment){
+                findNavController().navigate(R.id.action_wishlistFragment_to_collectionFragment)
+            }
+        }
+
         viewLifecycleOwner.lifecycleScope.launch {
             viewLifecycleOwner.repeatOnLifecycle(Lifecycle.State.STARTED) {
                 WishListStore.items.collect { items ->
@@ -95,6 +101,7 @@ class WishlistFragment : Fragment(R.layout.fragment_wishlist) {
                     binding.emptyStateContainer.visibility = if (itemCount == 0) View.VISIBLE else View.GONE
                     binding.nestedScrollView.visibility = if (itemCount == 0) View.GONE else View.VISIBLE
                     updateDefaultToolbarState(itemCount)
+                    updateCollectionButtonState(itemCount)
                 }
             }
         }
@@ -195,12 +202,20 @@ class WishlistFragment : Fragment(R.layout.fragment_wishlist) {
         cartShareIcon.alpha = if (itemCount > 0) 1f else 0.4f
     }
 
+    private fun updateCollectionButtonState(itemCount: Int){
+        val enabled = itemCount > 0
+        binding.btnMyCollection.isEnabled = enabled
+        binding.btnMyCollection.alpha = if (enabled) 1f else 0.4f
+        binding.ivCollectionIcon.alpha = if (enabled) 1f else 0.4f
+        binding.tvCollectionLabel.alpha = if (enabled) 1f else 0.4f
+    }
+
     private fun showDeleteConfirmationDialog(){
         val selectedItems = wishlistAdapter.getSelectedItems()
         val count = selectedItems.size
         val msg = if(count == 1) "item" else "items"
         if(selectedItems.isEmpty()) return
-        AlertDialog.Builder(requireContext())
+        val dialog = AlertDialog.Builder(requireContext())
             .setTitle("Remove From Wishlist")
             .setMessage("Are you sure want to remove $count $msg from your wishlist.")
             .setNegativeButton("Cancel",  null)
@@ -210,7 +225,22 @@ class WishlistFragment : Fragment(R.layout.fragment_wishlist) {
                     existSelectionMode()
                 }
             }
-            .show()
+            .create()
+        dialog.show()
+        dialog.window?.setBackgroundDrawableResource(R.drawable.bg_drawable_white)
+        dialog.findViewById<TextView>(android.R.id.message)?.setTextColor(
+            ContextCompat.getColor(requireContext(), R.color.textPrimary)
+        )
+        dialog.findViewById<TextView>(com.google.android.material.R.id.alertTitle)?.setTextColor(
+            ContextCompat.getColor(requireContext(), R.color.textPrimary)
+        )
+        dialog.getButton(AlertDialog.BUTTON_POSITIVE)?.setTextColor(
+            ContextCompat.getColor(requireContext(), R.color.colorPrimary)
+        )
+        dialog.getButton(AlertDialog.BUTTON_NEGATIVE)?.setTextColor(
+            ContextCompat.getColor(requireContext(), R.color.textPrimary)
+        )
+
     }
 
     fun shareSelectedWishlistItems(){

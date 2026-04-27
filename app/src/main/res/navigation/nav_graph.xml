@@ -135,6 +135,9 @@
         <action
             android:id="@+id/action_wishlistFragment_to_productDetailFragment"
             app:destination="@id/productDetailFragment" />
+        <action
+            android:id="@+id/action_wishlistFragment_to_collectionFragment"
+            app:destination="@id/collectionFragment" />
     </fragment>
     <fragment
         android:id="@+id/productSpecFragment"
@@ -148,5 +151,10 @@
             android:defaultValue="0"/>
 
     </fragment>
+    <fragment
+        android:id="@+id/collectionFragment"
+        android:name="com.example.trennex.ui.wishlist.CollectionFragment"
+        android:label="fragment_collection"
+        tools:layout="@layout/fragment_collection" />
 
 </navigation>
