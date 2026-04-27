@@ -1,6 +1,7 @@
 package com.example.trennex.ui.wishlist.adapter
 
 import android.annotation.SuppressLint
+import android.graphics.Color
 import android.view.LayoutInflater
 import android.view.ViewGroup
 import androidx.recyclerview.widget.RecyclerView
@@ -9,6 +10,7 @@ import com.example.trennex.R
 import com.example.trennex.databinding.ItemWishlistProductBinding
 import com.example.trennex.ui.wishlist.model.WishlistItemsModel
 import com.example.trennex.utils.CurrencyFormator
+import androidx.core.graphics.toColorInt
 
 class WishlistAdapter(
     private var items : List<WishlistItemsModel>,
@@ -38,7 +40,10 @@ class WishlistAdapter(
             .placeholder(R.drawable.placeholder)
             .error(R.drawable.placeholder)
             .into(holder.binding.ivProduct)
-        holder.binding.root.alpha = if(isSelectionMode && isSelected) 0.7f else 1f
+        holder.binding.root.alpha = 1f
+        holder.binding.root.setCardBackgroundColor(
+            if(isSelectionMode && isSelected) "#E8F0FF".toColorInt() else Color.WHITE
+        )
         holder.binding.root.setOnClickListener {
             if(isSelectionMode){
                 toggleItemSelection(item.id)
@@ -63,12 +68,13 @@ class WishlistAdapter(
 
         holder.binding.ivRemove.setImageResource(
             if(isSelectionMode){
-                if(isSelected) R.drawable.bg_cart_checkbox_check else R.drawable.bg_cart_unchecked
+                if(isSelected) R.drawable.wishlist_checkbox_check else R.drawable.wishlist_checkbox_unchecked
             }else{
                 R.drawable.baseline_close_24
             }
         )
         holder.binding.ivRemove.background = if(isSelectionMode) null else holder.binding.root.context.getDrawable(R.drawable.bg_circle_grey)
+        holder.binding.ivRemove.imageTintList = if (isSelectionMode) null else holder.binding.ivRemove.context.getColorStateList(R.color.textPrimary)
         holder.binding.ivRemove.setPadding(
             if (isSelectionMode) 0 else 6,
             if (isSelectionMode) 0 else 6,

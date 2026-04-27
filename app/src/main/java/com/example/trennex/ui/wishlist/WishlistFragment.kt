@@ -21,6 +21,7 @@ import com.example.trennex.databinding.FragmentWishlistBinding
 import com.example.trennex.ui.cart.model.CartItemModel
 import com.example.trennex.ui.main.MainActivity
 import com.example.trennex.ui.wishlist.adapter.WishlistAdapter
+import com.example.trennex.ui.wishlist.model.WishlistItemsModel
 import com.example.trennex.utils.cart.CartStore
 import com.example.trennex.utils.wishlist.WishListStore
 import kotlinx.coroutines.launch
@@ -29,6 +30,8 @@ import kotlinx.coroutines.launch
 class WishlistFragment : Fragment(R.layout.fragment_wishlist) {
     private var _binding: FragmentWishlistBinding? = null
     private val binding get() = _binding!!
+
+    private var wishlistCount: Int = 0
 
     private val wishlistAdapter by lazy { WishlistAdapter(
         emptyList(),
@@ -86,10 +89,12 @@ class WishlistFragment : Fragment(R.layout.fragment_wishlist) {
                 WishListStore.items.collect { items ->
                     wishlistAdapter.submitList(items)
                     val itemCount = items.size
+                    wishlistCount = itemCount
                     val countLabel = if(itemCount == 1) "1 item" else "$itemCount items"
                     binding.tvWishlistItemCount.text = countLabel
                     binding.emptyStateContainer.visibility = if (itemCount == 0) View.VISIBLE else View.GONE
                     binding.nestedScrollView.visibility = if (itemCount == 0) View.GONE else View.VISIBLE
+                    updateDefaultToolbarState(itemCount)
                 }
             }
         }
@@ -105,10 +110,10 @@ class WishlistFragment : Fragment(R.layout.fragment_wishlist) {
         titleText.text = "Wishlist"
         editDeleteIcon.setImageResource(R.drawable.ic_edit)
         cartShareIcon.setImageResource(R.drawable.cart)
-        editDeleteIcon.isEnabled = true
-        cartShareIcon.isEnabled = true
-        editDeleteIcon.alpha = 1f
-        cartShareIcon.alpha = 1f
+        editDeleteIcon.isEnabled = wishlistCount > 0
+        cartShareIcon.isEnabled =  wishlistCount > 0
+        editDeleteIcon.alpha = if(wishlistCount > 0) 1f else 0.4f
+        cartShareIcon.alpha =  if(wishlistCount > 0) 1f else 0.4f
 
         editDeleteIcon.setOnClickListener {
             if(!wishlistAdapter.isSelectionMode()){
@@ -173,10 +178,21 @@ class WishlistFragment : Fragment(R.layout.fragment_wishlist) {
         titleText.text = "Wishlist"
         editDeleteIcon.setImageResource(R.drawable.ic_edit)
         cartShareIcon.setImageResource(R.drawable.cart)
-        editDeleteIcon.isEnabled = true
-        cartShareIcon.isEnabled = true
-        editDeleteIcon.alpha = 1f
-        cartShareIcon.alpha = 1f
+        editDeleteIcon.isEnabled = wishlistCount > 0
+        cartShareIcon.isEnabled =  wishlistCount > 0
+        editDeleteIcon.alpha = if(wishlistCount > 0) 1f else 0.4f
+        cartShareIcon.alpha =  if(wishlistCount > 0) 1f else 0.4f
+    }
+
+    private fun updateDefaultToolbarState(itemCount: Int){
+        if(wishlistAdapter.isSelectionMode()) return
+        val toolbarRoot = (requireActivity() as? MainActivity)?.findViewById<View>(R.id.toolbarContainer) ?: return
+        val editDeleteIcon = toolbarRoot.findViewById<ImageView>(R.id.ivedit) ?: return
+        val cartShareIcon = toolbarRoot.findViewById<ImageView>(R.id.ivcart) ?: return
+        editDeleteIcon.isEnabled = itemCount > 0
+        cartShareIcon.isEnabled =  itemCount > 0
+        editDeleteIcon.alpha = if (itemCount > 0) 1f else 0.4f
+        cartShareIcon.alpha = if (itemCount > 0) 1f else 0.4f
     }
 
     private fun showDeleteConfirmationDialog(){
