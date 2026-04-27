@@ -155,6 +155,15 @@
         android:id="@+id/collectionFragment"
         android:name="com.example.trennex.ui.wishlist.CollectionFragment"
         android:label="fragment_collection"
-        tools:layout="@layout/fragment_collection" />
+        tools:layout="@layout/fragment_collection" >
+        <action
+            android:id="@+id/action_collectionFragment_to_collectionSelectionFragment"
+            app:destination="@id/collectionSelectionFragment" />
+    </fragment>
+    <fragment
+        android:id="@+id/collectionSelectionFragment"
+        android:name="com.example.trennex.ui.wishlist.CollectionSelectionFragment"
+        android:label="fragment_collection_selection"
+        tools:layout="@layout/fragment_collection_selection" />
 
 </navigation>
