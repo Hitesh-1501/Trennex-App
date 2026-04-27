@@ -29,6 +29,7 @@ import com.example.trennex.databinding.ToolbarCartBinding
 import com.example.trennex.databinding.WishlistToolbarBinding
 import androidx.core.view.isVisible
 import androidx.lifecycle.lifecycleScope
+import com.example.trennex.databinding.ToolbarCollectionSelectionBinding
 import com.example.trennex.utils.cart.CartStore
 import kotlinx.coroutines.launch
 
@@ -103,6 +104,11 @@ class MainActivity : AppCompatActivity() {
                 }
                 R.id.collectionFragment -> {
                     showToolBar(ToolBarType.TITLE,"Collections")
+                    setLightStatusBar(true)
+                    binding.curveBottomNav.visibility = View.GONE
+                }
+                R.id.collectionSelectionFragment->{
+                    showToolBar(ToolBarType.COLLECTION_SELECTION)
                     setLightStatusBar(true)
                     binding.curveBottomNav.visibility = View.GONE
                 }
@@ -222,6 +228,11 @@ class MainActivity : AppCompatActivity() {
                 val toolbarBinding = CategoryToolbarBinding.inflate(layoutInflater)
                 binding.toolbarContainer.addView(toolbarBinding.root)
                 binding.appBarLayout.setBackgroundColor("#332962FF".toColorInt())
+            }
+            ToolBarType.COLLECTION_SELECTION -> {
+                val toolbarBinding = ToolbarCollectionSelectionBinding.inflate(layoutInflater)
+                binding.toolbarContainer.addView(toolbarBinding.root)
+                binding.appBarLayout.setBackgroundColor(Color.WHITE)
             }
         }
     }
