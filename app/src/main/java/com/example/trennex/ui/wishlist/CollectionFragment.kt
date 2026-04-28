@@ -1,16 +1,25 @@
 package com.example.trennex.ui.wishlist
 
 import android.app.AlertDialog
+import android.content.Context
 import android.content.Intent
 import android.os.Bundle
+import android.text.SpannableString
+import android.text.style.ForegroundColorSpan
+import android.view.ContextThemeWrapper
+import android.view.Gravity
 import androidx.fragment.app.Fragment
 import android.view.LayoutInflater
 import android.view.MenuItem
 import android.view.View
 import android.view.ViewGroup
 import android.widget.EditText
+import android.widget.FrameLayout
 import android.widget.PopupMenu
+import android.widget.TextView
 import android.widget.Toast
+import androidx.core.content.ContextCompat
+import androidx.core.view.size
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.lifecycleScope
 import androidx.lifecycle.repeatOnLifecycle
@@ -24,6 +33,9 @@ import com.example.trennex.utils.wishlist.CollectionStore
 import kotlinx.coroutines.launch
 import java.security.cert.TrustAnchor
 import kotlin.random.Random
+import androidx.core.view.get
+import androidx.core.view.marginEnd
+import androidx.core.view.marginTop
 
 class CollectionFragment : Fragment(R.layout.fragment_collection) {
     private var _binding: FragmentCollectionBinding? = null
@@ -68,9 +80,20 @@ class CollectionFragment : Fragment(R.layout.fragment_collection) {
         findNavController().navigate(R.id.action_collectionFragment_to_collectionSelectionFragment)
     }
     private fun showCollectionMenu(anchor: View,collection: CollectionModel){
-        val popup = PopupMenu(requireContext(),anchor)
+        val popup = PopupMenu(ContextThemeWrapper(requireContext(), R.style.ThemeOverlay_TrenNex_PopupMenu),anchor)
         popup.menuInflater.inflate(R.menu.menu_collection_icon,popup.menu)
         popup.setForceShowIcon(true)
+        for(index in 0 until popup.menu.size){
+            val item = popup.menu[index]
+            val title = SpannableString(item.title)
+            title.setSpan(
+                ForegroundColorSpan(ContextCompat.getColor(requireContext(), R.color.textPrimary)),
+                0,
+                title.length,
+                0
+            )
+            item.title = title
+        }
         popup.setOnMenuItemClickListener { menuItem ->
             when(menuItem.itemId){
                 R.id.action_edit_collection ->{
@@ -96,18 +119,38 @@ class CollectionFragment : Fragment(R.layout.fragment_collection) {
         val editText = EditText(requireContext()).apply {
             setText(collection.name)
             setPadding(40, 30, 40, 20)
+            setTextColor(ContextCompat.getColor(requireContext(), R.color.textPrimary))
+            setHintTextColor(ContextCompat.getColor(requireContext(),R.color.textSecondary))
+            setBackgroundResource(R.drawable.edit_text_bg)
         }
-        AlertDialog.Builder(requireContext())
+        val container = FrameLayout(requireContext()).apply {
+            setPadding(20.dpToPx(), 0, 20.dpToPx(), 0)
+            addView(editText)
+        }
+
+        val dialog = AlertDialog.Builder(requireContext(), androidx.appcompat.R.style.Theme_AppCompat_Light_Dialog)
             .setTitle("Edit Collection")
-            .setView(editText)
+            .setMessage("Enter a new name for the collection")
+            .setView(container)
             .setNegativeButton("Cancel",null)
             .setPositiveButton("Save"){_,_->
                 CollectionStore.renameCollection(collection.id,editText.text.toString())
                 Toast.makeText(requireContext(), "Collection updated", Toast.LENGTH_SHORT).show()
             }
-            .show()
+            .create()
+        dialog.show()
+        dialog.window?.setBackgroundDrawableResource(R.drawable.bg_drawable_white)
+        dialog.getButton(androidx.appcompat.app.AlertDialog.BUTTON_POSITIVE)?.setTextColor(
+            ContextCompat.getColor(requireContext(), R.color.colorPrimary)
+        )
+        dialog.getButton(androidx.appcompat.app.AlertDialog.BUTTON_NEGATIVE)?.setTextColor(
+            ContextCompat.getColor(requireContext(), R.color.textPrimary)
+        )
     }
 
+    fun Int.dpToPx(): Int {
+        return (this * resources.displayMetrics.density).toInt()
+    }
     private fun shareCollection(collection: CollectionModel) {
         val shareText = buildString {
             append("${collection.name}\n")

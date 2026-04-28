@@ -4,8 +4,4 @@
     <stroke android:color="@color/textPlaceholder"
         android:width="1dp"/>
     <corners android:radius="6dp"/>
-    <padding android:bottom="6dp"
-        android:top="6dp"
-        android:left="6dp"
-        android:right="6dp"/>
 </shape>

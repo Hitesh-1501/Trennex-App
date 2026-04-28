@@ -31,4 +31,6 @@
     <color name="strokecolor">#1A000000</color>
     <color name="wishlist_border_color">#E6EAF2</color>
 
+    <color name="toolbar_bg">#332962FF</color>
+
 </resources>

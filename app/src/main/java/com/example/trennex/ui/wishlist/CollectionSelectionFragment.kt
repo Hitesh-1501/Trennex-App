@@ -127,7 +127,7 @@ class CollectionSelectionFragment : Fragment(R.layout.fragment_collection_select
             val image = ImageView(requireContext()).apply {
                 layoutParams = LinearLayout.LayoutParams(180,180).apply { marginEnd = 10 }
                 scaleType = ImageView.ScaleType.CENTER_CROP
-                background = requireContext().getDrawable(R.drawable.bg_drawable_white)
+                background = requireContext().getDrawable(R.drawable.bg_preview_blue)
             }
             Glide.with(image)
                 .load(url)

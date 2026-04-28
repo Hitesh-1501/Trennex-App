@@ -3,6 +3,7 @@
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
     android:orientation="vertical"
+    android:background="@color/white"
     android:padding="16dp">
 
     <TextView
@@ -17,6 +18,10 @@
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:layout_marginTop="8dp"
+        android:textColor="@color/textPrimary"
+        android:textColorHint="@color/textPlaceholder"
+        android:padding="8dp"
+        android:textSize="14sp"
         android:background="@drawable/edit_text_bg"
         android:hint="Enter collection name"
         android:inputType="textCapWords"
