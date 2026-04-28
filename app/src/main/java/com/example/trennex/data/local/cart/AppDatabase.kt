@@ -4,13 +4,16 @@ import android.content.Context
 import androidx.room.Database
 import androidx.room.Room
 import androidx.room.RoomDatabase
+import com.example.trennex.data.local.wihslist.CollectionDao
+import com.example.trennex.data.local.wihslist.CollectionEntity
 import com.example.trennex.data.local.wihslist.WishlistDao
 import com.example.trennex.data.local.wihslist.WishlistItemEntity
 
-@Database(entities = [CartItemEntity::class, WishlistItemEntity::class], version = 4, exportSchema = false)
+@Database(entities = [CartItemEntity::class, WishlistItemEntity::class, CollectionEntity::class], version = 5, exportSchema = false)
 abstract class AppDatabase: RoomDatabase(){
     abstract fun cartDao():CartDao
     abstract fun wishlistDao(): WishlistDao
+    abstract fun collectionDao(): CollectionDao
 
     companion object{
         @Volatile
