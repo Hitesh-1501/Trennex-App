@@ -112,6 +112,11 @@ class MainActivity : AppCompatActivity() {
                     setLightStatusBar(true)
                     binding.curveBottomNav.visibility = View.GONE
                 }
+                R.id.collectionItemsFragment ->{
+                    showToolBar(ToolBarType.COLLECTION_ITEMS)
+                    setLightStatusBar(true)
+                    binding.curveBottomNav.visibility = View.GONE
+                }
             }
             renderCartBadge()
         }
@@ -231,6 +236,11 @@ class MainActivity : AppCompatActivity() {
             }
             ToolBarType.COLLECTION_SELECTION -> {
                 val toolbarBinding = ToolbarCollectionSelectionBinding.inflate(layoutInflater)
+                binding.toolbarContainer.addView(toolbarBinding.root)
+                binding.appBarLayout.setBackgroundColor(Color.WHITE)
+            }
+            ToolBarType.COLLECTION_ITEMS -> {
+                val toolbarBinding = WishlistToolbarBinding.inflate(layoutInflater)
                 binding.toolbarContainer.addView(toolbarBinding.root)
                 binding.appBarLayout.setBackgroundColor(Color.WHITE)
             }
