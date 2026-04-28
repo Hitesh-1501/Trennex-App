@@ -58,4 +58,17 @@ object CollectionStore {
             repo().removeCollection(id)
         }
     }
+    fun removeItemsFromCollection(collectionId: Long,itemIds: List<Int>){
+        if(itemIds.isEmpty()) return
+        scope.launch {
+            val latestCollections = repo().observeCollections().first()
+            val target = latestCollections.firstOrNull(){it.id == collectionId}?: return@launch
+            val updateItems = target.items.filterNot { it.id in itemIds.toSet() }
+            if(updateItems.isEmpty()){
+                repo().removeCollection(collectionId)
+            }else{
+                repo().addOrUpdate(target.copy(items = updateItems))
+            }
+        }
+    }
 }
