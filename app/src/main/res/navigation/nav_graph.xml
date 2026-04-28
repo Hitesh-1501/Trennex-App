@@ -159,11 +159,35 @@
         <action
             android:id="@+id/action_collectionFragment_to_collectionSelectionFragment"
             app:destination="@id/collectionSelectionFragment" />
+        <action
+            android:id="@+id/action_collectionFragment_to_collectionItemsFragment"
+            app:destination="@id/collectionItemsFragment" />
     </fragment>
     <fragment
         android:id="@+id/collectionSelectionFragment"
         android:name="com.example.trennex.ui.wishlist.CollectionSelectionFragment"
         android:label="fragment_collection_selection"
         tools:layout="@layout/fragment_collection_selection" />
+    <fragment
+        android:id="@+id/collectionItemsFragment"
+        android:name="com.example.trennex.ui.wishlist.CollectionItemsFragment"
+        android:label="fragment_collection_items"
+        tools:layout="@layout/fragment_collection_items" >
+
+        <argument
+            android:name="collectionId"
+            app:argType="long"/>
+
+        <argument
+            android:name="collectionName"
+            app:argType="string"/>
+
+        <action
+            android:id="@+id/action_collectionItemsFragment_to_productDetailFragment"
+            app:destination="@id/productDetailFragment" />
+        <action
+            android:id="@+id/action_collectionItemsFragment_to_cartFragment"
+            app:destination="@id/cartFragment" />
+    </fragment>
 
 </navigation>

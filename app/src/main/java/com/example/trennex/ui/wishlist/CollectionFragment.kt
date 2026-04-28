@@ -43,7 +43,8 @@ class CollectionFragment : Fragment(R.layout.fragment_collection) {
     private val collectionAdapter by lazy {
         CollectionGridAdapter(
             onCreateCollectionClicked = {openCollectionSelection()},
-            onCollectionMenuClicked = { anchor, item -> showCollectionMenu(anchor,item) }
+            onCollectionMenuClicked = { anchor, item -> showCollectionMenu(anchor,item) },
+            onCollectionClicked = {openCollectionItem(it)}
         )
     }
     override fun onCreateView(
@@ -78,6 +79,13 @@ class CollectionFragment : Fragment(R.layout.fragment_collection) {
     }
     private fun openCollectionSelection(){
         findNavController().navigate(R.id.action_collectionFragment_to_collectionSelectionFragment)
+    }
+    private fun openCollectionItem(collection: CollectionModel){
+        val direction = CollectionFragmentDirections.actionCollectionFragmentToCollectionItemsFragment(
+            collectionId = collection.id,
+            collectionName = collection.name
+        )
+        findNavController().navigate(direction)
     }
     private fun showCollectionMenu(anchor: View,collection: CollectionModel){
         val popup = PopupMenu(ContextThemeWrapper(requireContext(), R.style.ThemeOverlay_TrenNex_PopupMenu),anchor)

@@ -15,7 +15,8 @@ import com.example.trennex.ui.wishlist.model.CollectionModel
 
 class CollectionGridAdapter(
     private val onCreateCollectionClicked: () -> Unit,
-    private val onCollectionMenuClicked: (anchor: View,item: CollectionModel) -> Unit
+    private val onCollectionMenuClicked: (anchor: View,item: CollectionModel) -> Unit,
+    private val onCollectionClicked: (CollectionModel) -> Unit
 ): RecyclerView.Adapter<RecyclerView.ViewHolder>(){
 
     private var items: List<CollectionModel> = emptyList()
@@ -65,6 +66,9 @@ class CollectionGridAdapter(
         renderPreviewImages(collectionHolder.binding,images)
         collectionHolder.binding.ivMenu.setOnClickListener {
             onCollectionMenuClicked(it, item)
+        }
+        collectionHolder.binding.root.setOnClickListener {
+            onCollectionClicked(item)
         }
     }
 
