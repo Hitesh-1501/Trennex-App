@@ -107,6 +107,11 @@ class WishlistFragment : Fragment(R.layout.fragment_wishlist) {
         }
     }
 
+    override fun onResume() {
+        super.onResume()
+        setupWishlistToolbar()
+    }
+
     private fun setupWishlistToolbar(){
         val toolbarRoot = (requireActivity() as? MainActivity)?.findViewById<View>(R.id.toolbarContainer)?:return
         val backArrow = toolbarRoot.findViewById<ImageView>(R.id.back_arrow) ?: return
