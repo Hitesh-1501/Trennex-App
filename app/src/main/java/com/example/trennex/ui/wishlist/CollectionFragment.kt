@@ -136,7 +136,7 @@ class CollectionFragment : Fragment(R.layout.fragment_collection) {
             addView(editText)
         }
 
-        val dialog = AlertDialog.Builder(requireContext(), androidx.appcompat.R.style.Theme_AppCompat_Light_Dialog)
+        val dialog = androidx.appcompat.app.AlertDialog.Builder(requireContext())
             .setTitle("Edit Collection")
             .setMessage("Enter a new name for the collection")
             .setView(container)
@@ -148,6 +148,12 @@ class CollectionFragment : Fragment(R.layout.fragment_collection) {
             .create()
         dialog.show()
         dialog.window?.setBackgroundDrawableResource(R.drawable.bg_drawable_white)
+        dialog.findViewById<TextView>(android.R.id.message)?.setTextColor(
+            ContextCompat.getColor(requireContext(), R.color.textPrimary)
+        )
+        dialog.findViewById<TextView>(com.google.android.material.R.id.alertTitle)?.setTextColor(
+            ContextCompat.getColor(requireContext(), R.color.textPrimary)
+        )
         dialog.getButton(androidx.appcompat.app.AlertDialog.BUTTON_POSITIVE)?.setTextColor(
             ContextCompat.getColor(requireContext(), R.color.colorPrimary)
         )
