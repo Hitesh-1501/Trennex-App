@@ -117,6 +117,11 @@ class MainActivity : AppCompatActivity() {
                     setLightStatusBar(true)
                     binding.curveBottomNav.visibility = View.GONE
                 }
+                R.id.searchFragment -> {
+                    showToolBar(ToolBarType.SEARCH)
+                    setLightStatusBar(true)
+                    binding.curveBottomNav.visibility = View.GONE
+                }
             }
             renderCartBadge()
         }
@@ -182,6 +187,11 @@ class MainActivity : AppCompatActivity() {
                         navController.navigate(R.id.action_homeFragment_to_wishlistFragment)
                     }
                 }
+                toolbarBinding.searchBar.setOnClickListener {
+                    if(navController.currentDestination?.id == R.id.homeFragment){
+                        navController.navigate(R.id.searchFragment)
+                    }
+                }
             }
             ToolBarType.TITLE -> {
                 val toolbarBinding = TitleToolbarBinding.inflate(layoutInflater)
@@ -201,6 +211,10 @@ class MainActivity : AppCompatActivity() {
             ToolBarType.SEARCH -> {
                 val toolbarBinding = SearchToolbarBinding.inflate(layoutInflater)
                 binding.toolbarContainer.addView(toolbarBinding.root)
+                binding.appBarLayout.setBackgroundColor("#332962FF".toColorInt())
+                toolbarBinding.backArrow.setOnClickListener {
+                    navController.popBackStack()
+                }
             }
             ToolBarType.OTP -> {
                 val toolbarBinding = NavigationIconToolbarBinding.inflate(layoutInflater)
@@ -233,6 +247,11 @@ class MainActivity : AppCompatActivity() {
                 val toolbarBinding = CategoryToolbarBinding.inflate(layoutInflater)
                 binding.toolbarContainer.addView(toolbarBinding.root)
                 binding.appBarLayout.setBackgroundColor("#332962FF".toColorInt())
+                toolbarBinding.searchBar.setOnClickListener {
+                    if (navController.currentDestination?.id == R.id.categoryFragment) {
+                        navController.navigate(R.id.searchFragment)
+                    }
+                }
             }
             ToolBarType.COLLECTION_SELECTION -> {
                 val toolbarBinding = ToolbarCollectionSelectionBinding.inflate(layoutInflater)
