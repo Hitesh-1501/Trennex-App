@@ -20,4 +20,8 @@ class ProductRepository {
         return RetrofitInstance.api.getProductByCategory(slug).products
     }
 
+    suspend fun searchProducts(query: String): List<ProductResponse>{
+        return RetrofitInstance.api.searchProducts(query).products
+    }
+
 }
