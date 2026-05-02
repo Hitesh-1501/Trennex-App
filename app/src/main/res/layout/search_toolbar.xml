@@ -23,11 +23,11 @@
         app:cardCornerRadius="6dp"
         app:cardElevation="5dp"
         app:cardBackgroundColor="@color/white"
-        android:layout_marginEnd="30dp"
+        android:layout_marginEnd="8dp"
         android:layout_marginStart="15dp"
         app:layout_constraintTop_toTopOf="parent"
         app:layout_constraintBottom_toBottomOf="parent"
-        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintEnd_toStartOf="@+id/ivwishlist"
         app:layout_constraintStart_toEndOf="@+id/back_arrow">
 
 
@@ -71,6 +71,27 @@
         </LinearLayout>
 
     </androidx.cardview.widget.CardView>
+
+    <ImageView
+        android:id="@+id/ivwishlist"
+        android:layout_width="24dp"
+        android:layout_height="24dp"
+        android:src="@drawable/wishlist_items"
+        app:layout_constraintStart_toEndOf="@+id/search_Bar"
+        app:layout_constraintEnd_toStartOf="@+id/ivcart"
+        app:layout_constraintTop_toTopOf="parent"
+        android:layout_marginEnd="10dp"
+        app:layout_constraintBottom_toBottomOf="parent"/>
+
+    <ImageView
+        android:id="@+id/ivcart"
+        android:layout_width="24dp"
+        android:layout_height="24dp"
+        android:src="@drawable/cart"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintTop_toTopOf="parent"
+        app:layout_constraintBottom_toBottomOf="parent"/>
+
 
 
 </androidx.constraintlayout.widget.ConstraintLayout>
