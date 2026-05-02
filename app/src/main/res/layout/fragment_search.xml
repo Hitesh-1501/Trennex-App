@@ -46,7 +46,7 @@
                 android:layout_weight="1"
                 android:layout_marginStart="12dp"
                 android:background="@drawable/search_btn_bg"
-                android:drawableStart="@drawable/gallary_icon"
+                android:drawableStart="@drawable/gallery_icon"
                 android:textColor="@color/textPrimary"
                 android:padding="10dp"
                 android:text="Select a photo"

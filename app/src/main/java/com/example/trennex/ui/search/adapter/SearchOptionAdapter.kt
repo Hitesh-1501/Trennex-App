@@ -4,6 +4,7 @@ import android.annotation.SuppressLint
 import android.view.LayoutInflater
 import android.view.ViewGroup
 import androidx.recyclerview.widget.RecyclerView
+import com.example.trennex.R
 import com.example.trennex.databinding.ItemSearchOptionsBinding
 
 class SearchOptionAdapter(
@@ -45,8 +46,8 @@ class SearchOptionAdapter(
     ) : RecyclerView.ViewHolder(binding.root) {
         fun bind(text: String, isRecommendation: Boolean) {
             binding.title.text = text
-            binding.leftIcon.setImageResource(if (isRecommendation) android.R.drawable.ic_menu_search else android.R.drawable.ic_menu_recent_history)
-            binding.actionIcon.setImageResource(if (isRecommendation) android.R.drawable.arrow_up_float else android.R.drawable.ic_menu_close_clear_cancel)
+            binding.leftIcon.setImageResource(if (isRecommendation) R.drawable.search_mini_icon else R.drawable.history_icon)
+            binding.actionIcon.setImageResource(if (isRecommendation) R.drawable.upper_icon else R.drawable.remove_icon)
             binding.actionIcon.setOnClickListener {
                 onActionClick(text)
             }

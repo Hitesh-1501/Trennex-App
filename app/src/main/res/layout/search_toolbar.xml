@@ -19,7 +19,7 @@
     <androidx.cardview.widget.CardView
         android:id="@+id/search_Bar"
         android:layout_width="0dp"
-        android:layout_height="30dp"
+        android:layout_height="40dp"
         app:cardCornerRadius="6dp"
         app:cardElevation="5dp"
         app:cardBackgroundColor="@color/white"
