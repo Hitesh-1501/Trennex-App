@@ -1,10 +1,12 @@
 package com.example.trennex.data.remote.api
 
+
 import com.example.trennex.data.model.CategoryApiResponse
 import com.example.trennex.data.model.ProductListResponse
 import com.example.trennex.data.model.ProductResponse
 import retrofit2.http.GET
 import retrofit2.http.Path
+import retrofit2.http.Query
 
 interface ApiService {
     @GET("products")
@@ -22,5 +24,8 @@ interface ApiService {
     suspend fun getProductByCategory(
         @Path("slug") slug: String
     ): ProductListResponse
+
+    @GET("products/search")
+    suspend fun searchProducts(@Query("q") query: String): ProductListResponse
 
 }
