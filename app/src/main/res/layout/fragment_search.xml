@@ -1,8 +1,9 @@
 <?xml version="1.0" encoding="utf-8"?>
-<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:orientation="vertical"
+    android:background="@color/colorBackground"
     android:paddingHorizontal="12dp"
     android:paddingTop="10dp">
 
@@ -11,7 +12,10 @@
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:layout_marginTop="8dp"
-        android:orientation="vertical">
+        android:orientation="vertical"
+        app:layout_constraintTop_toTopOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintEnd_toEndOf="parent">
 
         <TextView
             android:layout_width="wrap_content"
@@ -19,99 +23,160 @@
             android:text="PHOTO SEARCH"
             android:textColor="@color/textPrimary"
             android:textSize="13sp"
-            android:textStyle="bold"/>
+            android:textStyle="bold"
+            android:fontFamily="@font/poppins_semibold" />
 
         <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:layout_marginTop="12dp"
-            android:orientation="horizontal">
+            android:orientation="horizontal"
+            android:gravity="center">
 
             <androidx.appcompat.widget.AppCompatButton
                 android:id="@+id/btnSearchWithCamera"
                 android:layout_width="0dp"
-                android:layout_height="40dp"
+                android:layout_height="44dp"
                 android:layout_weight="1"
                 android:background="@drawable/search_btn_bg"
                 android:drawableStart="@drawable/camera_icon"
                 android:padding="10dp"
                 android:textColor="@color/textPrimary"
-                android:text="Search With camera"
+                android:text="Search With Camera"
                 android:textAllCaps="false"
-                android:textSize="11sp" />
+                android:textSize="11sp"
+                android:fontFamily="@font/poppins_medium"
+                android:drawablePadding="6dp" />
 
             <androidx.appcompat.widget.AppCompatButton
                 android:id="@+id/btnSelectPhoto"
                 android:layout_width="0dp"
-                android:layout_height="40dp"
+                android:layout_height="44dp"
                 android:layout_weight="1"
                 android:layout_marginStart="12dp"
                 android:background="@drawable/search_btn_bg"
                 android:drawableStart="@drawable/gallery_icon"
                 android:textColor="@color/textPrimary"
                 android:padding="10dp"
-                android:text="Select a photo"
+                android:text="Select a Photo"
                 android:textAllCaps="false"
-                android:textSize="11sp" />
+                android:textSize="11sp"
+                android:fontFamily="@font/poppins_medium"
+                android:drawablePadding="6dp" />
         </LinearLayout>
     </LinearLayout>
+
 
     <TextView
         android:id="@+id/listTitle"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:layout_marginTop="12dp"
+        android:layout_marginTop="16dp"
         android:text="RECENT SEARCHES"
         android:textColor="@color/textPrimary"
         android:textStyle="bold"
-         />
+        android:textSize="12sp"
+        android:fontFamily="@font/poppins_semibold"
+        app:layout_constraintTop_toBottomOf="@id/photoSearchSection"
+        app:layout_constraintStart_toStartOf="parent" />
 
     <androidx.recyclerview.widget.RecyclerView
         android:id="@+id/searchRecyclerView"
         android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:layout_marginTop="6dp"
-     />
+        android:layout_height="0dp"
+        android:layout_marginTop="8dp"
+        android:layout_marginBottom="8dp"
+        android:visibility="visible"
+        app:layout_constraintTop_toBottomOf="@id/listTitle"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintBottom_toTopOf="@id/bottomOptions" />
 
     <androidx.recyclerview.widget.RecyclerView
         android:id="@+id/searchResultRecyclerView"
         android:layout_width="match_parent"
         android:layout_height="0dp"
-        android:layout_weight="1"
         android:clipToPadding="false"
         android:paddingTop="4dp"
         android:paddingBottom="8dp"
-        android:visibility="gone" />
+        android:visibility="gone"
+        app:layout_constraintTop_toBottomOf="@id/photoSearchSection"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintBottom_toTopOf="@id/bottomOptions" />
+
+    <LinearLayout
+        android:id="@+id/noProductsContainer"
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:gravity="center"
+        android:orientation="vertical"
+        android:background="@color/colorBackground"
+        android:paddingHorizontal="10dp"
+        android:visibility="gone"
+        app:layout_constraintTop_toBottomOf="@id/photoSearchSection"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintBottom_toTopOf="@id/bottomOptions">
+
+
+        <ImageView
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:src="@drawable/no_product_found"
+            android:contentDescription="Empty Box Icon"/>
+
+    </LinearLayout>
+
 
     <LinearLayout
         android:id="@+id/bottomOptions"
         android:layout_width="match_parent"
-        android:layout_height="44dp"
-        android:background="@android:color/white"
-        android:elevation="4dp"
+        android:layout_height="48dp"
+        android:background="@color/colorBackground"
+        android:elevation="8dp"
         android:gravity="center_vertical"
         android:orientation="horizontal"
-        android:visibility="gone">
+        android:paddingHorizontal="12dp"
+        android:visibility="gone"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintEnd_toEndOf="parent">
 
-        <TextView
-            android:id="@+id/optionSort"
+        <LinearLayout
+            android:id="@+id/sortContainer"
             android:layout_width="0dp"
             android:layout_height="match_parent"
             android:layout_weight="1"
-            android:drawableStart="@drawable/sort"
-            android:paddingHorizontal="40dp"
-            android:fontFamily="@font/poppins_semibold"
             android:gravity="center"
-            android:text="sort"
-            android:textAllCaps="true"
-            android:textColor="@color/textPrimary"
-            android:textSize="12sp" />
+            android:orientation="horizontal">
+
+            <ImageView
+                android:layout_width="18dp"
+                android:layout_height="18dp"
+                android:src="@drawable/sort"
+                app:tint="@color/textPrimary"
+                android:contentDescription="Sort Icon" />
+
+            <TextView
+                android:id="@+id/optionSort"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="10dp"
+                android:fontFamily="@font/poppins_semibold"
+                android:text="Sort"
+                android:textAllCaps="true"
+                android:textColor="@color/textPrimary"
+                android:textSize="12sp" />
+        </LinearLayout>
 
         <View
             android:id="@+id/optionDivider"
             android:layout_width="1dp"
-            android:layout_height="18dp"
-            android:background="@color/wishlist_border_color" />
+            android:layout_height="24dp"
+            android:layout_marginHorizontal="12dp"
+            android:background="@color/wishlist_border_color"
+            android:visibility="gone" />
 
         <TextView
             android:id="@+id/optionSecondary"
@@ -120,10 +185,11 @@
             android:layout_weight="1"
             android:fontFamily="@font/poppins_semibold"
             android:gravity="center"
-            android:text="GENDER"
+            android:text="Gender"
+            android:textAllCaps="true"
             android:textColor="@color/textPrimary"
-            android:textSize="12sp" />
+            android:textSize="12sp"
+            android:visibility="gone" />
     </LinearLayout>
 
-
-</LinearLayout>
+</androidx.constraintlayout.widget.ConstraintLayout>
