@@ -8,7 +8,8 @@ import com.example.trennex.R
 import com.example.trennex.databinding.ItemSearchOptionsBinding
 
 class SearchOptionAdapter(
-    private val onActionClick:(String) -> Unit
+    private val onItemClick:(String,Boolean) -> Unit,
+    private val onRemoveClick: (String) -> Unit
 ): RecyclerView.Adapter<SearchOptionAdapter.SearchOptionViewHolder>() {
 
     private val items = mutableListOf<String>()
@@ -48,8 +49,17 @@ class SearchOptionAdapter(
             binding.title.text = text
             binding.leftIcon.setImageResource(if (isRecommendation) R.drawable.search_mini_icon else R.drawable.history_icon)
             binding.actionIcon.setImageResource(if (isRecommendation) R.drawable.upper_icon else R.drawable.remove_icon)
+            binding.root.isClickable = false
+            binding.root.setOnKeyListener(null)
             binding.actionIcon.setOnClickListener {
-                onActionClick(text)
+                if(!isRecommendation){
+                    onRemoveClick(text)
+                }else{
+                    onItemClick(text,isRecommendation)
+                }
+            }
+            binding.itemContentLayout.setOnClickListener {
+                onItemClick(text, isRecommendation)
             }
         }
     }
