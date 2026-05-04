@@ -8,20 +8,16 @@ import android.view.View
 import android.view.ViewGroup
 import android.widget.EditText
 import android.widget.ImageView
-import android.widget.LinearLayout
-import androidx.constraintlayout.helper.widget.Grid
 import androidx.core.view.isVisible
 import androidx.core.widget.doAfterTextChanged
 import androidx.fragment.app.viewModels
 import androidx.lifecycle.lifecycleScope
 import androidx.recyclerview.widget.GridLayoutManager
 import androidx.recyclerview.widget.LinearLayoutManager
-import androidx.room.util.query
 import com.example.trennex.R
 import com.example.trennex.data.local.cart.AppDatabase
 import com.example.trennex.data.local.search.RecentSearchEntity
 import com.example.trennex.databinding.FragmentSearchBinding
-import com.example.trennex.repository.product.ProductRepository
 import com.example.trennex.ui.main.MainActivity
 import com.example.trennex.ui.search.adapter.SearchOptionAdapter
 import com.example.trennex.ui.search.adapter.SearchResultAdapter
@@ -99,6 +95,7 @@ class SearchFragment : Fragment(R.layout.fragment_search){
             clearSearch?.isVisible = false
         }
     }
+
 
     private fun setupRecyclerViews() {
         binding.searchRecyclerView.layoutManager = LinearLayoutManager(requireContext())
@@ -189,6 +186,8 @@ class SearchFragment : Fragment(R.layout.fragment_search){
             AppDatabase.getInstance(requireContext()).recentSearchDao()
                 .getRecentSearches().collectLatest {searches->
                     if(searches.isNotEmpty()){
+                        binding.listTitle.text = "RECENT SEARCHES"
+                        binding.listTitle.isVisible = true
                         searchOptionAdapter.submitItems(
                             searches.map { it.query },
                             isRecommendation = false
@@ -210,6 +209,8 @@ class SearchFragment : Fragment(R.layout.fragment_search){
             }
 
             viewLifecycleOwner.lifecycleScope.launch {
+                AppDatabase.getInstance(requireContext()).recentSearchDao()
+                    .deleteRecentSearch(query)
                 AppDatabase.getInstance(requireContext()).recentSearchDao()
                     .insertRecentSearch(RecentSearchEntity(query = query))
                 viewModel.searchProducts(query)
