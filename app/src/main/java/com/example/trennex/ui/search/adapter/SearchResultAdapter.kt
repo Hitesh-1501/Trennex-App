@@ -73,8 +73,20 @@ class SearchResultAdapter: RecyclerView.Adapter<RecyclerView.ViewHolder>(){
     }
     inner class ListVH(private val binding: ItemSearchResultListBinding) : RecyclerView.ViewHolder(binding.root) {
         fun bind(item: ProductResponse) {
+            val mrp = if (item.discountPercentage > 0){
+                item.price / (1 - (item.discountPercentage / 100.0))
+            }else{
+                item.price
+            }
+
+            val mrpText = CurrencyFormator.formatInr(mrp)
+            val spannable = SpannableString(mrpText)
+            spannable.setSpan(StrikethroughSpan(), 0, mrpText.length, 0)
             binding.title.text = item.title
             binding.description.text = item.description
+            binding.mrpPrice.paintFlags = binding.mrpPrice.paintFlags or Paint.STRIKE_THRU_TEXT_FLAG
+            binding.mrpPrice.text = spannable
+            binding.discount.text = "${item.discountPercentage.roundToInt()}% OFF"
             binding.price.text = CurrencyFormator.formatInr(item.price)
             Glide.with(binding.image).load(item.thumbnail).into(binding.image)
         }
