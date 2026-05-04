@@ -86,19 +86,17 @@
                 android:layout_height="wrap_content"
                 android:fontFamily="@font/poppins_semibold"
                 android:textColor="@color/colorError"
-                android:textSize="12sp" />
-
-            <TextView
-                android:id="@+id/price"
-                android:layout_width="0dp"
-                android:layout_height="wrap_content"
-                android:layout_weight="1"
-                android:layout_marginStart="12dp"
-                android:fontFamily="@font/poppins_semibold"
-                android:textColor="@color/textPrimary"
-                android:textSize="14sp"
-                android:gravity="end" />
+                android:textSize="13sp" />
         </LinearLayout>
+        <TextView
+            android:id="@+id/price"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="4dp"
+            android:fontFamily="@font/poppins_semibold"
+            android:textColor="@color/textPrimary"
+            android:textSize="20sp"
+       />
     </LinearLayout>
 
 </androidx.constraintlayout.widget.ConstraintLayout>
