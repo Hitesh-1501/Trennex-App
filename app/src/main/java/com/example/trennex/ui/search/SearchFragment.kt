@@ -12,6 +12,7 @@ import androidx.core.view.isVisible
 import androidx.core.widget.doAfterTextChanged
 import androidx.fragment.app.viewModels
 import androidx.lifecycle.lifecycleScope
+import androidx.navigation.fragment.findNavController
 import androidx.recyclerview.widget.GridLayoutManager
 import androidx.recyclerview.widget.LinearLayoutManager
 import com.example.trennex.R
@@ -75,7 +76,14 @@ class SearchFragment : Fragment(R.layout.fragment_search){
                 }
             }
         )
-        searchResultAdapter = SearchResultAdapter()
+        searchResultAdapter = SearchResultAdapter{product ->
+            if(findNavController().currentDestination?.id == R.id.searchFragment){
+                val bundle = Bundle().apply {
+                    putInt("productId",product.id)
+                }
+                findNavController().navigate(R.id.productDetailFragment,bundle)
+            }
+        }
     }
 
 
@@ -93,6 +101,18 @@ class SearchFragment : Fragment(R.layout.fragment_search){
         clearSearch?.setOnClickListener {
             searchInput?.text?.clear()
             clearSearch?.isVisible = false
+        }
+
+        wishlistIcon?.setOnClickListener {
+            if (findNavController().currentDestination?.id == R.id.searchFragment) {
+                findNavController().navigate(R.id.wishlistFragment)
+            }
+        }
+
+        cartIcon?.setOnClickListener {
+            if (findNavController().currentDestination?.id == R.id.searchFragment) {
+                findNavController().navigate(R.id.cartFragment)
+            }
         }
     }
 

@@ -12,9 +12,12 @@ import com.example.trennex.data.model.ProductResponse
 import com.example.trennex.databinding.ItemSearchResultGridBinding
 import com.example.trennex.databinding.ItemSearchResultListBinding
 import com.example.trennex.utils.CurrencyFormator
+import com.example.trennex.viewmodel.product.ProductViewModel
 import kotlin.math.roundToInt
 
-class SearchResultAdapter: RecyclerView.Adapter<RecyclerView.ViewHolder>(){
+class SearchResultAdapter(
+    private val onProductClick: (ProductResponse) -> Unit
+): RecyclerView.Adapter<RecyclerView.ViewHolder>(){
     private val items = mutableListOf<ProductResponse>()
     private var isGrid = false
 
@@ -69,6 +72,7 @@ class SearchResultAdapter: RecyclerView.Adapter<RecyclerView.ViewHolder>(){
             binding.mrpPrice.text = spannable
             binding.price.text = CurrencyFormator.formatInr(item.price)
             Glide.with(binding.image).load(item.thumbnail).into(binding.image)
+            binding.root.setOnClickListener { onProductClick(item) }
         }
     }
     inner class ListVH(private val binding: ItemSearchResultListBinding) : RecyclerView.ViewHolder(binding.root) {
@@ -89,6 +93,8 @@ class SearchResultAdapter: RecyclerView.Adapter<RecyclerView.ViewHolder>(){
             binding.discount.text = "${item.discountPercentage.roundToInt()}% OFF"
             binding.price.text = CurrencyFormator.formatInr(item.price)
             Glide.with(binding.image).load(item.thumbnail).into(binding.image)
+            binding.root.setOnClickListener { onProductClick(item) }
+
         }
     }
 }
