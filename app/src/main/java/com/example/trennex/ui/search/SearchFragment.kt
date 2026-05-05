@@ -39,8 +39,6 @@ class SearchFragment : Fragment(R.layout.fragment_search){
     private var wishlistIcon: ImageView? = null
     private var cartIcon: ImageView? = null
 
-
-
     override fun onCreateView(
         inflater: LayoutInflater, container: ViewGroup?,
         savedInstanceState: Bundle?
@@ -58,7 +56,6 @@ class SearchFragment : Fragment(R.layout.fragment_search){
         observeViewModel()
         loadRecentSearches()
     }
-
     private fun setupAdapters(){
         searchOptionAdapter = SearchOptionAdapter(
             onItemClick = {text, isRecommendation ->
@@ -85,8 +82,6 @@ class SearchFragment : Fragment(R.layout.fragment_search){
             }
         }
     }
-
-
     private fun setupToolbar(){
         val mainActivity = (requireActivity() as MainActivity)
         searchInput = mainActivity.findViewById(R.id.searchInput)
@@ -115,15 +110,11 @@ class SearchFragment : Fragment(R.layout.fragment_search){
             }
         }
     }
-
-
     private fun setupRecyclerViews() {
         binding.searchRecyclerView.layoutManager = LinearLayoutManager(requireContext())
         binding.searchRecyclerView.adapter = searchOptionAdapter
         binding.searchResultRecyclerView.adapter = searchResultAdapter
     }
-
-
     private fun setupListeners(){
         searchInput?.doAfterTextChanged { query ->
             val q = query?.toString()?.trim().orEmpty()
@@ -219,7 +210,6 @@ class SearchFragment : Fragment(R.layout.fragment_search){
                 }
         }
     }
-
     private fun performSearch(query: String) {
         if (query.isBlank()) return
         viewLifecycleOwner.lifecycleScope.launch {
@@ -237,7 +227,6 @@ class SearchFragment : Fragment(R.layout.fragment_search){
             }
         }
     }
-
     private fun showSuggestions(hasQuery: Boolean){
         binding.searchResultRecyclerView.isVisible = false
         binding.searchRecyclerView.isVisible = true
@@ -253,5 +242,4 @@ class SearchFragment : Fragment(R.layout.fragment_search){
         cartIcon = null
         _binding = null
     }
-
 }
