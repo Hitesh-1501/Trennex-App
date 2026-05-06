@@ -72,6 +72,14 @@
             android:id="@+id/otp4"
             style="@style/OtpEditText"/>
 
+        <EditText
+            android:id="@+id/otp5"
+            style="@style/OtpEditText"/>
+
+        <EditText
+            android:id="@+id/otp6"
+            style="@style/OtpEditText"/>
+
     </LinearLayout>
 
     <TextView
