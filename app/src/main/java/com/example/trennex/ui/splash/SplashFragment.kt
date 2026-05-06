@@ -16,6 +16,8 @@ import androidx.navigation.NavArgument
 import androidx.navigation.fragment.findNavController
 import com.example.trennex.R
 import com.example.trennex.databinding.FragmentSplashBinding
+import com.google.firebase.FirebaseApp
+import com.google.firebase.auth.FirebaseAuth
 
 class SplashFragment : Fragment(R.layout.fragment_splash) {
     private var _binding: FragmentSplashBinding? = null
@@ -54,7 +56,14 @@ class SplashFragment : Fragment(R.layout.fragment_splash) {
                         .withEndAction {
                             binding.trennexTitle.postDelayed({
                                 if(isAdded){
-                                    findNavController().navigate(R.id.action_splashFragment_to_onboardingFragment)
+                                    val isLoggedIn = FirebaseApp.getApps(requireContext()).isNotEmpty() &&
+                                            FirebaseAuth.getInstance().currentUser != null
+                                    val destination = if(isLoggedIn){
+                                        R.id.action_splashFragment_to_homeFragment
+                                    }else{
+                                        R.id.action_splashFragment_to_onboardingFragment
+                                    }
+                                    findNavController().navigate(destination)
                                 }
                             },1000)
                         }
