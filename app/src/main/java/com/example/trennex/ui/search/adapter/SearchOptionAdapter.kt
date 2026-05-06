@@ -50,7 +50,7 @@ class SearchOptionAdapter(
             binding.leftIcon.setImageResource(if (isRecommendation) R.drawable.search_mini_icon else R.drawable.history_icon)
             binding.actionIcon.setImageResource(if (isRecommendation) R.drawable.upper_icon else R.drawable.remove_icon)
             binding.root.isClickable = false
-            binding.root.setOnKeyListener(null)
+            binding.root.setOnClickListener(null)
             binding.actionIcon.setOnClickListener {
                 if(!isRecommendation){
                     onRemoveClick(text)

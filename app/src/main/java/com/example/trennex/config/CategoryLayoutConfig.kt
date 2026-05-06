@@ -8,7 +8,6 @@ object CategoryLayoutConfig {
         "jeans", "shorts", "skirt", "saree", "lehenga", "top", "camisole",
         "tank", "vest", "robe", "gown", "suit",
 
-
         "shoe", "shoes", "sneaker", "boot", "sandal", "flip", "flop",
         "slipper", "heel", "pump", "loafer", "oxford", "athletic",
 

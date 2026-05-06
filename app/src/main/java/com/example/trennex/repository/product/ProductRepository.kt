@@ -23,5 +23,4 @@ class ProductRepository {
     suspend fun searchProducts(query: String): List<ProductResponse>{
         return RetrofitInstance.api.searchProducts(query).products
     }
-
 }
