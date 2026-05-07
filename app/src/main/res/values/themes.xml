@@ -53,9 +53,9 @@
         <item name="android:textColorHint">@color/textPlaceholder</item> </style>
 
     <style name="OtpEditText">
-        <item name="android:layout_width">56dp</item>
+        <item name="android:layout_width">44dp</item>
         <item name="android:layout_height">56dp</item>
-        <item name="android:layout_margin">8dp</item>
+        <item name="android:layout_margin">4dp</item>
         <item name="android:gravity">center</item>
         <item name="android:textSize">22sp</item>
         <item name="android:textStyle">bold</item>

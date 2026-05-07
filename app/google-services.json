@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "402227745567",
+    "project_id": "trennex-ebbeb",
+    "storage_bucket": "trennex-ebbeb.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:402227745567:android:146c96fe149305a5d5562a",
+        "android_client_info": {
+          "package_name": "com.example.trennex"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyDg33_532aTSz1aJ0AstYYA2Hy0wgIVJbA"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

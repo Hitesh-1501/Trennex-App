@@ -8,6 +8,10 @@
     <string name="onboarding3_page_description">safely with trusted providers</string>
     <string name="phone_login_text">Login With Phone Number</string>
     <string name="phone_No_text">Enter Phone No</string>
+    <string name="login_description">Enter your mobile number to continue securely with TrenNex.</string>
+    <string name="login_terms_note">We will send a 6-digit verification code by SMS.</string>
+    <string name="login_illustration_description">Login illustration</string>
+    <string name="otp_illustration_description">OTP verification illustration</string>
     <string name="get_otp_text">Get Otp</string>
     <string name="otp_verify_phone">Verify Phone</string>
     <string name="otp_description">code has been sent to +91XXXXXXXXXX</string>
@@ -16,7 +20,6 @@
     <string name="verify_otp">Verify Otp</string>
     <string name="mrp_text">MRP <strike>₹75,000</strike></string>
     <string name="mrp_text_variant"><strike>₹75,000</strike></string>
-    <!-- TODO: Remove or change this placeholder text -->
-    <string name="hello_blank_fragment">Hello blank fragment</string>
+
 
 </resources>

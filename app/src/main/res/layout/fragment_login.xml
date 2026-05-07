@@ -5,96 +5,132 @@
     android:id="@+id/layout"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    tools:context=".ui.auth.login.LoginFragment"
-    android:padding="24dp">
-
+    android:background = "@drawable/bg_auth_page"
+    tools:context=".ui.auth.login.LoginFragment">
 
     <ImageView
         android:id="@+id/skip_login"
-        android:layout_width="24dp"
-        android:layout_height="24dp"
+        android:layout_width="40dp"
+        android:layout_height="40dp"
         android:layout_marginTop="28dp"
+        android:layout_marginEnd="24dp"
+        android:background="@drawable/bg_white_circle"
+        android:elevation="4dp"
+        android:padding="9dp"
         android:src="@drawable/baseline_close_24"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintTop_toTopOf="parent" />
 
-    <ImageView
-        android:id="@+id/img_illustration"
+    <ScrollView
         android:layout_width="0dp"
-        android:layout_height="220dp"
-        android:src="@drawable/login_image"
+        android:layout_height="0dp"
+        android:fillViewport="true"
+        android:paddingHorizontal="24dp"
+        android:paddingTop="70dp"
+        android:paddingBottom="24dp"
+        app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintBottom_toTopOf="@+id/login_text"
-        app:layout_constraintTop_toTopOf="parent"
-        app:layout_constraintVertical_bias="0.2"
-        app:layout_constraintVertical_chainStyle="packed"/>
+        app:layout_constraintTop_toTopOf="parent">
 
-    <TextView
-        android:id="@+id/login_text"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_marginTop="24dp"
-        android:text="@string/phone_login_text"
-        android:textStyle="bold"
-        android:textSize="18sp"
-        android:textColor="@color/textPrimary"
-        app:layout_constraintTop_toBottomOf="@+id/img_illustration"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintBottom_toTopOf="@+id/phoneInputLayout"
-        app:layout_constraintEnd_toEndOf="parent"/>
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:gravity="center_horizontal"
+            android:orientation="vertical">
 
+        <ImageView
+            android:id="@+id/img_illustration"
+            android:layout_width="match_parent"
+            android:layout_height="230dp"
+            android:adjustViewBounds="true"
+            android:contentDescription="@string/login_illustration_description"
+            android:scaleType="fitCenter"
+            android:src="@drawable/login_illustration" />
 
-    <com.google.android.material.textfield.TextInputLayout
-        android:id="@+id/phoneInputLayout"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:layout_marginTop="32dp"
-        app:prefixText="+91 "
-        app:prefixTextColor="@color/textSecondary"
-        style="@style/LoginInputLayout"
-        app:errorEnabled="true"
-        app:layout_constraintBottom_toTopOf="@+id/btn_get_otp"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@+id/login_text">
-
-        <com.google.android.material.textfield.TextInputEditText
+            <LinearLayout
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                style="@style/LoginEditTextStyle"
-                android:id="@+id/et_phone"
-                android:inputType="phone"
-                android:hint="@string/phone_No_text"
-                android:padding="15dp"/>
+                android:layout_marginTop="20dp"
+                android:background="@drawable/bg_auth_card"
+                android:elevation="8dp"
+                android:gravity="center_horizontal"
+                android:orientation="vertical">
 
-        </com.google.android.material.textfield.TextInputLayout>
+                <TextView
+                    android:id="@+id/login_text"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="@string/phone_login_text"
+                    android:textColor="@color/textPrimary"
+                    android:textSize="24sp"
+                    android:textStyle="bold" />
 
+                <TextView
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="8dp"
+                    android:gravity="center"
+                    android:text="@string/login_description"
+                    android:textColor="@color/textSecondary"
+                    android:textSize="14sp" />
 
-    <androidx.appcompat.widget.AppCompatButton
-        android:id="@+id/btn_get_otp"
-        android:layout_width="200dp"
-        android:layout_height="wrap_content"
-        android:layout_marginTop="8dp"
-        android:background = "@drawable/btn_state"
-        android:enabled="false"
-        android:backgroundTint="@null"
-        android:text="@string/get_otp_text"
-        android:textAllCaps="false"
-        android:textColor="@color/white"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintBottom_toBottomOf="parent"
-        app:layout_constraintVertical_bias="0.0"
-        app:layout_constraintTop_toBottomOf="@id/phoneInputLayout" />
+                <com.google.android.material.textfield.TextInputLayout
+                    android:id="@+id/phoneInputLayout"
+                    style="@style/LoginInputLayout"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="28dp"
+                    app:errorEnabled="true"
+                    app:prefixText="+91 "
+                    app:prefixTextColor="@color/textSecondary">
+
+                    <com.google.android.material.textfield.TextInputEditText
+                        android:id="@+id/et_phone"
+                        style="@style/LoginEditTextStyle"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:hint="@string/phone_No_text"
+                        android:inputType="phone"
+                        android:padding="15dp" />
+
+                </com.google.android.material.textfield.TextInputLayout>
+
+                <androidx.appcompat.widget.AppCompatButton
+                    android:id="@+id/btn_get_otp"
+                    android:layout_width="match_parent"
+                    android:layout_height="54dp"
+                    android:layout_marginTop="18dp"
+                    android:background="@drawable/btn_state"
+                    android:backgroundTint="@null"
+                    android:enabled="false"
+                    android:text="@string/get_otp_text"
+                    android:textAllCaps="false"
+                    android:textColor="@color/white"
+                    android:textStyle="bold" />
+
+                <TextView
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="14dp"
+                    android:gravity="center"
+                    android:text="@string/login_terms_note"
+                    android:textColor="@color/textSecondary"
+                    android:textSize="12sp" />
+
+            </LinearLayout>
+
+        </LinearLayout>
+
+    </ScrollView>
 
     <ProgressBar
         android:id="@+id/login_progressbar"
         android:layout_width="48dp"
         android:layout_height="48dp"
         android:indeterminate="true"
-        android:visibility="gone"
         android:indeterminateTint="@color/colorPrimary"
+        android:visibility="gone"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
