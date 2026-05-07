@@ -36,6 +36,8 @@ class OtpFragment : Fragment(R.layout.fragment_otp) {
     private lateinit var otpBoxes: List<EditText>
 
     private lateinit var verificationId: String
+    
+    private lateinit var phone: String
 
 
 
@@ -57,7 +59,7 @@ class OtpFragment : Fragment(R.layout.fragment_otp) {
             controller.isAppearanceLightStatusBars = true
         }
         val args = OtpFragmentArgs.fromBundle(requireArguments())
-        val phone = args.phone
+        phone = args.phone
         verificationId = args.verificationId
 
         binding.tvSubtitle.text = "Code has been sent to ${mask(phone)}"
@@ -66,6 +68,14 @@ class OtpFragment : Fragment(R.layout.fragment_otp) {
         viewModel.setTimer()
         binding.btnVerify.setOnClickListener {
             viewModel.verifyOtp(verificationId,getOtp())
+        }
+        binding.tvResend.setOnClickListener {
+            if(binding.tvResend.isEnabled){
+                activity?.let {hostActivity->
+                    clearOtpInputs()
+                    viewModel.resendOtp(hostActivity,phone)
+                }
+            }
         }
 
         viewLifecycleOwner.lifecycleScope.launch {
@@ -99,6 +109,7 @@ class OtpFragment : Fragment(R.layout.fragment_otp) {
                             showOtpError(state.message)
                         }
                         is OtpUiState.Timer -> updateTimer(state)
+                        is OtpUiState.CodeResent -> showCodeResent(state)
                     }
                 }
             }
@@ -156,6 +167,24 @@ class OtpFragment : Fragment(R.layout.fragment_otp) {
         context?.let {
             binding.tvResend.setTextColor(ContextCompat.getColor(it,colorsRes))
         }
+    }
+    private fun showCodeResent(state: OtpUiState.CodeResent){
+        verificationId = state.verificationId
+        binding.otpProgressbar.visibility = View.GONE
+        binding.textinputErrorTxt.visibility = View.GONE
+        binding.btnVerify.isEnabled = false
+        Toast.makeText(requireContext(), "OTP sent again", Toast.LENGTH_SHORT).show()
+        viewModel.setTimer()
+    }
+
+    private fun clearOtpInputs(){
+        otpBoxes.forEach { otpBox->
+            otpBox.text.clear()
+            otpBox.setTextColor(ContextCompat.getColor(requireContext(), R.color.white))
+            otpBox.setBackgroundResource(R.drawable.otp_default)
+        }
+        binding.otp1.requestFocus()
+        binding.textinputErrorTxt.visibility = View.GONE
     }
 
     private fun resetErrorState() {

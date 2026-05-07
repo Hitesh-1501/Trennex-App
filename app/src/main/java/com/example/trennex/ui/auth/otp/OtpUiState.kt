@@ -8,4 +8,5 @@ sealed class OtpUiState {
     data object Success: OtpUiState()
     data class Error(val message: String): OtpUiState()
     data class Timer(val time : Int , val canResend: Boolean) : OtpUiState()
+    data class CodeResent(val verificationId: String): OtpUiState()
 }
