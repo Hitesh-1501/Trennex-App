@@ -6,19 +6,20 @@ import android.view.View
 import android.view.ViewGroup
 import android.widget.Toast
 import androidx.fragment.app.Fragment
+import androidx.navigation.fragment.findNavController
 import androidx.recyclerview.widget.GridLayoutManager
 import com.example.trennex.R
 import com.example.trennex.databinding.FragmentProfileBinding
 import com.example.trennex.ui.profile.adapter.ProfileGridAdapter
 import com.example.trennex.ui.profile.model.ProfileGridItem
+import com.google.firebase.auth.FirebaseAuth
 
 class profileFragment : Fragment(R.layout.fragment_profile) {
 
     private var _binding: FragmentProfileBinding? = null
     private val binding get() = _binding!!
 
-    private var isLoggedIn = true
-
+    private val auth: FirebaseAuth by lazy { FirebaseAuth.getInstance() }
 
 
     override fun onCreateView(
@@ -33,15 +34,14 @@ class profileFragment : Fragment(R.layout.fragment_profile) {
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
         setupUi()
-        UpdateUi()
+        updateUi()
         binding.btnLogout.setOnClickListener {
-            isLoggedIn = false
-            UpdateUi()
-            Toast.makeText(requireContext(), "Logged Out", Toast.LENGTH_SHORT).show()
+            auth.signOut()
+            updateUi()
+            Toast.makeText(requireContext(), "Logged out successfully", Toast.LENGTH_SHORT).show()
         }
         binding.btnLogInSignUp.setOnClickListener {
-            isLoggedIn = true
-            UpdateUi()
+            findNavController().navigate(R.id.action_profileFragment_to_loginFragment)
         }
 
         val gridItems = listOf(
@@ -60,8 +60,8 @@ class profileFragment : Fragment(R.layout.fragment_profile) {
 
     }
 
-    fun UpdateUi(){
-        if(isLoggedIn){
+    private fun updateUi(){
+        if(auth.currentUser != null){
             binding.profileCard.visibility = View.VISIBLE
             binding.nologincard.visibility = View.GONE
             binding.btnLogout.visibility = View.VISIBLE
