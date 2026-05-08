@@ -13,6 +13,7 @@ import com.example.trennex.databinding.FragmentProfileBinding
 import com.example.trennex.ui.profile.adapter.ProfileGridAdapter
 import com.example.trennex.ui.profile.model.ProfileGridItem
 import com.google.firebase.auth.FirebaseAuth
+import com.google.firebase.firestore.FirebaseFirestore
 
 class profileFragment : Fragment(R.layout.fragment_profile) {
 
@@ -20,6 +21,7 @@ class profileFragment : Fragment(R.layout.fragment_profile) {
     private val binding get() = _binding!!
 
     private val auth: FirebaseAuth by lazy { FirebaseAuth.getInstance() }
+    private val firestore: FirebaseFirestore by lazy { FirebaseFirestore.getInstance() }
 
 
     override fun onCreateView(
@@ -60,16 +62,35 @@ class profileFragment : Fragment(R.layout.fragment_profile) {
 
     }
 
+
     private fun updateUi(){
         if(auth.currentUser != null){
             binding.profileCard.visibility = View.VISIBLE
             binding.nologincard.visibility = View.GONE
             binding.btnLogout.visibility = View.VISIBLE
+            loadUserDetails()
         }else{
             binding.profileCard.visibility = View.GONE
             binding.nologincard.visibility = View.VISIBLE
             binding.btnLogout.visibility = View.GONE
         }
+    }
+
+    private fun loadUserDetails(){
+        val user = auth.currentUser ?: return
+        binding.tvUserName.text = user.phoneNumber ?: "User"
+        firestore.collection(USERS_COLLECTION)
+            .document(user.uid)
+            .get()
+            .addOnSuccessListener {snapshot ->
+                val name = snapshot.getString(NAME_FIELD).orEmpty().trim()
+                if(name.isNotEmpty()){
+                    binding.tvUserName.text = name
+                }
+            }
+            .addOnFailureListener {
+                Toast.makeText(requireContext(), "Could not load profile details", Toast.LENGTH_SHORT).show()
+            }
     }
 
     private fun setupUi(){
@@ -98,6 +119,10 @@ class profileFragment : Fragment(R.layout.fragment_profile) {
             tvRowSubtitle.text = "Clear Terms. Honest Policies"
             ivRowIcon.setImageResource(R.drawable.ic_terms)
         }
+    }
+    private companion object {
+        const val USERS_COLLECTION = "users"
+        const val NAME_FIELD = "name"
     }
 
 

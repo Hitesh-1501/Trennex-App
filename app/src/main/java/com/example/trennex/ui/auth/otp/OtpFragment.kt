@@ -27,6 +27,7 @@ import androidx.core.view.isVisible
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.repeatOnLifecycle
 import androidx.navigation.fragment.findNavController
+import com.example.trennex.ui.auth.UserDetailsDialog
 import com.example.trennex.viewmodel.auth.OtpViewModel
 
 class OtpFragment : Fragment(R.layout.fragment_otp) {
@@ -38,6 +39,7 @@ class OtpFragment : Fragment(R.layout.fragment_otp) {
     private lateinit var verificationId: String
     
     private lateinit var phone: String
+    private var handledSuccess = false
 
 
 
@@ -100,8 +102,13 @@ class OtpFragment : Fragment(R.layout.fragment_otp) {
                         }
                         is OtpUiState.Success ->{
                             binding.otpProgressbar.visibility = View.GONE
-                            Toast.makeText(requireContext(), "OTP verified successfully", Toast.LENGTH_SHORT).show()
-                            findNavController().navigate(R.id.action_otpFragment_to_homeFragment)
+                            if(!handledSuccess){
+                                handledSuccess = true
+                                Toast.makeText(requireContext(), "OTP verified successfully", Toast.LENGTH_SHORT).show()
+                                UserDetailsDialog.showIfNeeded(this@OtpFragment,phone){
+                                    findNavController().navigate(R.id.action_otpFragment_to_homeFragment)
+                                }
+                            }
                         }
                         is OtpUiState.Error ->{
                             binding.otpProgressbar.visibility = View.GONE

@@ -20,6 +20,7 @@ import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.viewpager2.widget.ViewPager2
 import com.example.trennex.R
 import com.example.trennex.databinding.FragmentHomeBinding
+import com.example.trennex.ui.auth.UserDetailsDialog
 import com.example.trennex.ui.home.adapters.CategoryAdapter
 import com.example.trennex.ui.home.adapters.HomeFragmentPagerAdapter
 import com.example.trennex.ui.home.adapters.ProductAdapter
@@ -70,6 +71,7 @@ class HomeFragment : Fragment(R.layout.fragment_home) {
         super.onViewCreated(view, savedInstanceState)
         viewModel.fetchProducts()
         viewModel.fetchCategories()
+        UserDetailsDialog.showIfNeeded(this){}
         viewLifecycleOwner.lifecycleScope.launch {
             viewLifecycleOwner.repeatOnLifecycle(Lifecycle.State.STARTED){
                 launch {

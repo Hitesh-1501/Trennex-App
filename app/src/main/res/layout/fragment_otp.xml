@@ -29,7 +29,7 @@
             <ImageView
                 android:id="@+id/otp_illustration"
                 android:layout_width="match_parent"
-                android:layout_height="220dp"
+                android:layout_height="230dp"
                 android:adjustViewBounds="true"
                 android:contentDescription="@string/otp_illustration_description"
                 android:scaleType="fitCenter"

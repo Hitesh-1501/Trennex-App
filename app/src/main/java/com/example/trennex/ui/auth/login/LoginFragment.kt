@@ -18,6 +18,7 @@ import androidx.lifecycle.repeatOnLifecycle
 import androidx.navigation.fragment.findNavController
 import com.example.trennex.R
 import com.example.trennex.databinding.FragmentLoginBinding
+import com.example.trennex.ui.auth.UserDetailsDialog
 import com.example.trennex.viewmodel.auth.LoginViewModel
 import kotlinx.coroutines.launch
 
@@ -25,6 +26,7 @@ class LoginFragment : Fragment(R.layout.fragment_login) {
     private var _binding: FragmentLoginBinding? = null
     private val binding get() = _binding!!
     private val viewModel: LoginViewModel by viewModels()
+    private var handleAutoVerification = false
     override fun onCreateView(
         inflater: LayoutInflater, container: ViewGroup?,
         savedInstanceState: Bundle?
@@ -87,9 +89,13 @@ class LoginFragment : Fragment(R.layout.fragment_login) {
     private fun showAutoVerified(){
         binding.root.alpha = 1.0f
         binding.loginProgressbar.visibility = View.GONE
+        if(handleAutoVerification) return
+        handleAutoVerification = true
         Toast.makeText(requireContext(), "Phone verified successfully", Toast.LENGTH_SHORT).show()
         viewModel.consumeNavigation()
-        findNavController().navigate(R.id.action_loginFragment_to_homeFragment)
+        UserDetailsDialog.showIfNeeded(this,null){
+            findNavController().navigate(R.id.action_loginFragment_to_homeFragment)
+        }
     }
 
     private fun showError(message: String){
