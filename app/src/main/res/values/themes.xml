@@ -64,7 +64,7 @@
         <item name="android:importantForAutofill">yes</item>
         <item name="android:background">@drawable/otp_default</item>
     </style>
-    
+
     <style name="PopupAnimation">
         <item name="android:windowEnterAnimation">@anim/slide_in_left_to_right</item>
         <item name="android:windowExitAnimation">@anim/fade_out_wishlist</item>

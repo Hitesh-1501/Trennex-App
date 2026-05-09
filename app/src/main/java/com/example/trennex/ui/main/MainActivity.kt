@@ -87,6 +87,11 @@ class MainActivity : AppCompatActivity() {
                     setLightStatusBar(true)
                     binding.curveBottomNav.visibility = View.VISIBLE
                 }
+                R.id.accountDetailsFragment -> {
+                    showToolBar(ToolBarType.TITLE,"Manage Your Account")
+                    setLightStatusBar(true)
+                    binding.curveBottomNav.visibility = View.GONE
+                }
                 R.id.wishlistFragment -> {
                     showToolBar(ToolBarType.WISHLIST,"Wishlist")
                     setLightStatusBar(true)
