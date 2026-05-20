@@ -52,18 +52,7 @@ class AccountDetailsFragment : Fragment() {
     }
     private fun setupListeners() {
         setPhoneEditable(false)
-        binding.tvPhoneAction.setOnClickListener {
-            if (binding.etMobile.isFocusable) {
-                activity?.let { hostActivity ->
-                    viewModel.requestPhoneOtp(
-                        hostActivity,
-                        binding.etMobile.text?.toString().orEmpty()
-                    )
-                }
-            } else {
-                viewModel.enablePhoneEditing()
-            }
-        }
+        setupMobileInputAction()
         binding.etMobile.addTextChangedListener{
             if(binding.etMobile.isFocusable){
                 renderAccountState(viewModel.state.value)
@@ -103,18 +92,8 @@ class AccountDetailsFragment : Fragment() {
         if(originalPhone.isBlank() && state.phone.isNotBlank()){
             originalPhone = state.phone.filter(Char::isDigit)
         }
-        binding.tilMobile.isEndIconVisible = state.isPhoneVerified
-        if(state.isPhoneEditable){
-            val enteredPhone =  binding.etMobile.text?.toString().orEmpty().filter(Char::isDigit)
-            val canUpdate = enteredPhone.length == PHONE_LENGTH && enteredPhone != originalPhone
-            binding.tvPhoneAction.text = "Update"
-            binding.tvPhoneAction.isEnabled = canUpdate
-            binding.tvPhoneAction.alpha = if (canUpdate) 1f else 0.4f
-        }else{
-            binding.tvPhoneAction.text = "Change"
-            binding.tvPhoneAction.isEnabled = true
-            binding.tvPhoneAction.alpha = 1f
-        }
+        binding.mobileInputLayout.isEndIconVisible = state.isPhoneVerified
+        binding.mobileInputLayout.suffixText = if (state.isPhoneEditable) "Update" else "Change"
         binding.btnSaveDetails.isEnabled = !state.isSaving
         if (state.isPhoneEditable && !binding.etMobile.hasFocus()) {
             binding.etMobile.requestFocus()
@@ -175,6 +154,32 @@ class AccountDetailsFragment : Fragment() {
         binding.etMobile.isFocusableInTouchMode = editable
         binding.etMobile.isCursorVisible = editable
         binding.etMobile.isLongClickable = editable
+    }
+
+    private fun setupMobileInputAction(){
+        binding.mobileInputLayout.setEndIconOnClickListener {
+            if (binding.etMobile.isFocusable) {
+                requestOtpForPhoneUpdate()
+            }
+        }
+        binding.mobileInputLayout.post {
+            val suffixTextView = binding.mobileInputLayout.findViewById<View>(com.google.android.material.R.id.textinput_suffix_text)
+            suffixTextView?.setOnClickListener {
+                if (binding.etMobile.isFocusable) {
+                    requestOtpForPhoneUpdate()
+                } else {
+                    viewModel.enablePhoneEditing()
+                }
+            }
+        }
+    }
+    private fun requestOtpForPhoneUpdate() {
+        activity?.let { hostActivity ->
+            viewModel.requestPhoneOtp(
+                hostActivity,
+                binding.etMobile.text?.toString().orEmpty()
+            )
+        }
     }
 
     private fun ensureVerifyPhoneSheet(phone: String){
@@ -298,11 +303,12 @@ class AccountDetailsFragment : Fragment() {
                     .rotation(360f)
                     .setDuration(650)
                     .withEndAction {
-                        binding.etMobile.setText(phone)
-                        originalPhone = phone.filter(Char::isDigit)
-                        binding.etMobile.clearFocus()
-                        verifyPhoneDialog?.dismiss()
-                        viewModel.resetOtpState()
+                        sheetBinding.root.postDelayed({
+                            binding.etMobile.setText(phone)
+                            binding.etMobile.clearFocus()
+                            verifyPhoneDialog?.dismiss()
+                            viewModel.resetOtpState()
+                        }, 550)
                     }
             }
     }
