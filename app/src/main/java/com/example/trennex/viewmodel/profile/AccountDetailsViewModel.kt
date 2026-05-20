@@ -66,6 +66,11 @@ class AccountDetailsViewModel: ViewModel() {
             _state.value = _state.value.copy(message = "Enter a valid $PHONE_NUMBER_LENGTH digit mobile number")
             return
         }
+        val currentPhone = _state.value.phone.filter(Char::isDigit)
+        if (phone == currentPhone) {
+            _state.value = _state.value.copy(message = "Please enter a new mobile number")
+            return
+        }
         if (FirebaseApp.getApps(activity).isEmpty()) {
             _state.value = _state.value.copy(message = "Firebase is not connected. Add google-services.json and enable Phone Authentication.")
             return
@@ -191,6 +196,9 @@ class AccountDetailsViewModel: ViewModel() {
         }
         user.updatePhoneNumber(credential)
             .addOnSuccessListener {
+                firestore.collection(USERS_COLLECTION)
+                    .document(user.uid)
+                    .set(mapOf(PHONE_FIELD to "$COUNTRY_CODE$phone"), SetOptions.merge())
                 _state.value = _state.value.copy(
                     phone = phone,
                     isPhoneEditable = false,
