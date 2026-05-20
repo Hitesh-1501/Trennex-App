@@ -33,6 +33,7 @@ class AccountDetailsFragment : Fragment() {
     private var verifyPhoneDialog: BottomSheetDialog? = null
     private var otpBoxes: List<EditText> = emptyList()
     private var animatedVerifiedPhone: String? = null
+    private var originalPhone: String = ""
 
 
     override fun onCreateView(
@@ -40,7 +41,7 @@ class AccountDetailsFragment : Fragment() {
         savedInstanceState: Bundle?
     ): View? {
         _binding = FragmentAccountDetailsBinding.inflate(inflater, container, false)
-        return binding?.root
+        return binding.root
     }
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
@@ -63,6 +64,11 @@ class AccountDetailsFragment : Fragment() {
                 viewModel.enablePhoneEditing()
             }
         }
+        binding.etMobile.addTextChangedListener{
+            if(binding.etMobile.isFocusable){
+                renderAccountState(viewModel.state.value)
+            }
+        }
         binding.btnSaveDetails.setOnClickListener {
             viewModel.saveDetails(
                 binding.etName.text?.toString().orEmpty(),
@@ -80,6 +86,9 @@ class AccountDetailsFragment : Fragment() {
                     renderOtpState(state.otpState)
                     state.message?.let { message ->
                         Toast.makeText(requireContext(), message, Toast.LENGTH_SHORT).show()
+                        if(message == "Details updated successfully"){
+                            parentFragmentManager.popBackStack()
+                        }
                         viewModel.clearMessage()
                     }
                 }
@@ -91,8 +100,21 @@ class AccountDetailsFragment : Fragment() {
         setTextIfNeeded(binding.etName, state.name)
         setTextIfNeeded(binding.etEmail, state.email)
         setPhoneEditable(state.isPhoneEditable)
-        binding.ivPhoneVerified.visibility = if (state.isPhoneVerified) View.VISIBLE else View.GONE
-        binding.tvPhoneAction.text = if (state.isPhoneEditable) "update" else "Change"
+        if(originalPhone.isBlank() && state.phone.isNotBlank()){
+            originalPhone = state.phone.filter(Char::isDigit)
+        }
+        binding.tilMobile.isEndIconVisible = state.isPhoneVerified
+        if(state.isPhoneEditable){
+            val enteredPhone =  binding.etMobile.text?.toString().orEmpty().filter(Char::isDigit)
+            val canUpdate = enteredPhone.length == PHONE_LENGTH && enteredPhone != originalPhone
+            binding.tvPhoneAction.text = "Update"
+            binding.tvPhoneAction.isEnabled = canUpdate
+            binding.tvPhoneAction.alpha = if (canUpdate) 1f else 0.4f
+        }else{
+            binding.tvPhoneAction.text = "Change"
+            binding.tvPhoneAction.isEnabled = true
+            binding.tvPhoneAction.alpha = 1f
+        }
         binding.btnSaveDetails.isEnabled = !state.isSaving
         if (state.isPhoneEditable && !binding.etMobile.hasFocus()) {
             binding.etMobile.requestFocus()
@@ -221,9 +243,6 @@ class AccountDetailsFragment : Fragment() {
                 }
                 val otp = getOtpCode()
                 viewModel.onOtpChanged(otp)
-                if(otp.length == OTP_LENGTH){
-                    viewModel.verifyPhoneOtp(otp)
-                }
             }
             otpEditText.setOnKeyListener { _, keyCode, _ ->
                 if (keyCode == KeyEvent.KEYCODE_DEL && otpEditText.text.isEmpty() && index > 0) {
@@ -280,6 +299,7 @@ class AccountDetailsFragment : Fragment() {
                     .setDuration(650)
                     .withEndAction {
                         binding.etMobile.setText(phone)
+                        originalPhone = phone.filter(Char::isDigit)
                         binding.etMobile.clearFocus()
                         verifyPhoneDialog?.dismiss()
                         viewModel.resetOtpState()
@@ -308,5 +328,6 @@ class AccountDetailsFragment : Fragment() {
     private companion object {
         const val COUNTRY_CODE = "+91"
         const val OTP_LENGTH = 6
+        const val PHONE_LENGTH = 10
     }
 }
