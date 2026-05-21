@@ -154,4 +154,11 @@
         android:paddingBottom="8dp"
         app:layoutManager="androidx.recyclerview.widget.LinearLayoutManager" />
 
+    <include
+        android:id="@+id/emptyAddressView"
+        layout="@layout/item_saved_address_empty"
+        android:layout_width="match_parent"
+        android:layout_height="300dp"
+        android:visibility="gone" />
+
 </LinearLayout>

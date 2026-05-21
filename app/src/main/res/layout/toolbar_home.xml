@@ -96,13 +96,15 @@
 
         <TextView
             android:id="@+id/location_address"
-            android:layout_width="wrap_content"
+            android:layout_width="0dp"
             android:layout_height="wrap_content"
             android:text="Your delivery address"
             android:textColor="@color/textPlaceholder"
             android:layout_marginStart="8dp"
             android:layout_weight="1"
-            android:textSize="12sp"/>
+            android:textSize="12sp"
+            android:maxLines="1"
+            android:ellipsize="end"/>
 
 
         <ImageView
