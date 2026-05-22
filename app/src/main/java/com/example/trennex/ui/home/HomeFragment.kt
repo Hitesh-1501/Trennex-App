@@ -5,6 +5,7 @@ import android.annotation.SuppressLint
 import android.content.Context
 import android.content.pm.PackageManager
 import android.content.Intent
+import android.content.IntentSender
 import android.location.Geocoder
 import android.location.LocationManager
 import android.os.Bundle
@@ -51,6 +52,12 @@ import com.example.trennex.ui.home.model.CategoryModel
 import com.example.trennex.ui.home.model.ProductModel
 import com.example.trennex.ui.main.MainActivity
 import com.example.trennex.viewmodel.product.ProductViewModel
+import com.google.android.gms.common.api.ResolvableApiException
+import com.google.android.gms.location.FusedLocationProviderClient
+import com.google.android.gms.location.LocationRequest
+import com.google.android.gms.location.LocationServices
+import com.google.android.gms.location.LocationSettingsRequest
+import com.google.android.gms.location.Priority
 import com.google.android.material.bottomsheet.BottomSheetBehavior
 import com.google.android.material.bottomsheet.BottomSheetDialog
 import com.google.android.material.tabs.TabLayoutMediator
@@ -70,6 +77,8 @@ class HomeFragment : Fragment(R.layout.fragment_home) {
     private var selectedAddress: String? = null
     private lateinit var saveAddressAdapter: SaveAddressAdapter
     private var bottomSheetBinding: BottomSheetSelectLocationBinding? = null
+    private var   locationBottomSheet: BottomSheetDialog? = null
+    private lateinit var fusedLocationClient: FusedLocationProviderClient
     private val firestore by lazy { FirebaseFirestore.getInstance() }
     private val auth by lazy { FirebaseAuth.getInstance() }
 
@@ -94,6 +103,7 @@ class HomeFragment : Fragment(R.layout.fragment_home) {
             Toast.makeText(requireContext(), "Device location is still off", Toast.LENGTH_SHORT).show()
         }
     }
+
 
     override fun onCreateView(
         inflater: LayoutInflater, container: ViewGroup?,
@@ -127,6 +137,7 @@ class HomeFragment : Fragment(R.layout.fragment_home) {
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
+        fusedLocationClient = LocationServices.getFusedLocationProviderClient(requireContext())
         viewModel.fetchProducts()
         viewModel.fetchCategories()
         UserDetailsDialog.showIfNeeded(this){}
@@ -194,7 +205,8 @@ class HomeFragment : Fragment(R.layout.fragment_home) {
     }
 
     private fun showLocationBottomSheet(){
-        val sheet = BottomSheetDialog(requireContext())
+        locationBottomSheet = BottomSheetDialog(requireContext())
+        val sheet = locationBottomSheet!!
         val sheetBinding = BottomSheetSelectLocationBinding.inflate(layoutInflater)
         bottomSheetBinding = sheetBinding
         sheet.setContentView(sheetBinding.root)
@@ -289,30 +301,30 @@ class HomeFragment : Fragment(R.layout.fragment_home) {
     }
 
     private fun showTurnOnLocationDialog(){
-        val dialog = androidx.appcompat.app.AlertDialog.Builder(requireContext())
-            .setTitle("Device location")
-            .setMessage("Please turn on device location for accurate delivery address.")
-            .setNegativeButton("No, thanks", null)
-            .setPositiveButton("Turn On") { _, _ ->
-                locationSettingsRequestor.launch(Intent(Settings.ACTION_LOCATION_SOURCE_SETTINGS))
+        val locationRequest = LocationRequest.Builder(
+            Priority.PRIORITY_HIGH_ACCURACY,
+            1000
+        ).build()
+        val builder = LocationSettingsRequest.Builder()
+            .addLocationRequest(locationRequest)
+        val client = LocationServices.getSettingsClient(requireActivity())
+        val task = client.checkLocationSettings(builder.build())
+        task.addOnSuccessListener {
+            fetchCurrentAddress()
+        }
+        task.addOnFailureListener { exception ->
+            if(exception is ResolvableApiException){
+                try {
+
+                    exception.startResolutionForResult(
+                        requireActivity(),
+                        1001
+                    )
+                }catch (sendEx: IntentSender.SendIntentException){
+                    sendEx.printStackTrace()
+                }
             }
-            .create()
-
-        dialog.show()
-        dialog.window?.setBackgroundDrawableResource(R.drawable.bg_drawable_white)
-
-        dialog.findViewById<TextView>(android.R.id.message)?.setTextColor(
-            ContextCompat.getColor(requireContext(), R.color.textPrimary)
-        )
-        dialog.findViewById<TextView>(com.google.android.material.R.id.alertTitle)?.setTextColor(
-            ContextCompat.getColor(requireContext(), R.color.textPrimary)
-        )
-        dialog.getButton(android.app.AlertDialog.BUTTON_POSITIVE)?.setTextColor(
-            ContextCompat.getColor(requireContext(), R.color.colorSuccess)
-        )
-        dialog.getButton(android.app.AlertDialog.BUTTON_NEGATIVE)?.setTextColor(
-            ContextCompat.getColor(requireContext(), R.color.textPrimary)
-        )
+        }
     }
     private fun isLocationServicesEnabled(): Boolean{
         val locationManager = requireContext().getSystemService(Context.LOCATION_SERVICE) as LocationManager
@@ -321,22 +333,58 @@ class HomeFragment : Fragment(R.layout.fragment_home) {
     }
     @SuppressLint("MissingPermission")
     private fun fetchCurrentAddress(){
-        val manager = requireContext().getSystemService(Context.LOCATION_SERVICE) as LocationManager
-        val location = manager.getLastKnownLocation(LocationManager.GPS_PROVIDER)
-            ?: manager.getLastKnownLocation(LocationManager.NETWORK_PROVIDER)
-        if (location == null) {
-            Toast.makeText(requireContext(), "Unable to find current location", Toast.LENGTH_SHORT).show()
-            return
+        fusedLocationClient.getCurrentLocation(
+            Priority.PRIORITY_HIGH_ACCURACY,
+            null
+        ).addOnSuccessListener { location ->
+            if(location == null){
+                Toast.makeText(
+                    requireContext(),
+                    "Unable to fetch current location",
+                    Toast.LENGTH_SHORT
+                ).show()
+                return@addOnSuccessListener
+            }
+            val geocoder = Geocoder(requireContext(), Locale.getDefault())
+            try {
+                val result  = geocoder.getFromLocation(
+                    location.latitude,
+                    location.longitude,
+                    1
+                )
+                val address = result?.firstOrNull()?.getAddressLine(0)
+                    ?: "Lat:${location.latitude},Lng:${location.longitude}"
+                selectedAddress = address
+                if(saveAddresses.none{it.address == address}){
+                    saveAddresses.add(
+                        0,
+                        SaveAddressAdapter.SavedAddressItem(
+                            loginUserName,
+                            address
+                        )
+                    )
+                }
+                updateLocationBar()
+                if(this::saveAddressAdapter.isInitialized){
+                    renderSaveAddresses()
+                }
+                (bottomSheetBinding?.root?.parent as? View)?.let {
+                    locationBottomSheet?.dismiss()
+                }
+            }catch (e: Exception){
+                Toast.makeText(
+                    requireContext(),
+                    "Failed to get address",
+                    Toast.LENGTH_SHORT
+                ).show()
+            }
+        }.addOnFailureListener {
+            Toast.makeText(
+                requireContext(),
+                "Failed to get current location",
+                Toast.LENGTH_SHORT
+            ).show()
         }
-        val geocoder = Geocoder(requireContext(), Locale.getDefault())
-        val result = geocoder.getFromLocation(location.latitude, location.longitude, 1)
-        val address = result?.firstOrNull()?.getAddressLine(0) ?: "Lat:${location.latitude}, Lng:${location.longitude}"
-        selectedAddress = address
-        if(saveAddresses.none{it.address == address}){
-            saveAddresses.add(0, SaveAddressAdapter.SavedAddressItem(loginUserName, address))
-        }
-        updateLocationBar()
-        if(this::saveAddressAdapter.isInitialized) renderSaveAddresses()
     }
 
     private fun updateLocationBar() {
