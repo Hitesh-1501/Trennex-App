@@ -4,11 +4,16 @@ import android.Manifest
 import android.annotation.SuppressLint
 import android.content.Context
 import android.content.pm.PackageManager
+import android.content.Intent
 import android.location.Geocoder
 import android.location.LocationManager
 import android.os.Bundle
 import android.os.Handler
 import android.os.Looper
+import android.provider.Settings
+import android.text.SpannableString
+import android.text.style.ForegroundColorSpan
+import android.view.ContextThemeWrapper
 import androidx.fragment.app.Fragment
 import android.view.LayoutInflater
 import android.view.MotionEvent
@@ -21,7 +26,9 @@ import android.widget.Toast
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AlertDialog
 import androidx.core.content.ContextCompat
+import androidx.core.view.get
 import androidx.core.view.isVisible
+import androidx.core.view.size
 import androidx.fragment.app.viewModels
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.lifecycleScope
@@ -43,8 +50,8 @@ import com.example.trennex.ui.home.model.BannerModel
 import com.example.trennex.ui.home.model.CategoryModel
 import com.example.trennex.ui.home.model.ProductModel
 import com.example.trennex.ui.main.MainActivity
-import com.example.trennex.utils.wishlist.CollectionStore
 import com.example.trennex.viewmodel.product.ProductViewModel
+import com.google.android.material.bottomsheet.BottomSheetBehavior
 import com.google.android.material.bottomsheet.BottomSheetDialog
 import com.google.android.material.tabs.TabLayoutMediator
 import com.google.firebase.auth.FirebaseAuth
@@ -75,6 +82,16 @@ class HomeFragment : Fragment(R.layout.fragment_home) {
             promptEnableLocationServicesAndFetch()
         }else{
             Toast.makeText(requireContext(),"Location Permission Denied",Toast.LENGTH_SHORT).show()
+        }
+    }
+
+    private val locationSettingsRequestor = registerForActivityResult(
+        ActivityResultContracts.StartActivityForResult()
+    ){
+        if(isLocationServicesEnabled()){
+            fetchCurrentAddress()
+        }else{
+            Toast.makeText(requireContext(), "Device location is still off", Toast.LENGTH_SHORT).show()
         }
     }
 
@@ -196,6 +213,15 @@ class HomeFragment : Fragment(R.layout.fragment_home) {
         sheetBinding.savedAddressRv.layoutManager = LinearLayoutManager(requireContext())
         renderSaveAddresses()
         sheet.show()
+        val bottomSheet = sheet.findViewById<View>(com.google.android.material.R.id.design_bottom_sheet)
+        bottomSheet?.let {
+            val behavior = BottomSheetBehavior.from(it)
+            val targetHeight = (resources.displayMetrics.heightPixels * 0.82f).toInt()
+            it.layoutParams.height = targetHeight
+            behavior.peekHeight = targetHeight
+            behavior.state = BottomSheetBehavior.STATE_EXPANDED
+            behavior.skipCollapsed = true
+        }
     }
 
     private fun renderSaveAddresses(){
@@ -212,10 +238,28 @@ class HomeFragment : Fragment(R.layout.fragment_home) {
         saveAddressAdapter.submitData(saveAddresses,selectedAddress,loginUserName)
     }
     private fun showAddressMenu(anchor: View){
-        val menu = PopupMenu(requireContext(),anchor)
-        menu.menu.add(0, 1, 0, "Edit")
-        menu.menu.add(0, 2, 1, "Delete")
-        menu.show()
+        val popup = PopupMenu(ContextThemeWrapper(requireContext(),R.style.ThemeOverlay_TrenNex_PopupMenu),anchor)
+        popup.menuInflater.inflate(R.menu.menu_saved_address_actions,popup.menu)
+        popup.setForceShowIcon(true)
+        for(index in 0 until popup.menu.size){
+            val item = popup.menu[index]
+            val title = SpannableString(item.title)
+            title.setSpan(
+                ForegroundColorSpan(ContextCompat.getColor(requireContext(), R.color.textPrimary)),
+                0,
+                title.length,
+                0
+            )
+            item.title = title
+        }
+        popup.setOnMenuItemClickListener { menuItem ->
+            when(menuItem.itemId){
+                R.id.action_delete -> {true}
+                R.id.action_edit -> {true}
+                else -> false
+            }
+        }
+        popup.show()
     }
     private fun hasLocationPermission(): Boolean {
         val fineGranted = ContextCompat.checkSelfPermission(requireContext(), Manifest.permission.ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_GRANTED
@@ -250,7 +294,7 @@ class HomeFragment : Fragment(R.layout.fragment_home) {
             .setMessage("Please turn on device location for accurate delivery address.")
             .setNegativeButton("No, thanks", null)
             .setPositiveButton("Turn On") { _, _ ->
-                fetchCurrentAddress()
+                locationSettingsRequestor.launch(Intent(Settings.ACTION_LOCATION_SOURCE_SETTINGS))
             }
             .create()
 
