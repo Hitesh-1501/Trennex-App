@@ -11,25 +11,19 @@ import android.location.LocationManager
 import android.os.Bundle
 import android.os.Handler
 import android.os.Looper
-import android.provider.Settings
-import android.text.SpannableString
-import android.text.style.ForegroundColorSpan
-import android.view.ContextThemeWrapper
 import androidx.fragment.app.Fragment
 import android.view.LayoutInflater
 import android.view.MotionEvent
 import android.view.View
 import android.view.ViewGroup
 import android.widget.LinearLayout
-import android.widget.PopupMenu
+import android.widget.PopupWindow
 import android.widget.TextView
 import android.widget.Toast
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AlertDialog
 import androidx.core.content.ContextCompat
-import androidx.core.view.get
 import androidx.core.view.isVisible
-import androidx.core.view.size
 import androidx.fragment.app.viewModels
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.lifecycleScope
@@ -250,28 +244,24 @@ class HomeFragment : Fragment(R.layout.fragment_home) {
         saveAddressAdapter.submitData(saveAddresses,selectedAddress,loginUserName)
     }
     private fun showAddressMenu(anchor: View){
-        val popup = PopupMenu(ContextThemeWrapper(requireContext(),R.style.ThemeOverlay_TrenNex_PopupMenu),anchor)
-        popup.menuInflater.inflate(R.menu.menu_saved_address_actions,popup.menu)
-        popup.setForceShowIcon(true)
-        for(index in 0 until popup.menu.size){
-            val item = popup.menu[index]
-            val title = SpannableString(item.title)
-            title.setSpan(
-                ForegroundColorSpan(ContextCompat.getColor(requireContext(), R.color.textPrimary)),
-                0,
-                title.length,
-                0
-            )
-            item.title = title
+        val popupView = LayoutInflater.from(requireContext())
+            .inflate(R.layout.item_popup_menu,null)
+        val popupWindow = PopupWindow(
+            popupView,
+            ViewGroup.LayoutParams.WRAP_CONTENT,
+            ViewGroup.LayoutParams.WRAP_CONTENT,
+            true
+        )
+
+        popupView.findViewById<View>(R.id.actionEdit).setOnClickListener {
+            popupWindow.dismiss()
         }
-        popup.setOnMenuItemClickListener { menuItem ->
-            when(menuItem.itemId){
-                R.id.action_delete -> {true}
-                R.id.action_edit -> {true}
-                else -> false
-            }
+        popupView.findViewById<View>(R.id.actionDelete).setOnClickListener {
+            popupWindow.dismiss()
         }
-        popup.show()
+        popupWindow.elevation = 12f
+        popupWindow.isOutsideTouchable = true
+        popupWindow.showAsDropDown(anchor, -anchor.width / 2 , 8)
     }
     private fun hasLocationPermission(): Boolean {
         val fineGranted = ContextCompat.checkSelfPermission(requireContext(), Manifest.permission.ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_GRANTED
