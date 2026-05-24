@@ -127,6 +127,11 @@ class MainActivity : AppCompatActivity() {
                     setLightStatusBar(true)
                     binding.curveBottomNav.visibility = View.GONE
                 }
+                R.id.addNewAddressFragment -> {
+                    showToolBar(ToolBarType.TITLE,"Add New Address")
+                    setLightStatusBar(true)
+                    binding.curveBottomNav.visibility = View.GONE
+                }
             }
             renderCartBadge()
         }

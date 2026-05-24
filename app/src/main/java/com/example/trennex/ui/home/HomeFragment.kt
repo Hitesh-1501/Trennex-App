@@ -88,17 +88,6 @@ class HomeFragment : Fragment(R.layout.fragment_home) {
         }
     }
 
-    private val locationSettingsRequestor = registerForActivityResult(
-        ActivityResultContracts.StartActivityForResult()
-    ){
-        if(isLocationServicesEnabled()){
-            fetchCurrentAddress()
-        }else{
-            Toast.makeText(requireContext(), "Device location is still off", Toast.LENGTH_SHORT).show()
-        }
-    }
-
-
     override fun onCreateView(
         inflater: LayoutInflater, container: ViewGroup?,
         savedInstanceState: Bundle?
@@ -206,6 +195,10 @@ class HomeFragment : Fragment(R.layout.fragment_home) {
         sheet.setContentView(sheetBinding.root)
         sheetBinding.closeBtn.setOnClickListener { sheet.dismiss() }
         sheetBinding.currentLocationRow.setOnClickListener { requestLocationPermissionAndFetch() }
+        sheetBinding.addNewAddress.setOnClickListener {
+            sheet.dismiss()
+            findNavController().navigate(R.id.action_homeFragment_to_addNewAddressFragment)
+        }
         saveAddressAdapter = SaveAddressAdapter(
            onItemClick = {item ->
                selectedAddress = item.address
