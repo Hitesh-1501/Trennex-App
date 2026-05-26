@@ -234,7 +234,7 @@
         tools:layout="@layout/fragment_account_details" />
     <fragment
         android:id="@+id/addNewAddressFragment"
-        android:name="com.example.trennex.ui.address.AddNewAddressFragment"
+        android:name="com.example.trennex.ui.location.AddNewAddressFragment"
         android:label="fragment_add_new_address"
         tools:layout="@layout/fragment_add_new_address" />
 
