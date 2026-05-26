@@ -86,5 +86,6 @@ dependencies {
     kapt(libs.androidx.room.compiler)
 
     implementation(libs.play.services.location)
-
+    implementation(libs.play.services.maps)
+    implementation(libs.places)
 }
