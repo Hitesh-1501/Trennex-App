@@ -8,8 +8,10 @@
     android:background="@color/white">
 
     <androidx.constraintlayout.widget.ConstraintLayout
+        android:id="@+id/mainContentLayout"
         android:layout_width="match_parent"
-        android:layout_height="wrap_content">
+        android:layout_height="wrap_content"
+        android:visibility="gone">
 
 
     <com.google.android.material.textfield.TextInputLayout
@@ -163,7 +165,7 @@
                         android:fontFamily="@font/poppins_bold"
                         android:text="Selected Location"
                         android:textColor="@color/textPrimary"
-                        android:textSize="16sp"/>
+                        android:textSize="14sp"/>
 
                     <TextView
                         android:id="@+id/addressTv"

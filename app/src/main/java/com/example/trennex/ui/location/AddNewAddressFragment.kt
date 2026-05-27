@@ -44,6 +44,13 @@ class AddNewAddressFragment : Fragment(R.layout.fragment_add_new_address), OnMap
             .create()
         dialogBinding.farFromLocationBtn.setOnClickListener {
             addAddressDialog?.dismiss()
+            binding.mainContentLayout.visibility = View.VISIBLE
+            binding.mainContentLayout.alpha = 0f
+
+            binding.mainContentLayout.animate()
+                .alpha(1f)
+                .setDuration(300)
+                .start()
             initializeMap()
         }
         dialogBinding.useCurrentLocationBtn.setOnClickListener {
