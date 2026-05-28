@@ -156,6 +156,15 @@ class AddNewAddressFragment : Fragment(R.layout.fragment_add_new_address), OnMap
     }
     @SuppressLint("MissingPermission")
     private fun moveToCurrentLocation() {
+        binding.addressTitleTv.text =
+            "Fetching location..."
+
+        binding.addressTv.text =
+            "Please wait while we get your current location"
+
+        binding.useMyCurrLocation.isEnabled = false
+
+
         fusedLocationClient.getCurrentLocation(
             Priority.PRIORITY_HIGH_ACCURACY,
             null
@@ -171,6 +180,15 @@ class AddNewAddressFragment : Fragment(R.layout.fragment_add_new_address), OnMap
                         17f
                     )
                 )
+                binding.useMyCurrLocation.isEnabled = true
+            }else{
+                binding.addressTitleTv.text =
+                    "Location unavailable"
+
+                binding.addressTv.text =
+                    "Please try again"
+
+                binding.useMyCurrLocation.isEnabled = true
             }
         }
     }
