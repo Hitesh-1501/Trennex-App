@@ -16,6 +16,7 @@ import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import android.view.WindowManager
+import android.widget.Toast
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.annotation.RequiresApi
 import androidx.appcompat.app.AlertDialog
@@ -38,6 +39,7 @@ import com.google.android.gms.maps.OnMapReadyCallback
 import com.google.android.gms.maps.SupportMapFragment
 import com.google.android.gms.maps.model.LatLng
 import com.google.android.libraries.places.api.Places
+import com.google.android.libraries.places.api.model.AutocompleteSessionToken
 import com.google.android.libraries.places.api.model.Place
 import com.google.android.libraries.places.api.net.FetchPlaceRequest
 import com.google.android.libraries.places.api.net.FindAutocompletePredictionsRequest
@@ -55,6 +57,10 @@ class AddNewAddressFragment : Fragment(R.layout.fragment_add_new_address), OnMap
     private lateinit var placesClient: PlacesClient
 
     private lateinit var searchSuggestionAdapter: SearchSuggestionAdapter
+
+    private var autoCompleteSessionToken: AutocompleteSessionToken? = null
+
+    private var isSelectingPlace = false
 
     private val locationPermissionLauncher = registerForActivityResult(
         ActivityResultContracts.RequestPermission()
@@ -75,12 +81,12 @@ class AddNewAddressFragment : Fragment(R.layout.fragment_add_new_address), OnMap
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
         fusedLocationClient = LocationServices.getFusedLocationProviderClient(requireContext())
-
-        if (!Places.isInitialized()){
-            Places.initialize(
-                requireContext(),
-                getString(R.string.MAP_API_KEY)
-            )
+        val apiKey = getString(R.string.MAP_API_KEY).trim()
+        if (apiKey.isBlank()) {
+            Toast.makeText(requireContext(), "Places API key is missing", Toast.LENGTH_LONG).show()
+            Log.e("PlacesDebug", "MAP_API_KEY is blank. Add a valid Places key in strings.xml")
+        } else if (!Places.isInitialized()) {
+            Places.initialize(requireContext(), apiKey)
         }
         placesClient = Places.createClient(requireContext())
 
@@ -103,8 +109,12 @@ class AddNewAddressFragment : Fragment(R.layout.fragment_add_new_address), OnMap
 
         binding.locationSearchInput.addTextChangedListener{
             val query = it.toString()
+
+            if (isSelectingPlace) return@addTextChangedListener
+
             if (query.length > 2){
-                searchPlaces(query)
+                autoCompleteSessionToken = AutocompleteSessionToken.newInstance()
+                searchPlaces(query.trim())
             }else{
                 binding.searchSuggestionsRv.visibility = View.GONE
             }
@@ -335,6 +345,7 @@ class AddNewAddressFragment : Fragment(R.layout.fragment_add_new_address), OnMap
         val request =
             FindAutocompletePredictionsRequest.builder()
                 .setQuery(query)
+                .setSessionToken(autoCompleteSessionToken)
                 .build()
 
         placesClient.findAutocompletePredictions(
@@ -354,6 +365,10 @@ class AddNewAddressFragment : Fragment(R.layout.fragment_add_new_address), OnMap
             }else{
                 binding.searchSuggestionsRv.visibility = View.GONE
             }
+        }.addOnFailureListener { exception ->
+            binding.searchSuggestionsRv.visibility = View.GONE
+            Log.e("PlacesDebug", "Autocomplete failed: ${exception.message}", exception)
+            Toast.makeText(requireContext(), "Unable to load place suggestions", Toast.LENGTH_SHORT).show()
         }
     }
 
@@ -385,11 +400,25 @@ class AddNewAddressFragment : Fragment(R.layout.fragment_add_new_address), OnMap
                             )
                     )
                 }
+                isSelectingPlace = true
                 binding.searchSuggestionsRv
                     .visibility = View.GONE
 
                 binding.locationSearchInput
                     .setText(place.name)
+
+                binding.locationSearchInput
+                    .setSelection(
+                        place.name?.length ?: 0
+                    )
+
+                binding.locationSearchInput.clearFocus()
+
+                isSelectingPlace = false
+
+            }.addOnFailureListener {exception ->
+                Log.e("PlacesDebug", "Fetch place failed: ${exception.message}", exception)
+                Toast.makeText(requireContext(), "Unable to fetch selected place", Toast.LENGTH_SHORT).show()
             }
     }
 
