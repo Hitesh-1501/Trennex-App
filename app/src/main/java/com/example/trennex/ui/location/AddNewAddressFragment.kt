@@ -10,6 +10,7 @@ import android.location.Geocoder
 import android.location.LocationManager
 import android.os.Build
 import android.os.Bundle
+import android.util.Log
 import androidx.fragment.app.Fragment
 import android.view.LayoutInflater
 import android.view.View
@@ -19,10 +20,12 @@ import androidx.activity.result.contract.ActivityResultContracts
 import androidx.annotation.RequiresApi
 import androidx.appcompat.app.AlertDialog
 import androidx.core.content.ContextCompat
-import androidx.navigation.fragment.findNavController
+import androidx.core.widget.addTextChangedListener
+import androidx.recyclerview.widget.LinearLayoutManager
 import com.example.trennex.R
 import com.example.trennex.databinding.FragmentAddNewAddressBinding
 import com.example.trennex.databinding.SelectingLocationDialogBinding
+import com.example.trennex.ui.location.adapter.SearchSuggestionAdapter
 import com.google.android.gms.common.api.ResolvableApiException
 import com.google.android.gms.location.FusedLocationProviderClient
 import com.google.android.gms.location.LocationRequest
@@ -34,6 +37,11 @@ import com.google.android.gms.maps.GoogleMap
 import com.google.android.gms.maps.OnMapReadyCallback
 import com.google.android.gms.maps.SupportMapFragment
 import com.google.android.gms.maps.model.LatLng
+import com.google.android.libraries.places.api.Places
+import com.google.android.libraries.places.api.model.Place
+import com.google.android.libraries.places.api.net.FetchPlaceRequest
+import com.google.android.libraries.places.api.net.FindAutocompletePredictionsRequest
+import com.google.android.libraries.places.api.net.PlacesClient
 import java.util.Locale
 
 class AddNewAddressFragment : Fragment(R.layout.fragment_add_new_address), OnMapReadyCallback {
@@ -44,11 +52,15 @@ class AddNewAddressFragment : Fragment(R.layout.fragment_add_new_address), OnMap
 
     private lateinit var fusedLocationClient: FusedLocationProviderClient
 
+    private lateinit var placesClient: PlacesClient
+
+    private lateinit var searchSuggestionAdapter: SearchSuggestionAdapter
+
     private val locationPermissionLauncher = registerForActivityResult(
         ActivityResultContracts.RequestPermission()
     ) {granted ->
         if (granted) {
-            moveToCurrentLocation()
+            checkLocationServicesAndMove()
         }
     }
 
@@ -63,12 +75,41 @@ class AddNewAddressFragment : Fragment(R.layout.fragment_add_new_address), OnMap
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
         fusedLocationClient = LocationServices.getFusedLocationProviderClient(requireContext())
+
+        if (!Places.isInitialized()){
+            Places.initialize(
+                requireContext(),
+                getString(R.string.MAP_API_KEY)
+            )
+        }
+        placesClient = Places.createClient(requireContext())
+
         showLocationDialog()
         binding.useMyCurrLocation.setOnClickListener {
             checkLocationPermission()
         }
-    }
 
+        searchSuggestionAdapter = SearchSuggestionAdapter { prediction ->
+            fetchPlaceAndMoveMap(
+                prediction.placeId
+            )
+        }
+
+        binding.searchSuggestionsRv.apply {
+            adapter = searchSuggestionAdapter
+
+            layoutManager = LinearLayoutManager(requireContext())
+        }
+
+        binding.locationSearchInput.addTextChangedListener{
+            val query = it.toString()
+            if (query.length > 2){
+                searchPlaces(query)
+            }else{
+                binding.searchSuggestionsRv.visibility = View.GONE
+            }
+        }
+    }
 
     private fun showLocationDialog(){
         val dialogBinding = SelectingLocationDialogBinding.inflate(layoutInflater)
@@ -122,7 +163,7 @@ class AddNewAddressFragment : Fragment(R.layout.fragment_add_new_address), OnMap
         }
     }
 
-    @RequiresApi(Build.VERSION_CODES.TIRAMISU)
+    @SuppressLint("NewApi")
     private fun getAddressFromLatLng(
         latitude: Double,
         longitude: Double
@@ -284,6 +325,72 @@ class AddNewAddressFragment : Fragment(R.layout.fragment_add_new_address), OnMap
         val mapFragment =
             childFragmentManager.findFragmentById(R.id.mapFragment) as SupportMapFragment
         mapFragment.getMapAsync(this)
+    }
+
+
+
+    private fun searchPlaces(
+        query: String
+    ){
+        val request =
+            FindAutocompletePredictionsRequest.builder()
+                .setQuery(query)
+                .build()
+
+        placesClient.findAutocompletePredictions(
+            request
+        ).addOnSuccessListener { response ->
+            val predictions = response.autocompletePredictions
+
+            if (predictions.isNotEmpty()) {
+                Log.d(
+                    "PlacesDebug",
+                    "Predictions size = ${predictions.size}"
+                )
+                binding.searchSuggestionsRv.visibility = View.VISIBLE
+                searchSuggestionAdapter.submitList(
+                    predictions
+                )
+            }else{
+                binding.searchSuggestionsRv.visibility = View.GONE
+            }
+        }
+    }
+
+    private fun fetchPlaceAndMoveMap(
+        placeId: String
+    ){
+        val fields = listOf(
+            Place.Field.LAT_LNG,
+            Place.Field.NAME,
+            Place.Field.ADDRESS
+        )
+
+        val request = FetchPlaceRequest.newInstance(
+            placeId,
+            fields
+        )
+
+        placesClient.fetchPlace(request)
+            .addOnSuccessListener { response ->
+
+                val place = response.place
+
+                place.latLng?.let { latLng ->
+                    googleMap.animateCamera(
+                        CameraUpdateFactory
+                            .newLatLngZoom(
+                                latLng,
+                                17f
+                            )
+                    )
+                }
+                binding.searchSuggestionsRv
+                    .visibility = View.GONE
+
+                binding.locationSearchInput
+                    .setText(place.name)
+            }
     }
 
     override fun onDestroyView() {
