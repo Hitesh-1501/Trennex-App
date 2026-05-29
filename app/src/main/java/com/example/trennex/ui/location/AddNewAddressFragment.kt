@@ -24,6 +24,7 @@ import androidx.core.content.ContextCompat
 import androidx.core.widget.addTextChangedListener
 import androidx.recyclerview.widget.LinearLayoutManager
 import com.example.trennex.R
+import com.example.trennex.databinding.BottomSheetDeliverToBinding
 import com.example.trennex.databinding.FragmentAddNewAddressBinding
 import com.example.trennex.databinding.SelectingLocationDialogBinding
 import com.example.trennex.ui.location.adapter.SearchSuggestionAdapter
@@ -44,6 +45,7 @@ import com.google.android.libraries.places.api.model.Place
 import com.google.android.libraries.places.api.net.FetchPlaceRequest
 import com.google.android.libraries.places.api.net.FindAutocompletePredictionsRequest
 import com.google.android.libraries.places.api.net.PlacesClient
+import com.google.android.material.bottomsheet.BottomSheetDialog
 import java.util.Locale
 
 class AddNewAddressFragment : Fragment(R.layout.fragment_add_new_address), OnMapReadyCallback {
@@ -118,6 +120,10 @@ class AddNewAddressFragment : Fragment(R.layout.fragment_add_new_address), OnMap
             }else{
                 binding.searchSuggestionsRv.visibility = View.GONE
             }
+        }
+
+        binding.addLocationBtn.setOnClickListener {
+            showDeliverToBottomSheet()
         }
     }
 
@@ -420,6 +426,25 @@ class AddNewAddressFragment : Fragment(R.layout.fragment_add_new_address), OnMap
                 Log.e("PlacesDebug", "Fetch place failed: ${exception.message}", exception)
                 Toast.makeText(requireContext(), "Unable to fetch selected place", Toast.LENGTH_SHORT).show()
             }
+    }
+
+
+    private fun showDeliverToBottomSheet(){
+        val sheetBinding = BottomSheetDeliverToBinding.inflate(layoutInflater)
+        val bottomSheetDialog = BottomSheetDialog(requireContext())
+        bottomSheetDialog.setContentView(sheetBinding.root)
+
+        sheetBinding.closeBtn.setOnClickListener {
+            bottomSheetDialog.dismiss()
+        }
+        sheetBinding.editAddressBtn.setOnClickListener {
+            bottomSheetDialog.dismiss()
+        }
+        sheetBinding.saveAddressBtn.setOnClickListener {
+            bottomSheetDialog.dismiss()
+        }
+
+        bottomSheetDialog.show()
     }
 
     override fun onDestroyView() {
