@@ -46,6 +46,11 @@ import com.google.android.libraries.places.api.net.FetchPlaceRequest
 import com.google.android.libraries.places.api.net.FindAutocompletePredictionsRequest
 import com.google.android.libraries.places.api.net.PlacesClient
 import com.google.android.material.bottomsheet.BottomSheetDialog
+import com.google.firebase.Firebase
+import com.google.firebase.FirebaseApp
+import com.google.firebase.auth.FirebaseAuth
+import com.google.firebase.firestore.FirebaseFirestore
+import kotlinx.coroutines.tasks.await
 import java.util.Locale
 
 class AddNewAddressFragment : Fragment(R.layout.fragment_add_new_address), OnMapReadyCallback {
@@ -61,6 +66,9 @@ class AddNewAddressFragment : Fragment(R.layout.fragment_add_new_address), OnMap
     private lateinit var searchSuggestionAdapter: SearchSuggestionAdapter
 
     private var autoCompleteSessionToken: AutocompleteSessionToken? = null
+
+    private val auth: FirebaseAuth by lazy { FirebaseAuth.getInstance() }
+    private val firestore: FirebaseFirestore by lazy { FirebaseFirestore.getInstance() }
 
     private var isSelectingPlace = false
 
@@ -83,6 +91,7 @@ class AddNewAddressFragment : Fragment(R.layout.fragment_add_new_address), OnMap
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
         fusedLocationClient = LocationServices.getFusedLocationProviderClient(requireContext())
+
         val apiKey = getString(R.string.MAP_API_KEY).trim()
         if (apiKey.isBlank()) {
             Toast.makeText(requireContext(), "Places API key is missing", Toast.LENGTH_LONG).show()
@@ -434,9 +443,11 @@ class AddNewAddressFragment : Fragment(R.layout.fragment_add_new_address), OnMap
         val bottomSheetDialog = BottomSheetDialog(requireContext())
         bottomSheetDialog.setContentView(sheetBinding.root)
 
+
         var selectedAddress = binding.addressTv.text.toString()
         sheetBinding.selectedAddressText.text = selectedAddress
 
+        prefilledUserDetails(sheetBinding)
 
         sheetBinding.closeBtn.setOnClickListener {
             bottomSheetDialog.dismiss()
@@ -471,10 +482,61 @@ class AddNewAddressFragment : Fragment(R.layout.fragment_add_new_address), OnMap
         bottomSheetDialog.show()
     }
 
+    private fun prefilledUserDetails(sheetBinding: BottomSheetDeliverToBinding){
+        if (!isAdded || FirebaseApp.getApps(requireContext()).isEmpty()) return
+        val user = auth.currentUser ?: return
+        val authPhone = user.phoneNumber.orEmpty().toEditablePhoneNumber()
+        if (authPhone.isNotEmpty()) {
+            sheetBinding.mobileInput.setText(authPhone)
+        }
+
+        firestore.collection(USERS_COLLECTION)
+            .document(user.uid)
+            .get()
+            .addOnSuccessListener { snapshot ->
+                if (!isAdded) return@addOnSuccessListener
+
+                val name = snapshot.getString(NAME_FIELD).orEmpty().trim()
+                val phone = snapshot.getString(PHONE_FIELD).orEmpty().toEditablePhoneNumber()
+
+                if (name.isNotEmpty() && sheetBinding.fullNameInput.text.isNullOrBlank()) {
+                    sheetBinding.fullNameInput.setText(name)
+                    sheetBinding.fullNameInput.setSelection(name.length)
+
+                }
+                val currentPhoneInput = sheetBinding.mobileInput.text?.toString().orEmpty()
+                if (phone.isNotEmpty() && (currentPhoneInput.isBlank() || currentPhoneInput == authPhone)) {
+                    sheetBinding.mobileInput.setText(phone)
+                    sheetBinding.mobileInput.setSelection(phone.length)
+                }
+            }
+            .addOnFailureListener { exception ->
+                Log.e("AddAddress", "Could not load user details: ${exception.message}", exception)
+            }
+
+    }
+
+    private fun String.toEditablePhoneNumber(): String {
+        val digits = filter(Char::isDigit)
+        return if (digits.length > PHONE_NUMBER_LENGTH) {
+            digits.takeLast(PHONE_NUMBER_LENGTH)
+        } else {
+            digits
+        }
+
+    }
+
     override fun onDestroyView() {
         super.onDestroyView()
         addAddressDialog?.dismiss()
         addAddressDialog = null
         _binding = null
+    }
+
+    private companion object {
+        const val USERS_COLLECTION = "users"
+        const val NAME_FIELD = "name"
+        const val PHONE_FIELD = "phone"
+        const val PHONE_NUMBER_LENGTH = 10
     }
 }
