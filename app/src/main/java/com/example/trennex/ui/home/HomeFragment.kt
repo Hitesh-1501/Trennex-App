@@ -73,6 +73,8 @@ class HomeFragment : Fragment(R.layout.fragment_home) {
     private var bottomSheetBinding: BottomSheetSelectLocationBinding? = null
     private var   locationBottomSheet: BottomSheetDialog? = null
     private lateinit var fusedLocationClient: FusedLocationProviderClient
+
+    private var shouldNavigateToAddress = false
     private val firestore by lazy { FirebaseFirestore.getInstance() }
     private val auth by lazy { FirebaseAuth.getInstance() }
 
@@ -193,11 +195,26 @@ class HomeFragment : Fragment(R.layout.fragment_home) {
         val sheetBinding = BottomSheetSelectLocationBinding.inflate(layoutInflater)
         bottomSheetBinding = sheetBinding
         sheet.setContentView(sheetBinding.root)
-        sheetBinding.closeBtn.setOnClickListener { sheet.dismiss() }
-        sheetBinding.currentLocationRow.setOnClickListener { requestLocationPermissionAndFetch() }
-        sheetBinding.addNewAddress.setOnClickListener {
+        sheetBinding.closeBtn.setOnClickListener {
+            shouldNavigateToAddress = false
             sheet.dismiss()
-            findNavController().navigate(R.id.action_homeFragment_to_addNewAddressFragment)
+        }
+        sheetBinding.currentLocationRow.setOnClickListener {
+            shouldNavigateToAddress = false
+            requestLocationPermissionAndFetch()
+        }
+        sheet.setOnDismissListener {
+            if (shouldNavigateToAddress && isAdded){
+                shouldNavigateToAddress = false
+                val navController = findNavController()
+                if (navController.currentDestination?.id == R.id.homeFragment){
+                    navController.navigate(R.id.action_homeFragment_to_addNewAddressFragment)
+                }
+            }
+        }
+        sheetBinding.addNewAddress.setOnClickListener {
+            shouldNavigateToAddress = true
+            sheet.dismiss()
         }
         saveAddressAdapter = SaveAddressAdapter(
            onItemClick = {item ->
@@ -485,6 +502,10 @@ class HomeFragment : Fragment(R.layout.fragment_home) {
         bannerPageCallbacks = null
         bannerMediator?.detach()
         bannerMediator = null
+        shouldNavigateToAddress = false
+        locationBottomSheet?.dismiss()
+        locationBottomSheet = null
+        bottomSheetBinding = null
         _binding = null
     }
 }
