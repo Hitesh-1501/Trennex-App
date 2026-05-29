@@ -434,11 +434,35 @@ class AddNewAddressFragment : Fragment(R.layout.fragment_add_new_address), OnMap
         val bottomSheetDialog = BottomSheetDialog(requireContext())
         bottomSheetDialog.setContentView(sheetBinding.root)
 
+        var selectedAddress = binding.addressTv.text.toString()
+        sheetBinding.selectedAddressText.text = selectedAddress
+
+
         sheetBinding.closeBtn.setOnClickListener {
             bottomSheetDialog.dismiss()
         }
         sheetBinding.editAddressBtn.setOnClickListener {
-            bottomSheetDialog.dismiss()
+            sheetBinding.addressCard.visibility = View.GONE
+            sheetBinding.editAddressInputLayout.visibility = View.VISIBLE
+            sheetBinding.editAddressInput.setText(
+                selectedAddress
+            )
+            sheetBinding.editAddressInput.setSelection(
+                selectedAddress.length
+            )
+            sheetBinding.editAddressInput.requestFocus()
+        }
+        sheetBinding.editAddressInputLayout.setEndIconOnClickListener{
+            val updatedAddress = sheetBinding.editAddressInput
+                .text
+                .toString()
+                .trim()
+            if (updatedAddress.isNotEmpty()){
+                selectedAddress = updatedAddress
+                sheetBinding.selectedAddressText.text = selectedAddress
+                sheetBinding.addressCard.visibility = View.VISIBLE
+                sheetBinding.editAddressInputLayout.visibility = View.GONE
+            }
         }
         sheetBinding.saveAddressBtn.setOnClickListener {
             bottomSheetDialog.dismiss()
