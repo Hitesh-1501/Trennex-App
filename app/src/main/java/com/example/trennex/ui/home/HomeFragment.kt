@@ -74,6 +74,7 @@ class HomeFragment : Fragment(R.layout.fragment_home) {
     private var selectedAddress: String? = null
 
     private var selectedAddressId: String? = null
+    private var selectedAddressLoaded = false
 
     private lateinit var saveAddressAdapter: SaveAddressAdapter
     private var bottomSheetBinding: BottomSheetSelectLocationBinding? = null
@@ -229,6 +230,7 @@ class HomeFragment : Fragment(R.layout.fragment_home) {
            onItemClick = {item ->
                selectedAddress = item.displayAddress
                selectedAddressId = item.id
+               selectedAddressLoaded = true
                auth.currentUser?.uid?.let { uid ->
                    Log.d(
                        "AddressSelection",
@@ -269,17 +271,25 @@ class HomeFragment : Fragment(R.layout.fragment_home) {
             sheetBinding.savedAddressRv.isVisible = hasSavedAddress
             sheetBinding.emptyAddressView.root.isVisible = !hasSavedAddress
         }
-       if(saveAddresses.isNotEmpty()){
-          val selectedItem = saveAddresses.find { it.id == selectedAddressId  }
-           if (selectedItem != null){
-               selectedAddress = selectedItem.displayAddress
-           }else {
-               selectedAddressId = saveAddresses.first().id
-
-               selectedAddress = saveAddresses.first().displayAddress
-           }
-           updateLocationBar()
-       }
+        if(saveAddresses.isNotEmpty()){
+            val selectedItem = selectedAddressId?.let { id ->
+                saveAddresses.find { it.id == id }
+            }
+            if (selectedItem != null){
+                selectedAddress = selectedItem.displayAddress
+                updateLocationBar()
+            } else if (selectedAddressLoaded) {
+                val firstAddress = saveAddresses.first()
+                selectedAddressId = firstAddress.id
+                selectedAddress = firstAddress.displayAddress
+                updateSelectedAddressInFirestore(firstAddress.id)
+                updateLocationBar()
+            }
+        } else if (selectedAddressLoaded) {
+            selectedAddressId = null
+            selectedAddress = null
+            updateLocationBar()
+        }
         if (this::saveAddressAdapter.isInitialized) {
             saveAddressAdapter.submitData(saveAddresses, selectedAddressId)
         }
@@ -457,22 +467,8 @@ class HomeFragment : Fragment(R.layout.fragment_home) {
                     }
                 }
                 fetchSelectedAddress()
-                val selectedStillExists = saveAddresses.any { it.id == selectedAddressId  }
-                if (!selectedStillExists) {
-                    val firstAddress = saveAddresses.firstOrNull()
-                    selectedAddressId = firstAddress?.id
-                    selectedAddress = firstAddress?.displayAddress
-                    firstAddress?.id?.let { newId ->
-                        auth.currentUser?.uid?.let { uid ->
-                            firestore.collection("users")
-                                .document(uid)
-                                .update(SELECTED_ADDRESS_ID_FIELD, newId)
-                        }
-                    }
-                    updateLocationBar()
-                }
                 if (this::saveAddressAdapter.isInitialized) {
-                    renderSaveAddresses()
+                    saveAddressAdapter.submitData(saveAddresses, selectedAddressId)
                 }
             }
     }
@@ -501,8 +497,20 @@ class HomeFragment : Fragment(R.layout.fragment_home) {
             .get()
             .addOnSuccessListener { snapshot ->
                 selectedAddressId = snapshot.getString(SELECTED_ADDRESS_ID_FIELD)
+                selectedAddressLoaded = true
                 renderSaveAddresses()
             }
+            .addOnFailureListener {
+                selectedAddressLoaded = true
+                renderSaveAddresses()
+            }
+    }
+
+    private fun updateSelectedAddressInFirestore(addressId: String) {
+        val uid = auth.currentUser?.uid ?: return
+        firestore.collection("users")
+            .document(uid)
+            .update(SELECTED_ADDRESS_ID_FIELD, addressId)
     }
 
     private fun updateLocationBar() {
