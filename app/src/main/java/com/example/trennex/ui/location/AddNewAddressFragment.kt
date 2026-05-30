@@ -23,6 +23,7 @@ import androidx.appcompat.app.AlertDialog
 import androidx.core.content.ContextCompat
 import androidx.core.widget.addTextChangedListener
 import androidx.core.widget.doAfterTextChanged
+import androidx.navigation.fragment.findNavController
 import androidx.recyclerview.widget.LinearLayoutManager
 import com.example.trennex.R
 import com.example.trennex.databinding.BottomSheetDeliverToBinding
@@ -50,6 +51,7 @@ import com.google.android.material.bottomsheet.BottomSheetDialog
 import com.google.firebase.Firebase
 import com.google.firebase.FirebaseApp
 import com.google.firebase.auth.FirebaseAuth
+import com.google.firebase.firestore.FieldValue
 import com.google.firebase.firestore.FirebaseFirestore
 import kotlinx.coroutines.tasks.await
 import java.util.Locale
@@ -477,14 +479,7 @@ class AddNewAddressFragment : Fragment(R.layout.fragment_add_new_address), OnMap
             }
         }
         sheetBinding.saveAddressBtn.setOnClickListener {
-           if (validateAddressForm(sheetBinding)){
-               bottomSheetDialog.dismiss()
-               Toast.makeText(
-                   requireContext(),
-                   "Address Saved",
-                   Toast.LENGTH_SHORT
-               ).show()
-           }
+            saveAddressToFirestore(sheetBinding, selectedAddress, bottomSheetDialog)
         }
         sheetBinding.flatInput.doAfterTextChanged { sheetBinding.flatInputLayout.error = null }
         sheetBinding.fullNameInput.doAfterTextChanged { sheetBinding.fullNameInputLayout.error = null }
@@ -535,54 +530,78 @@ class AddNewAddressFragment : Fragment(R.layout.fragment_add_new_address), OnMap
         }
 
     }
-
-    private fun validateAddressForm(
-        sheetBinding: BottomSheetDeliverToBinding
-    ): Boolean {
-        val flatHouse = sheetBinding.flatInput.text.toString().trim()
-        val address = sheetBinding.selectedAddressText.text.toString().trim()
-        val fullName = sheetBinding.fullNameInput.text.toString().trim()
-        val mobile = sheetBinding.mobileInput.text.toString().trim()
-
-        var isValid = true
-
-        if (flatHouse.isEmpty()){
-            sheetBinding.flatInputLayout.error = "Flat/House number required"
-            isValid = false
-        }else{
-            sheetBinding.flatInputLayout.error = null
+    private fun saveAddressToFirestore(
+        sheetBinding: BottomSheetDeliverToBinding,
+        selectedAddress: String,
+        bottomSheetDialog: BottomSheetDialog
+    ) {
+        val user = auth.currentUser
+        if (user == null) {
+            Toast.makeText(requireContext(), "Please login before saving address", Toast.LENGTH_SHORT).show()
+            return
         }
-        if (address.isEmpty()) {
-            Toast.makeText(requireContext(),
-                "Address is required",
-                Toast.LENGTH_SHORT
-            ).show()
+        val flatNo = sheetBinding.flatInput.text?.toString().orEmpty().trim()
+        val fullName = sheetBinding.fullNameInput.text?.toString().orEmpty().trim()
+        val mobile = sheetBinding.mobileInput.text?.toString().orEmpty().trim()
+        val address = selectedAddress.trim()
 
-            isValid = false
-        }
-
-        if (fullName.isEmpty()) {
-
-            sheetBinding.fullNameInputLayout.error = "Full name required"
-            isValid = false
-
+        val addressType = if (sheetBinding.officeRadio.isChecked) {
+            ADDRESS_TYPE_OFFICE
         } else {
-            sheetBinding.fullNameInputLayout.error = null
+            ADDRESS_TYPE_HOME
         }
 
-        if (mobile.isEmpty()) {
-            sheetBinding.mobileInputLayout.error = "Mobile number required"
-            isValid = false
+        sheetBinding.flatInputLayout.error = null
+        sheetBinding.fullNameInputLayout.error = null
+        sheetBinding.mobileInputLayout.error = null
 
-        } else if (mobile.length != 10) {
-            sheetBinding.mobileInputLayout.error = "Enter valid 10-digit mobile number"
-            isValid = false
-
-        } else{
-            sheetBinding.mobileInputLayout.error = null
+        when {
+            flatNo.isBlank() -> {
+                sheetBinding.flatInputLayout.error = "Enter flat, house, or building number"
+                return
+            }
+            address.isBlank() || address == "Address not found" -> {
+                Toast.makeText(requireContext(), "Please select a valid address", Toast.LENGTH_SHORT).show()
+                return
+            }
+            fullName.isBlank() -> {
+                sheetBinding.fullNameInputLayout.error = "Enter full name"
+                return
+            }
+            mobile.length != PHONE_NUMBER_LENGTH -> {
+                sheetBinding.mobileInputLayout.error = "Enter valid 10-digit mobile number"
+                return
+            }
         }
 
-        return isValid
+        sheetBinding.saveAddressBtn.isEnabled = false
+        val addressData = hashMapOf(
+            FLAT_NO_FIELD to flatNo,
+            ADDRESS_FIELD to address,
+            USER_NAME_FIELD to fullName,
+            MOBILE_FIELD to mobile,
+            ADDRESS_TYPE_FIELD to addressType,
+            CREATED_AT_FIELD to FieldValue.serverTimestamp(),
+            UPDATED_AT_FIELD to FieldValue.serverTimestamp()
+        )
+
+        firestore.collection(USERS_COLLECTION)
+            .document(user.uid)
+            .collection(SAVED_ADDRESSES_COLLECTION)
+            .add(addressData)
+            .addOnSuccessListener {
+                if (!isAdded) return@addOnSuccessListener
+                Toast.makeText(requireContext(), "Address saved", Toast.LENGTH_SHORT).show()
+                bottomSheetDialog.dismiss()
+                findNavController().popBackStack()
+            }
+            .addOnFailureListener { exception ->
+                if (!isAdded) return@addOnFailureListener
+                sheetBinding.saveAddressBtn.isEnabled = true
+                Log.e("AddAddress", "Could not save address: ${exception.message}", exception)
+                Toast.makeText(requireContext(), "Failed to save address", Toast.LENGTH_SHORT).show()
+            }
+
     }
 
 
@@ -597,6 +616,17 @@ class AddNewAddressFragment : Fragment(R.layout.fragment_add_new_address), OnMap
         const val USERS_COLLECTION = "users"
         const val NAME_FIELD = "name"
         const val PHONE_FIELD = "phone"
+
+        const val SAVED_ADDRESSES_COLLECTION = "savedAddresses"
+        const val FLAT_NO_FIELD = "flatNo"
+        const val ADDRESS_FIELD = "address"
+        const val USER_NAME_FIELD = "userName"
+        const val MOBILE_FIELD = "mobile"
+        const val ADDRESS_TYPE_FIELD = "addressType"
+        const val CREATED_AT_FIELD = "createdAt"
+        const val UPDATED_AT_FIELD = "updatedAt"
+        const val ADDRESS_TYPE_HOME = "Home"
+        const val ADDRESS_TYPE_OFFICE = "Office"
         const val PHONE_NUMBER_LENGTH = 10
     }
 }

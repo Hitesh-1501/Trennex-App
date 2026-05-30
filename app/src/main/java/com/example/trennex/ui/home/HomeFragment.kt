@@ -57,6 +57,8 @@ import com.google.android.material.bottomsheet.BottomSheetDialog
 import com.google.android.material.tabs.TabLayoutMediator
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.firestore.FirebaseFirestore
+import com.google.firebase.firestore.ListenerRegistration
+import com.google.firebase.firestore.Query
 import kotlinx.coroutines.launch
 import java.util.Locale
 
@@ -69,6 +71,9 @@ class HomeFragment : Fragment(R.layout.fragment_home) {
     private val saveAddresses = mutableListOf<SaveAddressAdapter.SavedAddressItem>()
     private var loginUserName = "Guest User"
     private var selectedAddress: String? = null
+
+    private var selectedAddressId: String? = null
+
     private lateinit var saveAddressAdapter: SaveAddressAdapter
     private var bottomSheetBinding: BottomSheetSelectLocationBinding? = null
     private var   locationBottomSheet: BottomSheetDialog? = null
@@ -77,6 +82,8 @@ class HomeFragment : Fragment(R.layout.fragment_home) {
     private var shouldNavigateToAddress = false
     private val firestore by lazy { FirebaseFirestore.getInstance() }
     private val auth by lazy { FirebaseAuth.getInstance() }
+    private var savedAddressListener: ListenerRegistration? = null
+
 
     private val locationPermissionRequester = registerForActivityResult(
         ActivityResultContracts.RequestMultiplePermissions()
@@ -127,6 +134,7 @@ class HomeFragment : Fragment(R.layout.fragment_home) {
         viewModel.fetchCategories()
         UserDetailsDialog.showIfNeeded(this){}
         fetchLoggedInUserName()
+        fetchSavedAddresses()
         setupLocationUi()
         if (selectedAddress == null && !hasLocationPermission()) {
             showLocationPermissionDialog()
@@ -218,12 +226,13 @@ class HomeFragment : Fragment(R.layout.fragment_home) {
         }
         saveAddressAdapter = SaveAddressAdapter(
            onItemClick = {item ->
-               selectedAddress = item.address
+               selectedAddress = item.displayAddress
+               selectedAddressId = item.id
                updateLocationBar()
                renderSaveAddresses()
                sheet.dismiss()
            },
-           onMoreClick = {anchor, _ -> showAddressMenu(anchor)}
+           onMoreClick = {anchor, item -> showAddressMenu(anchor,item)}
         )
         sheetBinding.savedAddressRv.adapter =  saveAddressAdapter
         sheetBinding.savedAddressRv.layoutManager = LinearLayoutManager(requireContext())
@@ -248,12 +257,15 @@ class HomeFragment : Fragment(R.layout.fragment_home) {
             sheetBinding.emptyAddressView.root.isVisible = !hasSavedAddress
         }
        if(selectedAddress.isNullOrBlank() && saveAddresses.isNotEmpty()){
-           selectedAddress = saveAddresses.first().address
+           selectedAddress = saveAddresses.first().displayAddress
+           selectedAddressId = saveAddresses.first().id
            updateLocationBar()
        }
-        saveAddressAdapter.submitData(saveAddresses,selectedAddress,loginUserName)
+        if (this::saveAddressAdapter.isInitialized) {
+            saveAddressAdapter.submitData(saveAddresses, selectedAddressId)
+        }
     }
-    private fun showAddressMenu(anchor: View){
+    private fun showAddressMenu(anchor: View, item: SaveAddressAdapter.SavedAddressItem){
         val popupView = LayoutInflater.from(requireContext())
             .inflate(R.layout.item_popup_menu,null)
         val popupWindow = PopupWindow(
@@ -267,6 +279,7 @@ class HomeFragment : Fragment(R.layout.fragment_home) {
             popupWindow.dismiss()
         }
         popupView.findViewById<View>(R.id.actionDelete).setOnClickListener {
+            deleteSaveAddress(item)
             popupWindow.dismiss()
         }
         popupWindow.elevation = 12f
@@ -359,8 +372,8 @@ class HomeFragment : Fragment(R.layout.fragment_home) {
                     saveAddresses.add(
                         0,
                         SaveAddressAdapter.SavedAddressItem(
-                            loginUserName,
-                            address
+                            userName = loginUserName,
+                            address = address
                         )
                     )
                 }
@@ -385,6 +398,70 @@ class HomeFragment : Fragment(R.layout.fragment_home) {
                 Toast.LENGTH_SHORT
             ).show()
         }
+    }
+
+    private fun fetchSavedAddresses() {
+        val uid = auth.currentUser?.uid ?: return
+        savedAddressListener?.remove()
+        savedAddressListener = firestore.collection("users")
+            .document(uid)
+            .collection(SAVED_ADDRESSES_COLLECTION)
+            .orderBy(CREATED_AT_FIELD, Query.Direction.DESCENDING)
+            .addSnapshotListener { snapshot, exception ->
+                 if (exception != null){
+                     if (isAdded){
+                         Toast.makeText(
+                             requireContext(),
+                             "Failed to fetch saved addresses",
+                             Toast.LENGTH_SHORT
+                         ).show()
+                     }
+                     return@addSnapshotListener
+                 }
+
+                saveAddresses.clear()
+
+                snapshot?.documents?.forEach { documentSnapshot ->
+                    val address = documentSnapshot.getString(ADDRESS_FIELD).orEmpty().trim()
+                    if (address.isNotEmpty()){
+                        saveAddresses.add(
+                            SaveAddressAdapter.SavedAddressItem(
+                                id = documentSnapshot.id,
+                                userName = documentSnapshot.getString(USER_NAME_FIELD).orEmpty().ifBlank { loginUserName },
+                                flatNo = documentSnapshot.getString(FLAT_NO_FIELD).orEmpty(),
+                                address = address,
+                                addressType = documentSnapshot.getString(ADDRESS_TYPE_FIELD).orEmpty().ifBlank {
+                                    SaveAddressAdapter.ADDRESS_TYPE_HOME
+                                }
+                            )
+                        )
+                    }
+                }
+                val selectedStillExists = saveAddresses.any { it.id == selectedAddressId  }
+                if (!selectedStillExists) {
+                    selectedAddressId = saveAddresses.firstOrNull()?.id
+                    selectedAddress = saveAddresses.firstOrNull()?.displayAddress
+                    updateLocationBar()
+                }
+                if (this::saveAddressAdapter.isInitialized) {
+                    renderSaveAddresses()
+                }
+            }
+    }
+
+    private fun deleteSaveAddress(item: SaveAddressAdapter.SavedAddressItem) {
+        val uid = auth.currentUser?.uid ?: return
+        if (item.id.isBlank()) return
+        firestore.collection("users")
+            .document(uid)
+            .collection(SAVED_ADDRESSES_COLLECTION)
+            .document(item.id)
+            .delete()
+            .addOnFailureListener {
+                if (isAdded) {
+                    Toast.makeText(requireContext(), "Failed to delete address", Toast.LENGTH_SHORT).show()
+                }
+            }
     }
 
     private fun updateLocationBar() {
@@ -503,9 +580,20 @@ class HomeFragment : Fragment(R.layout.fragment_home) {
         bannerMediator?.detach()
         bannerMediator = null
         shouldNavigateToAddress = false
+        savedAddressListener?.remove()
+        savedAddressListener = null
         locationBottomSheet?.dismiss()
         locationBottomSheet = null
         bottomSheetBinding = null
         _binding = null
+    }
+
+    private companion object {
+        const val SAVED_ADDRESSES_COLLECTION = "savedAddresses"
+        const val FLAT_NO_FIELD = "flatNo"
+        const val ADDRESS_FIELD = "address"
+        const val USER_NAME_FIELD = "userName"
+        const val ADDRESS_TYPE_FIELD = "addressType"
+        const val CREATED_AT_FIELD = "createdAt"
     }
 }
