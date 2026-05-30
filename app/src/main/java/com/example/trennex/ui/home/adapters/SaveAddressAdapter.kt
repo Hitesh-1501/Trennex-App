@@ -6,6 +6,7 @@ import android.view.View
 import android.view.ViewGroup
 import androidx.core.view.isVisible
 import androidx.recyclerview.widget.RecyclerView
+import com.example.trennex.R
 import com.example.trennex.databinding.ItemSavedAddressBinding
 
 
@@ -15,19 +16,26 @@ class SaveAddressAdapter(
 ): RecyclerView.Adapter<SaveAddressAdapter.AddressViewHolder>(){
 
     data class SavedAddressItem(
+        val id: String = "",
         val userName: String,
-        val address: String
-    )
-    private var addresses: List<SavedAddressItem> = emptyList()
-    private var selectedAddress: String? = null
+        val flatNo: String = "",
+        val address: String,
+        val addressType: String = ADDRESS_TYPE_HOME
+    ) {
+        val displayAddress: String
+            get() = listOf(flatNo, address)
+                .map { it.trim() }
+                .filter { it.isNotEmpty() }
+                .joinToString(", ")
+    }
 
-    private var currentUserName: String = "Guest User"
+    private var addresses: List<SavedAddressItem> = emptyList()
+    private var selectedAddressId: String? = null
 
     @SuppressLint("NotifyDataSetChanged")
-    fun submitData(items: List<SavedAddressItem>, selected: String?, title: String ){
+    fun submitData(items: List<SavedAddressItem>, selectedId: String? ){
         addresses = items
-        selectedAddress = selected
-        currentUserName = title
+        selectedAddressId = selectedId
         notifyDataSetChanged()
     }
 
@@ -57,11 +65,23 @@ class SaveAddressAdapter(
         private val binding: ItemSavedAddressBinding
     ): RecyclerView.ViewHolder(binding.root){
         fun bind(item: SavedAddressItem){
-            binding.savedAddressTitle.text = currentUserName
-            binding.savedAddressText.text = item.address
-            binding.selectedBadge.isVisible = item.address == selectedAddress
+            binding.homeIcon.setImageResource(
+                if (item.addressType.equals(ADDRESS_TYPE_OFFICE, ignoreCase = true)){
+                    R.drawable.ic_office
+                } else {
+                    R.drawable.ic_home
+                }
+            )
+            binding.savedAddressTitle.text = item.userName
+            binding.savedAddressText.text = item.displayAddress
+            binding.selectedBadge.isVisible = item.id.isNotBlank() && item.id == selectedAddressId
             binding.root.setOnClickListener { onItemClick(item) }
             binding.moreAddressOptions.setOnClickListener { onMoreClick(it, item) }
         }
+    }
+
+    companion object {
+        const val ADDRESS_TYPE_HOME = "Home"
+        const val ADDRESS_TYPE_OFFICE = "Office"
     }
 }
