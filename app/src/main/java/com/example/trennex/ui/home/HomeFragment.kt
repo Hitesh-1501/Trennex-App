@@ -11,6 +11,7 @@ import android.location.LocationManager
 import android.os.Bundle
 import android.os.Handler
 import android.os.Looper
+import android.util.Log
 import androidx.fragment.app.Fragment
 import android.view.LayoutInflater
 import android.view.MotionEvent
@@ -228,6 +229,18 @@ class HomeFragment : Fragment(R.layout.fragment_home) {
            onItemClick = {item ->
                selectedAddress = item.displayAddress
                selectedAddressId = item.id
+               auth.currentUser?.uid?.let { uid ->
+                   Log.d(
+                       "AddressSelection",
+                       "Selected = ${item.id}"
+                   )
+                   firestore.collection("users")
+                       .document(uid)
+                       .update(
+                           SELECTED_ADDRESS_ID_FIELD,
+                           item.id
+                       )
+               }
                updateLocationBar()
                renderSaveAddresses()
                sheet.dismiss()
@@ -256,9 +269,15 @@ class HomeFragment : Fragment(R.layout.fragment_home) {
             sheetBinding.savedAddressRv.isVisible = hasSavedAddress
             sheetBinding.emptyAddressView.root.isVisible = !hasSavedAddress
         }
-       if(selectedAddress.isNullOrBlank() && saveAddresses.isNotEmpty()){
-           selectedAddress = saveAddresses.first().displayAddress
-           selectedAddressId = saveAddresses.first().id
+       if(saveAddresses.isNotEmpty()){
+          val selectedItem = saveAddresses.find { it.id == selectedAddressId  }
+           if (selectedItem != null){
+               selectedAddress = selectedItem.displayAddress
+           }else {
+               selectedAddressId = saveAddresses.first().id
+
+               selectedAddress = saveAddresses.first().displayAddress
+           }
            updateLocationBar()
        }
         if (this::saveAddressAdapter.isInitialized) {
@@ -437,10 +456,19 @@ class HomeFragment : Fragment(R.layout.fragment_home) {
                         )
                     }
                 }
+                fetchSelectedAddress()
                 val selectedStillExists = saveAddresses.any { it.id == selectedAddressId  }
                 if (!selectedStillExists) {
-                    selectedAddressId = saveAddresses.firstOrNull()?.id
-                    selectedAddress = saveAddresses.firstOrNull()?.displayAddress
+                    val firstAddress = saveAddresses.firstOrNull()
+                    selectedAddressId = firstAddress?.id
+                    selectedAddress = firstAddress?.displayAddress
+                    firstAddress?.id?.let { newId ->
+                        auth.currentUser?.uid?.let { uid ->
+                            firestore.collection("users")
+                                .document(uid)
+                                .update(SELECTED_ADDRESS_ID_FIELD, newId)
+                        }
+                    }
                     updateLocationBar()
                 }
                 if (this::saveAddressAdapter.isInitialized) {
@@ -464,6 +492,19 @@ class HomeFragment : Fragment(R.layout.fragment_home) {
             }
     }
 
+
+    private fun fetchSelectedAddress() {
+        val uid = auth.currentUser?.uid ?: return
+
+        firestore.collection("users")
+            .document(uid)
+            .get()
+            .addOnSuccessListener { snapshot ->
+                selectedAddressId = snapshot.getString(SELECTED_ADDRESS_ID_FIELD)
+                renderSaveAddresses()
+            }
+    }
+
     private fun updateLocationBar() {
         val locationAddress = (activity as MainActivity).findViewById<TextView>(R.id.location_address)
         locationAddress.text = selectedAddress ?: "Your delivery address"
@@ -479,6 +520,9 @@ class HomeFragment : Fragment(R.layout.fragment_home) {
             }
         }
     }
+
+
+
     private fun setupCategories(categories: List<CategoryModel>){
         binding.rvCategories.apply {
             layoutManager = LinearLayoutManager(requireContext(), LinearLayoutManager.HORIZONTAL,false)
@@ -595,5 +639,8 @@ class HomeFragment : Fragment(R.layout.fragment_home) {
         const val USER_NAME_FIELD = "userName"
         const val ADDRESS_TYPE_FIELD = "addressType"
         const val CREATED_AT_FIELD = "createdAt"
+
+        const val SELECTED_ADDRESS_ID_FIELD = "selectedAddressId"
+
     }
 }

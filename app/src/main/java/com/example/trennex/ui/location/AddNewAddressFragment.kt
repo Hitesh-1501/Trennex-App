@@ -589,11 +589,20 @@ class AddNewAddressFragment : Fragment(R.layout.fragment_add_new_address), OnMap
             .document(user.uid)
             .collection(SAVED_ADDRESSES_COLLECTION)
             .add(addressData)
-            .addOnSuccessListener {
-                if (!isAdded) return@addOnSuccessListener
-                Toast.makeText(requireContext(), "Address saved", Toast.LENGTH_SHORT).show()
-                bottomSheetDialog.dismiss()
-                findNavController().popBackStack()
+            .addOnSuccessListener {documentReference ->
+                firestore.collection(USERS_COLLECTION)
+                    .document(user.uid)
+                    .update(
+                        SELECTED_ADDRESS_ID_FIELD,
+                        documentReference.id
+                    )
+                    .addOnSuccessListener {
+                        if (!isAdded) return@addOnSuccessListener
+                        Toast.makeText(requireContext(), "Address saved", Toast.LENGTH_SHORT).show()
+                        bottomSheetDialog.dismiss()
+                        findNavController().popBackStack()
+                    }
+
             }
             .addOnFailureListener { exception ->
                 if (!isAdded) return@addOnFailureListener
@@ -618,6 +627,7 @@ class AddNewAddressFragment : Fragment(R.layout.fragment_add_new_address), OnMap
         const val PHONE_FIELD = "phone"
 
         const val SAVED_ADDRESSES_COLLECTION = "savedAddresses"
+        const val SELECTED_ADDRESS_ID_FIELD = "selectedAddressId"
         const val FLAT_NO_FIELD = "flatNo"
         const val ADDRESS_FIELD = "address"
         const val USER_NAME_FIELD = "userName"
