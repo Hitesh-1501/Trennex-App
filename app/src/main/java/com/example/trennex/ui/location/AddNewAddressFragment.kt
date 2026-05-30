@@ -22,6 +22,7 @@ import androidx.annotation.RequiresApi
 import androidx.appcompat.app.AlertDialog
 import androidx.core.content.ContextCompat
 import androidx.core.widget.addTextChangedListener
+import androidx.core.widget.doAfterTextChanged
 import androidx.recyclerview.widget.LinearLayoutManager
 import com.example.trennex.R
 import com.example.trennex.databinding.BottomSheetDeliverToBinding
@@ -476,9 +477,18 @@ class AddNewAddressFragment : Fragment(R.layout.fragment_add_new_address), OnMap
             }
         }
         sheetBinding.saveAddressBtn.setOnClickListener {
-            bottomSheetDialog.dismiss()
+           if (validateAddressForm(sheetBinding)){
+               bottomSheetDialog.dismiss()
+               Toast.makeText(
+                   requireContext(),
+                   "Address Saved",
+                   Toast.LENGTH_SHORT
+               ).show()
+           }
         }
-
+        sheetBinding.flatInput.doAfterTextChanged { sheetBinding.flatInputLayout.error = null }
+        sheetBinding.fullNameInput.doAfterTextChanged { sheetBinding.fullNameInputLayout.error = null }
+        sheetBinding.mobileInput.doAfterTextChanged { sheetBinding.mobileInputLayout.error = null }
         bottomSheetDialog.show()
     }
 
@@ -525,6 +535,56 @@ class AddNewAddressFragment : Fragment(R.layout.fragment_add_new_address), OnMap
         }
 
     }
+
+    private fun validateAddressForm(
+        sheetBinding: BottomSheetDeliverToBinding
+    ): Boolean {
+        val flatHouse = sheetBinding.flatInput.text.toString().trim()
+        val address = sheetBinding.selectedAddressText.text.toString().trim()
+        val fullName = sheetBinding.fullNameInput.text.toString().trim()
+        val mobile = sheetBinding.mobileInput.text.toString().trim()
+
+        var isValid = true
+
+        if (flatHouse.isEmpty()){
+            sheetBinding.flatInputLayout.error = "Flat/House number required"
+            isValid = false
+        }else{
+            sheetBinding.flatInputLayout.error = null
+        }
+        if (address.isEmpty()) {
+            Toast.makeText(requireContext(),
+                "Address is required",
+                Toast.LENGTH_SHORT
+            ).show()
+
+            isValid = false
+        }
+
+        if (fullName.isEmpty()) {
+
+            sheetBinding.fullNameInputLayout.error = "Full name required"
+            isValid = false
+
+        } else {
+            sheetBinding.fullNameInputLayout.error = null
+        }
+
+        if (mobile.isEmpty()) {
+            sheetBinding.mobileInputLayout.error = "Mobile number required"
+            isValid = false
+
+        } else if (mobile.length != 10) {
+            sheetBinding.mobileInputLayout.error = "Enter valid 10-digit mobile number"
+            isValid = false
+
+        } else{
+            sheetBinding.mobileInputLayout.error = null
+        }
+
+        return isValid
+    }
+
 
     override fun onDestroyView() {
         super.onDestroyView()

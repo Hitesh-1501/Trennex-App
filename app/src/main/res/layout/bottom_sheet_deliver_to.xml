@@ -193,7 +193,7 @@
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:layout_marginTop="8dp"
-        android:hint="10-digit mobile number *"
+        android:hint="mobile number *"
         android:textColorHint="@color/textPrimary"
         app:boxCornerRadiusBottomEnd="4dp"
         app:boxCornerRadiusBottomStart="4dp"
