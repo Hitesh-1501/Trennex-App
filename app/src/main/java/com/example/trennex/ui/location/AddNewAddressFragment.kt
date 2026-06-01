@@ -24,6 +24,7 @@ import androidx.core.content.ContextCompat
 import androidx.core.widget.addTextChangedListener
 import androidx.core.widget.doAfterTextChanged
 import androidx.navigation.fragment.findNavController
+import androidx.navigation.fragment.navArgs
 import androidx.recyclerview.widget.LinearLayoutManager
 import com.example.trennex.R
 import com.example.trennex.databinding.BottomSheetDeliverToBinding
@@ -75,6 +76,14 @@ class AddNewAddressFragment : Fragment(R.layout.fragment_add_new_address), OnMap
 
     private var isSelectingPlace = false
 
+    private val args by navArgs<AddNewAddressFragmentArgs>()
+
+    private var searchedLat = 0.0
+    private var searchedLng = 0.0
+    private var searchedAddress = ""
+    private var searchedPlaceName = ""
+
+
     private val locationPermissionLauncher = registerForActivityResult(
         ActivityResultContracts.RequestPermission()
     ) {granted ->
@@ -105,6 +114,29 @@ class AddNewAddressFragment : Fragment(R.layout.fragment_add_new_address), OnMap
         placesClient = Places.createClient(requireContext())
 
         showLocationDialog()
+
+        searchedLat = args.latitude.toDoubleOrNull() ?: 0.0
+        searchedLng = args.longitude.toDoubleOrNull() ?: 0.0
+        searchedAddress = args.address
+        searchedPlaceName = args.placeName
+
+        Log.d(
+            "PlaceSearch",
+            """
+            lat=$searchedLat
+            lng=$searchedLng
+            name=$searchedPlaceName
+            address=$searchedAddress
+            """.trimIndent()
+        )
+
+        if (searchedPlaceName.isNotBlank()){
+            binding.locationSearchInput.setText(searchedPlaceName)
+            binding.locationSearchInput.setSelection(
+                searchedPlaceName.length
+            )
+        }
+
         binding.useMyCurrLocation.setOnClickListener {
             checkLocationPermission()
         }
@@ -120,6 +152,7 @@ class AddNewAddressFragment : Fragment(R.layout.fragment_add_new_address), OnMap
 
             layoutManager = LinearLayoutManager(requireContext())
         }
+
 
         binding.locationSearchInput.addTextChangedListener{
             val query = it.toString()
@@ -173,13 +206,8 @@ class AddNewAddressFragment : Fragment(R.layout.fragment_add_new_address), OnMap
     @RequiresApi(Build.VERSION_CODES.TIRAMISU)
     override fun onMapReady(map: GoogleMap) {
         googleMap = map
-        val defaultLocation = LatLng(20.5937, 78.9629)
-        googleMap.moveCamera(
-            CameraUpdateFactory.newLatLngZoom(
-                defaultLocation,
-                5f
-            )
-        )
+
+        handleInitialLocation()
 
         googleMap.setOnCameraIdleListener {
             val center = googleMap.cameraPosition.target
@@ -290,6 +318,38 @@ class AddNewAddressFragment : Fragment(R.layout.fragment_add_new_address), OnMap
         }else{
             showTurnOnLocationDialog()
         }
+    }
+
+    private fun handleInitialLocation() {
+        if (
+            searchedLat != 0.0 &&
+            searchedLng != 0.0
+        ) {
+           moveToSearchedLocation()
+        }else{
+            val defaultLocation = LatLng(20.5937, 78.9629)
+            googleMap.moveCamera(
+                CameraUpdateFactory.newLatLngZoom(
+                    defaultLocation,
+                    5f
+                )
+            )
+        }
+    }
+
+    private fun moveToSearchedLocation(){
+        val latlng = LatLng(
+            searchedLat,
+            searchedLng
+        )
+        googleMap.animateCamera(
+            CameraUpdateFactory.newLatLngZoom(
+                latlng,
+                17f
+            )
+        )
+        binding.addressTitleTv.text = searchedPlaceName
+        binding.addressTv.text = searchedAddress
     }
 
     private fun showTurnOnLocationDialog(){

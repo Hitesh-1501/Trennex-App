@@ -236,6 +236,29 @@
         android:id="@+id/addNewAddressFragment"
         android:name="com.example.trennex.ui.location.AddNewAddressFragment"
         android:label="fragment_add_new_address"
-        tools:layout="@layout/fragment_add_new_address" />
+        tools:layout="@layout/fragment_add_new_address" >
+
+        <argument
+            android:name="latitude"
+            app:argType="string"
+            android:defaultValue=""/>
+
+        <argument
+            android:name="longitude"
+            app:argType="string"
+            android:defaultValue=""/>
+
+
+        <argument
+            android:name="address"
+            app:argType="string"
+            android:defaultValue="" />
+
+        <argument
+            android:name="placeName"
+            app:argType="string"
+            android:defaultValue="" />
+
+    </fragment>
 
 </navigation>

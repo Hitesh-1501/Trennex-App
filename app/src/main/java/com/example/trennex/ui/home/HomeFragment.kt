@@ -2,6 +2,7 @@ package com.example.trennex.ui.home
 
 import android.Manifest
 import android.annotation.SuppressLint
+import android.app.Activity
 import android.content.Context
 import android.content.pm.PackageManager
 import android.content.Intent
@@ -53,6 +54,9 @@ import com.google.android.gms.location.LocationRequest
 import com.google.android.gms.location.LocationServices
 import com.google.android.gms.location.LocationSettingsRequest
 import com.google.android.gms.location.Priority
+import com.google.android.libraries.places.api.model.Place
+import com.google.android.libraries.places.widget.Autocomplete
+import com.google.android.libraries.places.widget.model.AutocompleteActivityMode
 import com.google.android.material.bottomsheet.BottomSheetBehavior
 import com.google.android.material.bottomsheet.BottomSheetDialog
 import com.google.android.material.tabs.TabLayoutMediator
@@ -96,6 +100,17 @@ class HomeFragment : Fragment(R.layout.fragment_home) {
             promptEnableLocationServicesAndFetch()
         }else{
             Toast.makeText(requireContext(),"Location Permission Denied",Toast.LENGTH_SHORT).show()
+        }
+    }
+
+    private val placesSearchLauncher = registerForActivityResult(
+        ActivityResultContracts.StartActivityForResult()
+    ){result ->
+        if (result.resultCode == Activity.RESULT_OK) {
+            val place = Autocomplete.getPlaceFromIntent(
+                result.data!!
+            )
+            navigateToMapScreen(place)
         }
     }
 
@@ -222,6 +237,9 @@ class HomeFragment : Fragment(R.layout.fragment_home) {
                 }
             }
         }
+        sheetBinding.locationSearchInput.setOnClickListener {
+            openPlaceSearch()
+        }
         sheetBinding.addNewAddress.setOnClickListener {
             shouldNavigateToAddress = true
             sheet.dismiss()
@@ -262,6 +280,35 @@ class HomeFragment : Fragment(R.layout.fragment_home) {
             behavior.state = BottomSheetBehavior.STATE_EXPANDED
             behavior.skipCollapsed = true
         }
+    }
+
+    private fun openPlaceSearch(){
+        val fields = listOf(
+            Place.Field.ID,
+            Place.Field.NAME,
+            Place.Field.ADDRESS,
+            Place.Field.LAT_LNG
+        )
+        val intent = Autocomplete.IntentBuilder(
+            AutocompleteActivityMode.FULLSCREEN,
+            fields
+        ).build(requireContext())
+
+        placesSearchLauncher.launch(intent)
+    }
+
+    private fun navigateToMapScreen(
+        place: Place
+    ){
+        val action = HomeFragmentDirections
+            .actionHomeFragmentToAddNewAddressFragment(
+                latitude = place.latLng?.latitude?.toString() ?: "",
+                longitude = place.latLng?.longitude?.toString() ?: "",
+                address = place.address ?: "",
+                placeName = place.name ?: ""
+
+            )
+        findNavController().navigate(action)
     }
 
     private fun renderSaveAddresses(){
