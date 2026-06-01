@@ -189,6 +189,15 @@ class AddNewAddressFragment : Fragment(R.layout.fragment_add_new_address), OnMap
         dialogBinding.useCurrentLocationBtn.setOnClickListener {
             openWithCurrentLocation = true
             addAddressDialog?.dismiss()
+            binding.mainContentLayout.visibility = View.VISIBLE
+            binding.mainContentLayout.alpha = 0f
+
+            binding.mainContentLayout.animate()
+                .alpha(1f)
+                .setDuration(300)
+                .start()
+
+            initializeMap()
             checkLocationPermission()
         }
         addAddressDialog?.show()
@@ -313,15 +322,6 @@ class AddNewAddressFragment : Fragment(R.layout.fragment_add_new_address), OnMap
             LocationManager.GPS_PROVIDER
         )
         if(isEnabled) {
-            if (_binding != null && binding.mainContentLayout.visibility != View.VISIBLE){
-                binding.mainContentLayout.visibility = View.VISIBLE
-                binding.mainContentLayout.alpha = 0f
-                binding.mainContentLayout.animate()
-                    .alpha(1f)
-                    .setDuration(300)
-                    .start()
-                initializeMap()
-            }
             moveToCurrentLocation()
         }else{
             showTurnOnLocationDialog()
@@ -337,7 +337,6 @@ class AddNewAddressFragment : Fragment(R.layout.fragment_add_new_address), OnMap
 
             openWithCurrentLocation -> {
 
-                checkLocationPermission()
             }
 
             else -> {
@@ -387,15 +386,7 @@ class AddNewAddressFragment : Fragment(R.layout.fragment_add_new_address), OnMap
             )
 
         task.addOnSuccessListener {
-            if (_binding != null &&
-                binding.mainContentLayout.visibility != View.VISIBLE
-            ) {
 
-                binding.mainContentLayout.visibility =
-                    View.VISIBLE
-
-                initializeMap()
-            }
             moveToCurrentLocation()
         }
         task.addOnFailureListener { exception ->
@@ -410,7 +401,7 @@ class AddNewAddressFragment : Fragment(R.layout.fragment_add_new_address), OnMap
                     )
 
                 } catch (e: IntentSender.SendIntentException) {
-
+                    openWithCurrentLocation = false
                     e.printStackTrace()
                 }
             }
