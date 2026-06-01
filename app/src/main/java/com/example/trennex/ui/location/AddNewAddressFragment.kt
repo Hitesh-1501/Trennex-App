@@ -113,22 +113,18 @@ class AddNewAddressFragment : Fragment(R.layout.fragment_add_new_address), OnMap
         }
         placesClient = Places.createClient(requireContext())
 
-        showLocationDialog()
+        if(args.openedFromSearch) {
+            binding.mainContentLayout.visibility = View.VISIBLE
+            initializeMap()
+        }else{
+            showLocationDialog()
+        }
 
         searchedLat = args.latitude.toDoubleOrNull() ?: 0.0
         searchedLng = args.longitude.toDoubleOrNull() ?: 0.0
         searchedAddress = args.address
         searchedPlaceName = args.placeName
 
-        Log.d(
-            "PlaceSearch",
-            """
-            lat=$searchedLat
-            lng=$searchedLng
-            name=$searchedPlaceName
-            address=$searchedAddress
-            """.trimIndent()
-        )
 
         if (searchedPlaceName.isNotBlank()){
             binding.locationSearchInput.setText(searchedPlaceName)

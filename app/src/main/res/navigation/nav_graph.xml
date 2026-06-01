@@ -259,6 +259,11 @@
             app:argType="string"
             android:defaultValue="" />
 
+        <argument
+            android:name="openedFromSearch"
+            app:argType="boolean"
+            android:defaultValue="false"/>
+
     </fragment>
 
 </navigation>

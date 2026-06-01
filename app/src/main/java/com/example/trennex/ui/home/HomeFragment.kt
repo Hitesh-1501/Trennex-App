@@ -237,8 +237,14 @@ class HomeFragment : Fragment(R.layout.fragment_home) {
                 }
             }
         }
-        sheetBinding.locationSearchInput.setOnClickListener {
-            openPlaceSearch()
+        sheetBinding.locationSearchInput.apply {
+            isFocusable = false
+            isCursorVisible = false
+            keyListener = null
+
+            setOnClickListener {
+                openPlaceSearch()
+            }
         }
         sheetBinding.addNewAddress.setOnClickListener {
             shouldNavigateToAddress = true
@@ -305,7 +311,8 @@ class HomeFragment : Fragment(R.layout.fragment_home) {
                 latitude = place.latLng?.latitude?.toString() ?: "",
                 longitude = place.latLng?.longitude?.toString() ?: "",
                 address = place.address ?: "",
-                placeName = place.name ?: ""
+                placeName = place.name ?: "",
+                openedFromSearch = true
 
             )
         findNavController().navigate(action)
