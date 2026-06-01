@@ -83,6 +83,7 @@ class AddNewAddressFragment : Fragment(R.layout.fragment_add_new_address), OnMap
     private var searchedAddress = ""
     private var searchedPlaceName = ""
 
+    private var openWithCurrentLocation = false
 
     private val locationPermissionLauncher = registerForActivityResult(
         ActivityResultContracts.RequestPermission()
@@ -186,7 +187,9 @@ class AddNewAddressFragment : Fragment(R.layout.fragment_add_new_address), OnMap
             initializeMap()
         }
         dialogBinding.useCurrentLocationBtn.setOnClickListener {
+            openWithCurrentLocation = true
             addAddressDialog?.dismiss()
+            checkLocationPermission()
         }
         addAddressDialog?.show()
 
@@ -310,6 +313,15 @@ class AddNewAddressFragment : Fragment(R.layout.fragment_add_new_address), OnMap
             LocationManager.GPS_PROVIDER
         )
         if(isEnabled) {
+            if (_binding != null && binding.mainContentLayout.visibility != View.VISIBLE){
+                binding.mainContentLayout.visibility = View.VISIBLE
+                binding.mainContentLayout.alpha = 0f
+                binding.mainContentLayout.animate()
+                    .alpha(1f)
+                    .setDuration(300)
+                    .start()
+                initializeMap()
+            }
             moveToCurrentLocation()
         }else{
             showTurnOnLocationDialog()
@@ -317,19 +329,26 @@ class AddNewAddressFragment : Fragment(R.layout.fragment_add_new_address), OnMap
     }
 
     private fun handleInitialLocation() {
-        if (
-            searchedLat != 0.0 &&
-            searchedLng != 0.0
-        ) {
-           moveToSearchedLocation()
-        }else{
-            val defaultLocation = LatLng(20.5937, 78.9629)
-            googleMap.moveCamera(
-                CameraUpdateFactory.newLatLngZoom(
-                    defaultLocation,
-                    5f
+
+        when  {
+            searchedLat != 0.0 && searchedLng != 0.0 -> {
+                moveToSearchedLocation()
+            }
+
+            openWithCurrentLocation -> {
+
+                checkLocationPermission()
+            }
+
+            else -> {
+                val defaultLocation = LatLng(20.5937, 78.9629)
+                googleMap.moveCamera(
+                    CameraUpdateFactory.newLatLngZoom(
+                        defaultLocation,
+                        5f
+                    )
                 )
-            )
+            }
         }
     }
 
@@ -368,7 +387,15 @@ class AddNewAddressFragment : Fragment(R.layout.fragment_add_new_address), OnMap
             )
 
         task.addOnSuccessListener {
+            if (_binding != null &&
+                binding.mainContentLayout.visibility != View.VISIBLE
+            ) {
 
+                binding.mainContentLayout.visibility =
+                    View.VISIBLE
+
+                initializeMap()
+            }
             moveToCurrentLocation()
         }
         task.addOnFailureListener { exception ->
@@ -668,6 +695,8 @@ class AddNewAddressFragment : Fragment(R.layout.fragment_add_new_address), OnMap
             }
 
     }
+
+
 
 
     override fun onDestroyView() {
