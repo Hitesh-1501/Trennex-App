@@ -2,6 +2,7 @@ package com.example.trennex.ui.location
 
 import android.Manifest
 import android.annotation.SuppressLint
+import android.app.Activity
 import android.content.Context
 import android.content.IntentSender
 import android.content.pm.PackageManager
@@ -17,6 +18,7 @@ import android.view.View
 import android.view.ViewGroup
 import android.view.WindowManager
 import android.widget.Toast
+import androidx.activity.result.IntentSenderRequest
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.annotation.RequiresApi
 import androidx.appcompat.app.AlertDialog
@@ -84,13 +86,41 @@ class AddNewAddressFragment : Fragment(R.layout.fragment_add_new_address), OnMap
     private var searchedPlaceName = ""
 
     private var openWithCurrentLocation = false
+    private var shouldMoveToCurrentLocationWhenMapReady = false
+
+    private var isMapInitialized = false
 
     private val locationPermissionLauncher = registerForActivityResult(
         ActivityResultContracts.RequestPermission()
     ) {granted ->
+        if (!isAdded) return@registerForActivityResult
         if (granted) {
             checkLocationServicesAndMove()
+        }else{
+            openWithCurrentLocation = false
+            Toast.makeText(
+                requireContext(),
+                "Location permission is required to use current location",
+                Toast.LENGTH_SHORT
+            ).show()
         }
+    }
+
+    private val locationSettingsLauncher = registerForActivityResult(
+        ActivityResultContracts.StartIntentSenderForResult()
+    ){result ->
+        if (!isAdded || !openWithCurrentLocation) return@registerForActivityResult
+        if (result.resultCode == Activity.RESULT_OK || isLocationEnabled()){
+            showMapAndMoveToCurrentLocation()
+        }else{
+            Toast.makeText(
+                requireContext(),
+                "Please turn on GPS to use current location",
+                Toast.LENGTH_SHORT
+            ).show()
+            showTurnOnLocationDialog()
+        }
+
     }
 
     override fun onCreateView(
@@ -188,16 +218,6 @@ class AddNewAddressFragment : Fragment(R.layout.fragment_add_new_address), OnMap
         }
         dialogBinding.useCurrentLocationBtn.setOnClickListener {
             openWithCurrentLocation = true
-            addAddressDialog?.dismiss()
-            binding.mainContentLayout.visibility = View.VISIBLE
-            binding.mainContentLayout.alpha = 0f
-
-            binding.mainContentLayout.animate()
-                .alpha(1f)
-                .setDuration(300)
-                .start()
-
-            initializeMap()
             checkLocationPermission()
         }
         addAddressDialog?.show()
@@ -261,6 +281,14 @@ class AddNewAddressFragment : Fragment(R.layout.fragment_add_new_address), OnMap
     }
     @SuppressLint("MissingPermission")
     private fun moveToCurrentLocation() {
+
+        if (!::googleMap.isInitialized) {
+            shouldMoveToCurrentLocationWhenMapReady = true
+            return
+        }
+
+        shouldMoveToCurrentLocationWhenMapReady = false
+
         binding.addressTitleTv.text =
             "Fetching location..."
 
@@ -305,7 +333,7 @@ class AddNewAddressFragment : Fragment(R.layout.fragment_add_new_address), OnMap
                 Manifest.permission.ACCESS_FINE_LOCATION
             ) == PackageManager.PERMISSION_GRANTED
         ){
-             checkLocationServicesAndMove()
+            checkLocationServicesAndMove()
         }else{
             locationPermissionLauncher.launch(
                 Manifest.permission.ACCESS_FINE_LOCATION
@@ -314,18 +342,38 @@ class AddNewAddressFragment : Fragment(R.layout.fragment_add_new_address), OnMap
     }
 
     private fun checkLocationServicesAndMove(){
-        val locationManager = requireContext().getSystemService(
-            Context.LOCATION_SERVICE
-        )as LocationManager
-
-        val isEnabled = locationManager.isProviderEnabled(
-            LocationManager.GPS_PROVIDER
-        )
-        if(isEnabled) {
-            moveToCurrentLocation()
+        if(isLocationEnabled()) {
+            showMapAndMoveToCurrentLocation()
         }else{
             showTurnOnLocationDialog()
         }
+    }
+
+    private fun isLocationEnabled(): Boolean {
+        val locationManager = requireContext().getSystemService(
+            Context.LOCATION_SERVICE
+        ) as LocationManager
+
+        return locationManager.isProviderEnabled(LocationManager.GPS_PROVIDER)
+    }
+
+    private fun showMapAndMoveToCurrentLocation() {
+        addAddressDialog?.dismiss()
+
+        binding.mainContentLayout.visibility = View.VISIBLE
+        binding.mainContentLayout.alpha = 0f
+
+        binding.mainContentLayout.animate()
+            .alpha(1f)
+            .setDuration(300)
+            .start()
+
+        shouldMoveToCurrentLocationWhenMapReady = true
+        openWithCurrentLocation = true
+
+        initializeMap()
+        moveToCurrentLocation()
+
     }
 
     private fun handleInitialLocation() {
@@ -335,8 +383,8 @@ class AddNewAddressFragment : Fragment(R.layout.fragment_add_new_address), OnMap
                 moveToSearchedLocation()
             }
 
-            openWithCurrentLocation -> {
-
+            openWithCurrentLocation || shouldMoveToCurrentLocationWhenMapReady -> {
+                moveToCurrentLocation()
             }
 
             else -> {
@@ -374,6 +422,7 @@ class AddNewAddressFragment : Fragment(R.layout.fragment_add_new_address), OnMap
         val builder =
             LocationSettingsRequest.Builder()
                 .addLocationRequest(locationRequest)
+                .setAlwaysShow(true)
 
         val client =
             LocationServices.getSettingsClient(
@@ -386,24 +435,32 @@ class AddNewAddressFragment : Fragment(R.layout.fragment_add_new_address), OnMap
             )
 
         task.addOnSuccessListener {
-
-            moveToCurrentLocation()
+            if (!isAdded) return@addOnSuccessListener
+            showMapAndMoveToCurrentLocation()
         }
         task.addOnFailureListener { exception ->
 
             if (exception is ResolvableApiException) {
-
+                if (!isAdded) return@addOnFailureListener
                 try {
 
-                    exception.startResolutionForResult(
-                        requireActivity(),
-                        1001
-                    )
+                    val intentSenderRequest = IntentSenderRequest.Builder(
+                        exception.resolution
+                    ).build()
+
+                    locationSettingsLauncher.launch(intentSenderRequest)
 
                 } catch (e: IntentSender.SendIntentException) {
                     openWithCurrentLocation = false
                     e.printStackTrace()
                 }
+            }else{
+                openWithCurrentLocation = false
+                Toast.makeText(
+                    requireContext(),
+                    "Unable to open location settings",
+                    Toast.LENGTH_SHORT
+                ).show()
             }
         }
     }
@@ -424,6 +481,8 @@ class AddNewAddressFragment : Fragment(R.layout.fragment_add_new_address), OnMap
     }
 
     private fun initializeMap(){
+        if (isMapInitialized) return
+        isMapInitialized = true
         val mapFragment =
             childFragmentManager.findFragmentById(R.id.mapFragment) as SupportMapFragment
         mapFragment.getMapAsync(this)
@@ -693,6 +752,8 @@ class AddNewAddressFragment : Fragment(R.layout.fragment_add_new_address), OnMap
     override fun onDestroyView() {
         super.onDestroyView()
         addAddressDialog?.dismiss()
+        isMapInitialized = false
+        shouldMoveToCurrentLocationWhenMapReady = false
         addAddressDialog = null
         _binding = null
     }
