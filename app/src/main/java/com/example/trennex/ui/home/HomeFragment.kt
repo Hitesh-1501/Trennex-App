@@ -61,9 +61,11 @@ import com.google.android.material.bottomsheet.BottomSheetBehavior
 import com.google.android.material.bottomsheet.BottomSheetDialog
 import com.google.android.material.tabs.TabLayoutMediator
 import com.google.firebase.auth.FirebaseAuth
+import com.google.firebase.firestore.FieldValue
 import com.google.firebase.firestore.FirebaseFirestore
 import com.google.firebase.firestore.ListenerRegistration
 import com.google.firebase.firestore.Query
+import com.google.firebase.firestore.SetOptions
 import kotlinx.coroutines.launch
 import java.util.Locale
 
@@ -252,24 +254,7 @@ class HomeFragment : Fragment(R.layout.fragment_home) {
         }
         saveAddressAdapter = SaveAddressAdapter(
            onItemClick = {item ->
-               selectedAddress = item.displayAddress
-               selectedAddressId = item.id
-               selectedAddressLoaded = true
-               auth.currentUser?.uid?.let { uid ->
-                   Log.d(
-                       "AddressSelection",
-                       "Selected = ${item.id}"
-                   )
-                   firestore.collection("users")
-                       .document(uid)
-                       .update(
-                           SELECTED_ADDRESS_ID_FIELD,
-                           item.id
-                       )
-               }
-               updateLocationBar()
-               renderSaveAddresses()
-               sheet.dismiss()
+             selectSaveAddress(item)
            },
            onMoreClick = {anchor, item -> showAddressMenu(anchor,item)}
         )
@@ -450,23 +435,8 @@ class HomeFragment : Fragment(R.layout.fragment_home) {
                 )
                 val address = result?.firstOrNull()?.getAddressLine(0)
                     ?: "Lat:${location.latitude},Lng:${location.longitude}"
-                selectedAddress = address
-                if(saveAddresses.none{it.address == address}){
-                    saveAddresses.add(
-                        0,
-                        SaveAddressAdapter.SavedAddressItem(
-                            userName = loginUserName,
-                            address = address
-                        )
-                    )
-                }
-                updateLocationBar()
-                if(this::saveAddressAdapter.isInitialized){
-                    renderSaveAddresses()
-                }
-                (bottomSheetBinding?.root?.parent as? View)?.let {
-                    locationBottomSheet?.dismiss()
-                }
+
+                saveCurrentAddressToFirestore(address)
             }catch (e: Exception){
                 Toast.makeText(
                     requireContext(),
@@ -535,6 +505,15 @@ class HomeFragment : Fragment(R.layout.fragment_home) {
             .collection(SAVED_ADDRESSES_COLLECTION)
             .document(item.id)
             .delete()
+            .addOnSuccessListener {
+                if (item.id == selectedAddressId && saveAddresses.none { it.id != item.id }){
+                    selectedAddressId = null
+                    selectedAddress = null
+                    clearSelectedAddressInFirestore()
+                    updateLocationBar()
+                    renderSaveAddresses()
+                }
+            }
             .addOnFailureListener {
                 if (isAdded) {
                     Toast.makeText(requireContext(), "Failed to delete address", Toast.LENGTH_SHORT).show()
@@ -542,6 +521,93 @@ class HomeFragment : Fragment(R.layout.fragment_home) {
             }
     }
 
+    private fun saveCurrentAddressToFirestore(address: String){
+        val user = auth.currentUser
+        if (user == null){
+            Toast.makeText(requireContext(), "Please login before saving address", Toast.LENGTH_SHORT).show()
+            return
+        }
+
+        val cleanedAddress = address.trim()
+        if (cleanedAddress.isBlank()) return
+
+        val existingAddress = saveAddresses.firstOrNull{
+            it.address.normalizeAddressKey() == cleanedAddress.normalizeAddressKey()
+        }
+
+        if (existingAddress != null){
+            selectSaveAddress(existingAddress)
+            return
+        }
+
+        val userDocument = firestore.collection("users").document(user.uid)
+        userDocument.collection(SAVED_ADDRESSES_COLLECTION)
+            .whereEqualTo(ADDRESS_FIELD,cleanedAddress)
+            .limit(1)
+            .get()
+            .addOnSuccessListener { snapshot ->
+                val duplicateDocument = snapshot.documents.firstOrNull()
+                if (duplicateDocument != null) {
+                    val item = SaveAddressAdapter.SavedAddressItem(
+                        id = duplicateDocument.id,
+                        userName = duplicateDocument.getString(USER_NAME_FIELD).orEmpty().ifBlank { loginUserName },
+                        flatNo = duplicateDocument.getString(FLAT_NO_FIELD).orEmpty(),
+                        address = duplicateDocument.getString(ADDRESS_FIELD).orEmpty(),
+                        addressType = duplicateDocument.getString(ADDRESS_TYPE_FIELD).orEmpty().ifBlank {
+                            SaveAddressAdapter.ADDRESS_TYPE_HOME
+                        }
+                    )
+                    selectSaveAddress(item)
+                    return@addOnSuccessListener
+                }
+
+                val addressData = hashMapOf(
+                    FLAT_NO_FIELD to "",
+                    ADDRESS_FIELD to cleanedAddress,
+                    USER_NAME_FIELD to loginUserName,
+                    ADDRESS_TYPE_FIELD to SaveAddressAdapter.ADDRESS_TYPE_HOME,
+                    CREATED_AT_FIELD to FieldValue.serverTimestamp(),
+                    UPDATED_AT_FIELD to FieldValue.serverTimestamp()
+                )
+
+                userDocument.collection(SAVED_ADDRESSES_COLLECTION)
+                    .add(addressData)
+                    .addOnSuccessListener { documentReference ->
+                        selectedAddress = cleanedAddress
+                        selectedAddressId = documentReference.id
+                        selectedAddressLoaded = true
+                        updateSelectedAddressInFirestore(documentReference.id)
+                        renderSaveAddresses()
+                        locationBottomSheet?.dismiss()
+                    }
+                    .addOnFailureListener { exception ->
+                        Log.e("AddressSelection", "Could not save current address: ${exception.message}", exception)
+                        if (isAdded) {
+                            Toast.makeText(requireContext(), "Failed to save current location", Toast.LENGTH_SHORT).show()
+                        }
+                    }
+            }.addOnFailureListener {exception ->
+                Log.e("AddressSelection", "Could not check duplicate address: ${exception.message}", exception)
+                if (isAdded) {
+                    Toast.makeText(requireContext(), "Failed to save current location", Toast.LENGTH_SHORT).show()
+                }
+            }
+    }
+
+    private fun selectSaveAddress(item: SaveAddressAdapter.SavedAddressItem){
+        if (item.id.isBlank()) return
+        selectedAddress = item.displayAddress
+        selectedAddressId = item.id
+        selectedAddressLoaded = true
+        updateSelectedAddressInFirestore(item.id)
+        updateLocationBar()
+        renderSaveAddresses()
+        locationBottomSheet?.dismiss()
+    }
+
+    private fun String.normalizeAddressKey(): String = trim()
+        .replace(Regex("\\s+"), " ")
+        .lowercase(Locale.getDefault())
 
     private fun fetchSelectedAddress() {
         val uid = auth.currentUser?.uid ?: return
@@ -564,12 +630,19 @@ class HomeFragment : Fragment(R.layout.fragment_home) {
         val uid = auth.currentUser?.uid ?: return
         firestore.collection("users")
             .document(uid)
-            .update(SELECTED_ADDRESS_ID_FIELD, addressId)
+            .set(mapOf(SELECTED_ADDRESS_ID_FIELD to addressId), SetOptions.merge())
     }
 
     private fun updateLocationBar() {
         val locationAddress = (activity as MainActivity).findViewById<TextView>(R.id.location_address)
         locationAddress.text = selectedAddress ?: "Your delivery address"
+    }
+
+    private fun clearSelectedAddressInFirestore() {
+        val uid = auth.currentUser?.uid ?: return
+        firestore.collection("users")
+            .document(uid)
+            .set(mapOf(SELECTED_ADDRESS_ID_FIELD to FieldValue.delete()), SetOptions.merge())
     }
 
     private fun fetchLoggedInUserName(){
@@ -701,7 +774,7 @@ class HomeFragment : Fragment(R.layout.fragment_home) {
         const val USER_NAME_FIELD = "userName"
         const val ADDRESS_TYPE_FIELD = "addressType"
         const val CREATED_AT_FIELD = "createdAt"
-
+        const val UPDATED_AT_FIELD = "updatedAt"
         const val SELECTED_ADDRESS_ID_FIELD = "selectedAddressId"
 
     }
