@@ -110,7 +110,7 @@ class AddNewAddressFragment : Fragment(R.layout.fragment_add_new_address), OnMap
         ActivityResultContracts.StartIntentSenderForResult()
     ){result ->
         if (!isAdded || !openWithCurrentLocation) return@registerForActivityResult
-        if (result.resultCode == Activity.RESULT_OK || isLocationEnabled()){
+        if (result.resultCode == Activity.RESULT_OK){
             showMapAndMoveToCurrentLocation()
         }else{
             Toast.makeText(
@@ -361,15 +361,9 @@ class AddNewAddressFragment : Fragment(R.layout.fragment_add_new_address), OnMap
         addAddressDialog?.dismiss()
 
         binding.mainContentLayout.visibility = View.VISIBLE
-        binding.mainContentLayout.alpha = 0f
-
-        binding.mainContentLayout.animate()
-            .alpha(1f)
-            .setDuration(300)
-            .start()
+        binding.mainContentLayout.alpha = 1f
 
         shouldMoveToCurrentLocationWhenMapReady = true
-        openWithCurrentLocation = true
 
         initializeMap()
         moveToCurrentLocation()
