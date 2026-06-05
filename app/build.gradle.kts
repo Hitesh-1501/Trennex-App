@@ -85,6 +85,8 @@ dependencies {
     implementation(libs.androidx.room.ktx)
     kapt(libs.androidx.room.compiler)
 
+
+    implementation(libs.play.services.auth.api.phone)
     implementation(libs.play.services.location)
     implementation(libs.play.services.maps)
     implementation(libs.places)

@@ -1,5 +1,10 @@
 package com.example.trennex.ui.auth.otp
 
+import android.app.Activity
+import android.content.BroadcastReceiver
+import android.content.Context
+import android.content.Intent
+import android.content.IntentFilter
 import android.graphics.Color
 import android.os.Bundle
 import android.text.InputFilter
@@ -11,6 +16,7 @@ import android.view.View
 import android.view.ViewGroup
 import android.widget.EditText
 import android.widget.Toast
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.core.content.ContextCompat
 import androidx.core.view.WindowCompat
 import androidx.core.view.WindowInsetsCompat
@@ -29,6 +35,9 @@ import androidx.lifecycle.repeatOnLifecycle
 import androidx.navigation.fragment.findNavController
 import com.example.trennex.ui.auth.UserDetailsDialog
 import com.example.trennex.viewmodel.auth.OtpViewModel
+import com.google.android.gms.auth.api.phone.SmsRetriever
+import com.google.android.gms.common.api.CommonStatusCodes
+import com.google.android.gms.common.api.Status
 
 class OtpFragment : Fragment(R.layout.fragment_otp) {
     private var _binding: FragmentOtpBinding? = null
@@ -41,6 +50,33 @@ class OtpFragment : Fragment(R.layout.fragment_otp) {
     private lateinit var phone: String
     private var handledSuccess = false
 
+    private var smsReceiverRegistered = false
+
+    private val smsConsentLauncher = registerForActivityResult(
+        ActivityResultContracts.StartActivityForResult()
+    ){result ->
+        if (result.resultCode == Activity.RESULT_OK) {
+            val message = result.data?.getStringExtra(SmsRetriever.EXTRA_SMS_MESSAGE).orEmpty()
+            extractOtp(message)?.let { otp -> autofillOtp(otp, verifyAfterFill = true)  }
+        }
+    }
+
+    private val smsVerificationReceiver = object : BroadcastReceiver() {
+        override fun onReceive(context: Context?, intent: Intent?) {
+            if (intent?.action != SmsRetriever.SMS_RETRIEVED_ACTION) return
+            val extras = intent.extras ?: return
+            val status = extras.get(SmsRetriever.EXTRA_STATUS) as? Status ?: return
+            if (status.statusCode == CommonStatusCodes.SUCCESS) {
+                val message = extras.getString(SmsRetriever.EXTRA_SMS_MESSAGE).orEmpty()
+                val consentIntent = extras.getParcelable<Intent>(SmsRetriever.EXTRA_CONSENT_INTENT)
+                when {
+                    message.isNotBlank() -> extractOtp(message)?.let { autofillOtp(it, verifyAfterFill = true) }
+                    consentIntent != null -> smsConsentLauncher.launch(consentIntent)
+                }
+            }
+
+        }
+    }
 
 
     override fun onCreateView(
@@ -67,6 +103,7 @@ class OtpFragment : Fragment(R.layout.fragment_otp) {
         binding.tvSubtitle.text = "Code has been sent to ${mask(phone)}"
 
         setupOtpUI()
+        startSmsOtpListener()
         viewModel.setTimer()
         binding.btnVerify.setOnClickListener {
             viewModel.verifyOtp(verificationId,getOtp())
@@ -75,6 +112,7 @@ class OtpFragment : Fragment(R.layout.fragment_otp) {
             if(binding.tvResend.isEnabled){
                 activity?.let {hostActivity->
                     clearOtpInputs()
+                    startSmsOtpListener()
                     viewModel.resendOtp(hostActivity,phone)
                 }
             }
@@ -124,11 +162,21 @@ class OtpFragment : Fragment(R.layout.fragment_otp) {
         }
     }
 
+    override fun onStart() {
+        super.onStart()
+        registerSmsReceiver()
+    }
+
+    override fun onStop() {
+        unregisterSmsReceiver()
+        super.onStop()
+    }
+
     private fun setupOtpUI() {
         otpBoxes.forEachIndexed { index, otpEditText ->
             otpEditText.keyListener = DigitsKeyListener.getInstance("0123456789")
             otpEditText.filters = arrayOf(InputFilter.LengthFilter(1))
-            otpEditText.onFocusChangeListener = View.OnFocusChangeListener { view, hasFocus ->
+            otpEditText.onFocusChangeListener = View.OnFocusChangeListener { _, hasFocus ->
                 if (hasFocus) {
                     otpEditText.setBackgroundResource(R.drawable.otp_active)
                 }else if (otpEditText.text.isEmpty()) {
@@ -159,6 +207,55 @@ class OtpFragment : Fragment(R.layout.fragment_otp) {
         }
     }
 
+    private fun startSmsOtpListener() {
+        SmsRetriever.getClient(requireActivity()).startSmsRetriever()
+        SmsRetriever.getClient(requireActivity()).startSmsUserConsent(null)
+
+    }
+
+    private fun registerSmsReceiver(){
+        if(smsReceiverRegistered) return
+
+        val filter = IntentFilter(SmsRetriever.SMS_RETRIEVED_ACTION)
+        ContextCompat.registerReceiver(
+            requireContext(),
+            smsVerificationReceiver,
+            filter,
+            SmsRetriever.SEND_PERMISSION,
+            null,
+            ContextCompat.RECEIVER_EXPORTED
+        )
+        smsReceiverRegistered = true
+    }
+
+    private fun unregisterSmsReceiver() {
+        if (!smsReceiverRegistered) return
+        requireContext().unregisterReceiver(smsVerificationReceiver)
+        smsReceiverRegistered = false
+    }
+
+
+    private fun autofillOtp(otp: String, verifyAfterFill: Boolean) {
+        if (_binding == null || otp.length != OTP_LENGTH || handledSuccess) return
+
+        binding.textinputErrorTxt.visibility = View.GONE
+        otpBoxes.forEachIndexed { index, otpEditText ->
+            otpEditText.setText(otp[index].toString())
+            otpEditText.setSelection(otpEditText.text?.length ?: 0)
+            otpEditText.setTextColor(ContextCompat.getColor(requireContext(), R.color.white))
+            otpEditText.setBackgroundResource(R.drawable.otp_filled)
+        }
+        otpBoxes.last().clearFocus()
+        viewModel.onOtpChanged(otp)
+        if(verifyAfterFill){
+            viewModel.verifyOtp(verificationId,otp)
+        }
+    }
+
+    private fun extractOtp(message: String): String? {
+        return OTP_REGEX.find(message)?.value
+    }
+
     private fun getOtp(): String = otpBoxes.joinToString(""){it.text.toString()}
 
     private fun updateTimer(state: OtpUiState.Timer){
@@ -181,6 +278,7 @@ class OtpFragment : Fragment(R.layout.fragment_otp) {
         binding.textinputErrorTxt.visibility = View.GONE
         binding.btnVerify.isEnabled = false
         Toast.makeText(requireContext(), "OTP sent again", Toast.LENGTH_SHORT).show()
+        startSmsOtpListener()
         viewModel.setTimer()
     }
 
@@ -224,5 +322,10 @@ class OtpFragment : Fragment(R.layout.fragment_otp) {
     override fun onDestroyView() {
         super.onDestroyView()
         _binding = null
+    }
+
+    private companion object {
+        const val OTP_LENGTH = 6
+        val OTP_REGEX = Regex("(?<!\\d)\\d{$OTP_LENGTH}(?!\\d)")
     }
 }
