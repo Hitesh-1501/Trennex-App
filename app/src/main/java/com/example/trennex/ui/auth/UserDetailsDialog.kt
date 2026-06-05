@@ -1,7 +1,10 @@
 package com.example.trennex.ui.auth
 
+import android.graphics.Color
+import android.graphics.drawable.ColorDrawable
 import android.view.LayoutInflater
 import android.view.View
+import android.view.WindowManager
 import android.widget.Toast
 import androidx.fragment.app.Fragment
 import com.example.trennex.databinding.DialogUserDetailsBinding
@@ -10,6 +13,7 @@ import com.google.firebase.FirebaseApp
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.firestore.FirebaseFirestore
 import com.google.firebase.firestore.SetOptions
+import androidx.core.graphics.drawable.toDrawable
 
 object UserDetailsDialog {
     private const val USER_COLLECTION = "users"
@@ -53,12 +57,17 @@ object UserDetailsDialog {
         val binding = DialogUserDetailsBinding.inflate(LayoutInflater.from(fragment.requireContext()))
         val dialog = MaterialAlertDialogBuilder(fragment.requireContext())
             .setView(binding.root)
-            .setPositiveButton("Save",null)
             .create()
         dialog.setCancelable(false)
         dialog.setCanceledOnTouchOutside(false)
         dialog.setOnShowListener {
-            dialog.getButton(android.app.AlertDialog.BUTTON_POSITIVE).setOnClickListener {
+
+            dialog.window?.apply {
+                setBackgroundDrawable(Color.TRANSPARENT.toDrawable())
+                setSoftInputMode(WindowManager.LayoutParams.SOFT_INPUT_ADJUST_RESIZE)
+            }
+
+            binding.btnSave.setOnClickListener {
                 val name = binding.etName.text?.toString().orEmpty().trim()
                 val email = binding.etEmail.text?.toString().orEmpty().trim()
                 if(name.isBlank()){
@@ -67,7 +76,7 @@ object UserDetailsDialog {
                 }
                 binding.nameInputLayout.error = null
                 binding.saveProgress.visibility = View.VISIBLE
-                dialog.getButton(android.app.AlertDialog.BUTTON_POSITIVE).isEnabled = false
+                binding.btnSave.isEnabled = false
                 val userDetails =  mapOf(
                     NAME_FIELD to name,
                     EMAIL_FIELD to email,
@@ -83,7 +92,7 @@ object UserDetailsDialog {
                     }
                     .addOnFailureListener { exception ->
                         binding.saveProgress.visibility = View.GONE
-                        dialog.getButton(android.app.AlertDialog.BUTTON_POSITIVE).isEnabled = true
+                        binding.btnSave.isEnabled = true
                         Toast.makeText(
                             fragment.requireContext(),
                             exception.localizedMessage ?: "Could not save details. Please try again.",
@@ -93,5 +102,9 @@ object UserDetailsDialog {
             }
         }
         dialog.show()
+        dialog.window?.apply {
+            setBackgroundDrawable(Color.TRANSPARENT.toDrawable())
+            setSoftInputMode(WindowManager.LayoutParams.SOFT_INPUT_ADJUST_RESIZE)
+        }
     }
 }
