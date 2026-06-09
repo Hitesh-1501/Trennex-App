@@ -154,6 +154,13 @@ class HomeFragment : Fragment(R.layout.fragment_home) {
         UserDetailsDialog.showIfNeeded(this){}
         fetchLoggedInUserName()
         fetchSavedAddresses()
+        parentFragmentManager.setFragmentResultListener(
+            "address_updated",
+            viewLifecycleOwner
+        ) { _, _ ->
+
+            fetchSavedAddresses()
+        }
         setupLocationUi()
         if (selectedAddress == null && !hasLocationPermission()) {
             showLocationPermissionDialog()
@@ -370,6 +377,7 @@ class HomeFragment : Fragment(R.layout.fragment_home) {
             findNavController().navigate(action)
             true
         }
+
         popupView.findViewById<View>(R.id.actionDelete).setOnClickListener {
             deleteSaveAddress(item)
             popupWindow.dismiss()
