@@ -20,6 +20,10 @@ class SaveAddressAdapter(
         val userName: String,
         val flatNo: String = "",
         val address: String,
+        val mobile: String = "",
+        val latitude: Double = 0.0,
+        val longitude: Double = 0.0,
+        val placeName: String = "",
         val addressType: String = ADDRESS_TYPE_HOME
     ) {
         val displayAddress: String

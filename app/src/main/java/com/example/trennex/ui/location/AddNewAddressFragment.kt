@@ -702,12 +702,16 @@ class AddNewAddressFragment : Fragment(R.layout.fragment_add_new_address), OnMap
         }
 
         sheetBinding.saveAddressBtn.isEnabled = false
+        val cameraTarget = googleMap.cameraPosition.target
         val addressData = hashMapOf(
             FLAT_NO_FIELD to flatNo,
             ADDRESS_FIELD to address,
             USER_NAME_FIELD to fullName,
             MOBILE_FIELD to mobile,
             ADDRESS_TYPE_FIELD to addressType,
+            LATITUDE_FIELD to cameraTarget.latitude,
+            LONGITUDE_FIELD to cameraTarget.longitude,
+            PLACE_NAME_FIELD to binding.addressTitleTv.text.toString(),
             CREATED_AT_FIELD to FieldValue.serverTimestamp(),
             UPDATED_AT_FIELD to FieldValue.serverTimestamp()
         )
@@ -769,5 +773,11 @@ class AddNewAddressFragment : Fragment(R.layout.fragment_add_new_address), OnMap
         const val ADDRESS_TYPE_HOME = "Home"
         const val ADDRESS_TYPE_OFFICE = "Office"
         const val PHONE_NUMBER_LENGTH = 10
+
+        const val LATITUDE_FIELD = "latitude"
+
+        const val LONGITUDE_FIELD = "longitude"
+
+        const val PLACE_NAME_FIELD = "placeName"
     }
 }

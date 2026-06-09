@@ -483,6 +483,10 @@ class HomeFragment : Fragment(R.layout.fragment_home) {
                                 userName = documentSnapshot.getString(USER_NAME_FIELD).orEmpty().ifBlank { loginUserName },
                                 flatNo = documentSnapshot.getString(FLAT_NO_FIELD).orEmpty(),
                                 address = address,
+                                mobile = documentSnapshot.getString(MOBILE).orEmpty(),
+                                latitude = documentSnapshot.getDouble(LATITUDE_FIELD) ?: 0.0,
+                                longitude = documentSnapshot.getDouble(LONGITUDE_FIELD) ?: 0.0,
+                                placeName = documentSnapshot.getString(PLACE_NAME_FIELD).orEmpty(),
                                 addressType = documentSnapshot.getString(ADDRESS_TYPE_FIELD).orEmpty().ifBlank {
                                     SaveAddressAdapter.ADDRESS_TYPE_HOME
                                 }
@@ -776,6 +780,14 @@ class HomeFragment : Fragment(R.layout.fragment_home) {
         const val CREATED_AT_FIELD = "createdAt"
         const val UPDATED_AT_FIELD = "updatedAt"
         const val SELECTED_ADDRESS_ID_FIELD = "selectedAddressId"
+
+        const val LATITUDE_FIELD = "latitude"
+
+        const val LONGITUDE_FIELD = "longitude"
+
+        const val PLACE_NAME_FIELD = "placeName"
+
+        const val MOBILE = "mobile"
 
     }
 }
