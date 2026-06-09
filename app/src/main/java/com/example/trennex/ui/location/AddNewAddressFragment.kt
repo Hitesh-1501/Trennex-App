@@ -32,6 +32,7 @@ import com.example.trennex.R
 import com.example.trennex.databinding.BottomSheetDeliverToBinding
 import com.example.trennex.databinding.FragmentAddNewAddressBinding
 import com.example.trennex.databinding.SelectingLocationDialogBinding
+import com.example.trennex.ui.home.adapters.SaveAddressAdapter
 import com.example.trennex.ui.location.adapter.SearchSuggestionAdapter
 import com.google.android.gms.common.api.ResolvableApiException
 import com.google.android.gms.location.FusedLocationProviderClient
@@ -90,6 +91,10 @@ class AddNewAddressFragment : Fragment(R.layout.fragment_add_new_address), OnMap
 
     private var isMapInitialized = false
 
+    private var isEditMode = false
+
+    private var editingAddressId = ""
+
     private val locationPermissionLauncher = registerForActivityResult(
         ActivityResultContracts.RequestPermission()
     ) {granted ->
@@ -144,17 +149,37 @@ class AddNewAddressFragment : Fragment(R.layout.fragment_add_new_address), OnMap
         }
         placesClient = Places.createClient(requireContext())
 
-        if(args.openedFromSearch) {
-            binding.mainContentLayout.visibility = View.VISIBLE
-            initializeMap()
-        }else{
-            showLocationDialog()
+
+        when {
+            args.isEditMode -> {
+                binding.mainContentLayout.visibility =
+                    View.VISIBLE
+
+                initializeMap()
+            }
+
+            args.openedFromSearch -> {
+
+                binding.mainContentLayout.visibility =
+                    View.VISIBLE
+
+                initializeMap()
+            }
+
+            else -> {
+
+                showLocationDialog()
+            }
         }
 
         searchedLat = args.latitude.toDoubleOrNull() ?: 0.0
         searchedLng = args.longitude.toDoubleOrNull() ?: 0.0
         searchedAddress = args.address
         searchedPlaceName = args.placeName
+        isEditMode = args.isEditMode
+        editingAddressId = args.addressId
+
+
 
 
         if (searchedPlaceName.isNotBlank()){
@@ -193,7 +218,7 @@ class AddNewAddressFragment : Fragment(R.layout.fragment_add_new_address), OnMap
                 binding.searchSuggestionsRv.visibility = View.GONE
             }
         }
-
+        binding.addLocationBtn.text = if(args.isEditMode) "Update Location" else "Add Location"
         binding.addLocationBtn.setOnClickListener {
             showDeliverToBottomSheet()
         }
@@ -579,6 +604,25 @@ class AddNewAddressFragment : Fragment(R.layout.fragment_add_new_address), OnMap
 
         prefilledUserDetails(sheetBinding)
 
+        if (args.isEditMode){
+            sheetBinding.flatInput.setText(
+                args.flatNo
+            )
+
+            sheetBinding.mobileInput.setText(
+                args.mobile
+            )
+
+            when(args.addressType){
+                SaveAddressAdapter.ADDRESS_TYPE_HOME ->
+                    sheetBinding.homeRadio.isChecked =
+                        true
+
+                SaveAddressAdapter.ADDRESS_TYPE_OFFICE ->
+                    sheetBinding.officeRadio.isChecked =
+                        true
+            }
+        }
         sheetBinding.closeBtn.setOnClickListener {
             bottomSheetDialog.dismiss()
         }
@@ -605,8 +649,13 @@ class AddNewAddressFragment : Fragment(R.layout.fragment_add_new_address), OnMap
                 sheetBinding.editAddressInputLayout.visibility = View.GONE
             }
         }
+        sheetBinding.saveAddressBtn.text = if (args.isEditMode) "Update Address" else "Save Address"
         sheetBinding.saveAddressBtn.setOnClickListener {
-            saveAddressToFirestore(sheetBinding, selectedAddress, bottomSheetDialog)
+            if(isEditMode){
+                updateAddress(sheetBinding , bottomSheetDialog)
+            } else {
+                saveAddressToFirestore(sheetBinding, selectedAddress, bottomSheetDialog)
+            }
         }
         sheetBinding.flatInput.doAfterTextChanged { sheetBinding.flatInputLayout.error = null }
         sheetBinding.fullNameInput.doAfterTextChanged { sheetBinding.fullNameInputLayout.error = null }
@@ -744,6 +793,83 @@ class AddNewAddressFragment : Fragment(R.layout.fragment_add_new_address), OnMap
 
     }
 
+    private fun updateAddress(
+        sheetBinding: BottomSheetDeliverToBinding,
+        bottomSheetDialog: BottomSheetDialog
+    ){
+
+        val flatNo =
+            sheetBinding.flatInput.text
+                .toString()
+                .trim()
+
+        val fullName =
+            sheetBinding.fullNameInput.text
+                .toString()
+                .trim()
+
+        val mobile =
+            sheetBinding.mobileInput.text
+                .toString()
+                .trim()
+
+        val address =
+            sheetBinding.selectedAddressText.text
+                .toString()
+                .trim()
+
+        val addressType =
+            if (sheetBinding.homeRadio.isChecked)
+                SaveAddressAdapter.ADDRESS_TYPE_HOME
+            else
+                SaveAddressAdapter.ADDRESS_TYPE_OFFICE
+
+        firestore
+            .collection(USERS_COLLECTION)
+            .document(auth.currentUser!!.uid)
+            .collection(SAVED_ADDRESSES_COLLECTION)
+            .document(editingAddressId)
+            .update(
+                mapOf(
+                    FLAT_NO_FIELD to flatNo,
+
+                    ADDRESS_FIELD to address,
+
+                    USER_NAME_FIELD to fullName,
+
+                    MOBILE_FIELD to mobile,
+
+                    ADDRESS_TYPE_FIELD to addressType,
+
+                    LATITUDE_FIELD to
+                            googleMap.cameraPosition
+                                .target.latitude,
+
+                    LONGITUDE_FIELD to
+                            googleMap.cameraPosition
+                                .target.longitude,
+
+                    PLACE_NAME_FIELD to
+                            binding.addressTitleTv
+                                .text.toString(),
+
+                    UPDATED_AT_FIELD to
+                            FieldValue.serverTimestamp()
+                )
+            )
+            .addOnSuccessListener {
+                Toast.makeText(requireContext(), "Address updated", Toast.LENGTH_SHORT).show()
+                bottomSheetDialog.dismiss()
+                findNavController().popBackStack()
+            }
+
+            .addOnFailureListener { exception ->
+                if (!isAdded) return@addOnFailureListener
+                sheetBinding.saveAddressBtn.isEnabled = true
+                Log.e("AddAddress", "Could not update address: ${exception.message}", exception)
+                Toast.makeText(requireContext(), "Failed to update address", Toast.LENGTH_SHORT).show()
+            }
+    }
 
 
 

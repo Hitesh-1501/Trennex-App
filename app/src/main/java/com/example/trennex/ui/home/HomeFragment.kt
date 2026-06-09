@@ -344,7 +344,29 @@ class HomeFragment : Fragment(R.layout.fragment_home) {
         )
 
         popupView.findViewById<View>(R.id.actionEdit).setOnClickListener {
-            popupWindow.dismiss()
+            val action = HomeFragmentDirections
+                .actionHomeFragmentToAddNewAddressFragment(
+                    latitude = item.latitude.toString(),
+                    longitude = item.longitude.toString(),
+
+                    address = item.address,
+
+                    placeName = item.placeName,
+
+                    openedFromSearch = true,
+
+                    isEditMode = true,
+
+                    addressId = item.id,
+
+                    flatNo = item.flatNo,
+
+                    mobile = item.mobile,
+
+                    addressType = item.addressType
+                )
+            findNavController().navigate(action)
+            true
         }
         popupView.findViewById<View>(R.id.actionDelete).setOnClickListener {
             deleteSaveAddress(item)

@@ -264,6 +264,31 @@
             app:argType="boolean"
             android:defaultValue="false"/>
 
+        <argument
+            android:name="isEditMode"
+            app:argType="boolean"
+            android:defaultValue="false"/>
+
+        <argument
+            android:name="addressId"
+            app:argType="string"
+            android:defaultValue=""/>
+
+        <argument
+            android:name="flatNo"
+            app:argType="string"
+            android:defaultValue=""/>
+
+        <argument
+            android:name="mobile"
+            app:argType="string"
+            android:defaultValue=""/>
+
+        <argument
+            android:name="addressType"
+            app:argType="string"
+            android:defaultValue="Home"/>
+
     </fragment>
 
 </navigation>
