@@ -97,6 +97,11 @@ class AddNewAddressFragment : Fragment(R.layout.fragment_add_new_address), OnMap
 
     private var editingAddressId = ""
 
+    private var skipNextAddresssLookup = false
+    private var addressLookupRequestId = 0
+
+
+
     private val locationPermissionLauncher = registerForActivityResult(
         ActivityResultContracts.RequestPermission()
     ) {granted ->
@@ -258,16 +263,27 @@ class AddNewAddressFragment : Fragment(R.layout.fragment_add_new_address), OnMap
     override fun onMapReady(map: GoogleMap) {
         googleMap = map
 
-        handleInitialLocation()
+
+        skipNextAddresssLookup = isEditMode &&
+                searchedAddress.isNotBlank() &&
+                searchedLat != 0.0 &&
+                searchedLng != 0.0
 
         googleMap.setOnCameraIdleListener {
             val center = googleMap.cameraPosition.target
             animateCenterMarker()
+
+            if (skipNextAddresssLookup){
+                skipNextAddresssLookup = false
+                return@setOnCameraIdleListener
+            }
+
             getAddressFromLatLng(
                 center.latitude,
                 center.longitude
             )
         }
+        handleInitialLocation()
     }
 
     @SuppressLint("NewApi")
@@ -276,7 +292,7 @@ class AddNewAddressFragment : Fragment(R.layout.fragment_add_new_address), OnMap
         longitude: Double
     ) {
        try {
-
+           val requestId = ++addressLookupRequestId
            val geocoder = Geocoder(requireContext(), Locale.getDefault())
            geocoder.getFromLocation(
                latitude,
@@ -292,7 +308,16 @@ class AddNewAddressFragment : Fragment(R.layout.fragment_add_new_address), OnMap
                    val fullAddress =
                        address?.getAddressLine(0)
                            ?: "Address not found"
-                   requireActivity().runOnUiThread {
+                   activity?.runOnUiThread {
+                       if (!isAdded || _binding == null || requestId != addressLookupRequestId) {
+                           return@runOnUiThread
+                       }
+                       val cameraTarget = googleMap.cameraPosition.target
+                       val cameraStillMatchesRequest =
+                           kotlin.math.abs(cameraTarget.latitude - latitude) < COORDINATE_EPSILON &&
+                                   kotlin.math.abs(cameraTarget.longitude - longitude) < COORDINATE_EPSILON
+                       if (!cameraStillMatchesRequest) return@runOnUiThread
+
                        binding.addressTitleTv.text = title
                        binding.addressTv.text = fullAddress
                    }
@@ -642,6 +667,8 @@ class AddNewAddressFragment : Fragment(R.layout.fragment_add_new_address), OnMap
                 .trim()
             if (updatedAddress.isNotEmpty()){
                 selectedAddress = updatedAddress
+                addressLookupRequestId++
+                binding.addressTv.text = selectedAddress
                 sheetBinding.selectedAddressText.text = selectedAddress
                 sheetBinding.addressCard.visibility = View.VISIBLE
                 sheetBinding.editAddressInputLayout.visibility = View.GONE
@@ -821,13 +848,49 @@ class AddNewAddressFragment : Fragment(R.layout.fragment_add_new_address), OnMap
                 SaveAddressAdapter.ADDRESS_TYPE_HOME
             else
                 SaveAddressAdapter.ADDRESS_TYPE_OFFICE
+
+        sheetBinding.flatInputLayout.error = null
+        sheetBinding.fullNameInputLayout.error = null
+        sheetBinding.mobileInputLayout.error = null
+
+        when {
+            flatNo.isBlank() -> {
+                sheetBinding.flatInputLayout.error = "Enter flat, house, or building number"
+                return
+            }
+            address.isBlank() || address == "Address not found" -> {
+                Toast.makeText(requireContext(), "Please select a valid address", Toast.LENGTH_SHORT).show()
+                return
+            }
+            fullName.isBlank() -> {
+                sheetBinding.fullNameInputLayout.error = "Enter full name"
+                return
+            }
+            mobile.length != PHONE_NUMBER_LENGTH -> {
+                sheetBinding.mobileInputLayout.error = "Enter valid 10-digit mobile number"
+                return
+            }
+        }
+
+        val user = auth.currentUser
+        if (user == null) {
+            Toast.makeText(requireContext(), "Please login before updating address", Toast.LENGTH_SHORT).show()
+            return
+        }
+        if (editingAddressId.isBlank()) {
+            Toast.makeText(requireContext(), "Unable to identify the saved address", Toast.LENGTH_SHORT).show()
+            return
+        }
         Log.d(
             "AddressUpdate",
             "editingAddressId = $editingAddressId"
         )
+        sheetBinding.saveAddressBtn.isEnabled = false
+        val cameraTarget = googleMap.cameraPosition.target
+
         firestore
             .collection(USERS_COLLECTION)
-            .document(auth.currentUser!!.uid)
+            .document(user.uid)
             .collection(SAVED_ADDRESSES_COLLECTION)
             .document(editingAddressId)
             .update(
@@ -842,13 +905,9 @@ class AddNewAddressFragment : Fragment(R.layout.fragment_add_new_address), OnMap
 
                     ADDRESS_TYPE_FIELD to addressType,
 
-                    LATITUDE_FIELD to
-                            googleMap.cameraPosition
-                                .target.latitude,
+                    LATITUDE_FIELD to cameraTarget.latitude,
 
-                    LONGITUDE_FIELD to
-                            googleMap.cameraPosition
-                                .target.longitude,
+                    LONGITUDE_FIELD to cameraTarget.longitude,
 
                     PLACE_NAME_FIELD to
                             binding.addressTitleTv
@@ -860,7 +919,7 @@ class AddNewAddressFragment : Fragment(R.layout.fragment_add_new_address), OnMap
             )
             .addOnSuccessListener {
                 firestore.collection(USERS_COLLECTION)
-                    .document(auth.currentUser!!.uid)
+                    .document(user.uid)
                     .update(
                         SELECTED_ADDRESS_ID_FIELD,
                         editingAddressId
@@ -926,5 +985,7 @@ class AddNewAddressFragment : Fragment(R.layout.fragment_add_new_address), OnMap
         const val LONGITUDE_FIELD = "longitude"
 
         const val PLACE_NAME_FIELD = "placeName"
+
+        const val COORDINATE_EPSILON = 0.000001
     }
 }
