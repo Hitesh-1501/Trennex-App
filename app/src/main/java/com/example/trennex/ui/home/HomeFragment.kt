@@ -365,6 +365,8 @@ class HomeFragment : Fragment(R.layout.fragment_home) {
 
                     addressType = item.addressType
                 )
+            popupWindow.dismiss()
+            locationBottomSheet?.dismiss()
             findNavController().navigate(action)
             true
         }

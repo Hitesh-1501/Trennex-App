@@ -148,7 +148,12 @@ class AddNewAddressFragment : Fragment(R.layout.fragment_add_new_address), OnMap
             Places.initialize(requireContext(), apiKey)
         }
         placesClient = Places.createClient(requireContext())
-
+        searchedLat = args.latitude.toDoubleOrNull() ?: 0.0
+        searchedLng = args.longitude.toDoubleOrNull() ?: 0.0
+        searchedAddress = args.address
+        searchedPlaceName = args.placeName
+        isEditMode = args.isEditMode
+        editingAddressId = args.addressId
 
         when {
             args.isEditMode -> {
@@ -171,15 +176,6 @@ class AddNewAddressFragment : Fragment(R.layout.fragment_add_new_address), OnMap
                 showLocationDialog()
             }
         }
-
-        searchedLat = args.latitude.toDoubleOrNull() ?: 0.0
-        searchedLng = args.longitude.toDoubleOrNull() ?: 0.0
-        searchedAddress = args.address
-        searchedPlaceName = args.placeName
-        isEditMode = args.isEditMode
-        editingAddressId = args.addressId
-
-
 
 
         if (searchedPlaceName.isNotBlank()){
@@ -823,7 +819,10 @@ class AddNewAddressFragment : Fragment(R.layout.fragment_add_new_address), OnMap
                 SaveAddressAdapter.ADDRESS_TYPE_HOME
             else
                 SaveAddressAdapter.ADDRESS_TYPE_OFFICE
-
+        Log.d(
+            "AddressUpdate",
+            "editingAddressId = $editingAddressId"
+        )
         firestore
             .collection(USERS_COLLECTION)
             .document(auth.currentUser!!.uid)
@@ -858,6 +857,16 @@ class AddNewAddressFragment : Fragment(R.layout.fragment_add_new_address), OnMap
                 )
             )
             .addOnSuccessListener {
+                firestore.collection(USERS_COLLECTION)
+                    .document(auth.currentUser!!.uid)
+                    .update(
+                        SELECTED_ADDRESS_ID_FIELD,
+                        editingAddressId
+                    )
+                Log.d(
+                    "AddressUpdate",
+                    "Updated doc id = $editingAddressId"
+                )
                 Toast.makeText(requireContext(), "Address updated", Toast.LENGTH_SHORT).show()
                 bottomSheetDialog.dismiss()
                 findNavController().popBackStack()
