@@ -262,12 +262,15 @@ class AddNewAddressFragment : Fragment(R.layout.fragment_add_new_address), OnMap
     @RequiresApi(Build.VERSION_CODES.TIRAMISU)
     override fun onMapReady(map: GoogleMap) {
         googleMap = map
+        skipNextAddresssLookup = isEditMode && searchedAddress.isNotBlank()
 
-
-        skipNextAddresssLookup = isEditMode &&
-                searchedAddress.isNotBlank() &&
-                searchedLat != 0.0 &&
-                searchedLng != 0.0
+        if (args.isEditMode) {
+            val savedAddress = args.address
+            if (savedAddress.isNotEmpty()) {
+                binding.addressTv.text = savedAddress
+                binding.addressTitleTv.text = savedAddress.split(",").firstOrNull()?.trim() ?: "Location"
+            }
+        }
 
         googleMap.setOnCameraIdleListener {
             val center = googleMap.cameraPosition.target
@@ -422,7 +425,7 @@ class AddNewAddressFragment : Fragment(R.layout.fragment_add_new_address), OnMap
 
         when  {
             searchedLat != 0.0 && searchedLng != 0.0 -> {
-                moveToSearchedLocation()
+                moveToSavedOrSearchedLocation()
             }
 
             openWithCurrentLocation || shouldMoveToCurrentLocationWhenMapReady -> {
@@ -441,19 +444,20 @@ class AddNewAddressFragment : Fragment(R.layout.fragment_add_new_address), OnMap
         }
     }
 
-    private fun moveToSearchedLocation(){
-        val latlng = LatLng(
-            searchedLat,
-            searchedLng
-        )
-        googleMap.animateCamera(
-            CameraUpdateFactory.newLatLngZoom(
-                latlng,
-                17f
-            )
-        )
-        binding.addressTitleTv.text = searchedPlaceName
+
+
+
+    private fun moveToSavedOrSearchedLocation() {
+        val latLng = LatLng(searchedLat, searchedLng)
+        googleMap.moveCamera(CameraUpdateFactory.newLatLngZoom(latLng, 17f))
+
         binding.addressTv.text = searchedAddress
+
+        if (searchedPlaceName.isNotBlank()) {
+            binding.addressTitleTv.text = searchedPlaceName
+        } else {
+            binding.addressTitleTv.text = searchedAddress.split(",").firstOrNull() ?: "Saved Location"
+        }
     }
 
     private fun showTurnOnLocationDialog(){
@@ -925,7 +929,17 @@ class AddNewAddressFragment : Fragment(R.layout.fragment_add_new_address), OnMap
                         editingAddressId
                     )
                     .addOnSuccessListener {
+                        if (!isAdded) return@addOnSuccessListener
                         Toast.makeText(requireContext(), "Address updated", Toast.LENGTH_SHORT).show()
+
+                        binding.addressTv.text = address
+
+                        val shortTitle = address.split(",").firstOrNull()?.trim() ?: "Updated Location"
+                        binding.addressTitleTv.text = shortTitle
+
+                        val newLatLng = LatLng(cameraTarget.latitude, cameraTarget.longitude)
+                        googleMap.animateCamera(CameraUpdateFactory.newLatLngZoom(newLatLng, 17f))
+
                     }
                 Log.d(
                     "AddressUpdate",
