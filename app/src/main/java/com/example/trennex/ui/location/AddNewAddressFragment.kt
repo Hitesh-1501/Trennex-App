@@ -123,7 +123,13 @@ class AddNewAddressFragment : Fragment(R.layout.fragment_add_new_address), OnMap
     ){result ->
         if (!isAdded || !openWithCurrentLocation) return@registerForActivityResult
         if (result.resultCode == Activity.RESULT_OK){
-            showMapAndMoveToCurrentLocation()
+            Handler(Looper.getMainLooper()).postDelayed({
+
+                if (!isAdded) return@postDelayed
+
+                checkLocationServicesAndMove()
+
+            }, 1500)
         }else{
             Toast.makeText(
                 requireContext(),
@@ -364,23 +370,62 @@ class AddNewAddressFragment : Fragment(R.layout.fragment_add_new_address), OnMap
                         17f
                     )
                 )
+                getAddressFromLatLng(
+                    location.latitude,
+                    location.longitude
+                )
+
                 binding.useMyCurrLocation.isEnabled = true
             }else {
-                fusedLocationClient.lastLocation.addOnSuccessListener { lastLoc ->
-                    if (lastLoc != null) {
-                        val latLng = LatLng(lastLoc.latitude, lastLoc.longitude)
-                        googleMap.animateCamera(CameraUpdateFactory.newLatLngZoom(latLng, 17f))
-                    } else {
-                        binding.addressTitleTv.text = "Location unavailable"
-                        binding.addressTv.text = "Please move the map manually or check GPS"
+
+                Handler(Looper.getMainLooper()).postDelayed({
+
+                    fusedLocationClient.getCurrentLocation(
+                        Priority.PRIORITY_HIGH_ACCURACY,
+                        null
+                    ).addOnSuccessListener { retryLocation ->
+
+                        if (retryLocation != null) {
+
+                            val latLng = LatLng(
+                                retryLocation.latitude,
+                                retryLocation.longitude
+                            )
+
+                            googleMap.animateCamera(
+                                CameraUpdateFactory.newLatLngZoom(
+                                    latLng,
+                                    17f
+                                )
+                            )
+
+                            getAddressFromLatLng(
+                                retryLocation.latitude,
+                                retryLocation.longitude
+                            )
+
+                        } else {
+
+                            binding.addressTitleTv.text =
+                                "Location unavailable"
+
+                            binding.addressTv.text =
+                                "Please move the map manually or check GPS"
+                        }
+
+                        binding.useMyCurrLocation.isEnabled = true
                     }
-                    binding.useMyCurrLocation.isEnabled = true
-                }
+
+                }, 2000)
             }
+
         }.addOnFailureListener {
-            if (!isAdded || _binding == null) return@addOnFailureListener
+
             binding.addressTitleTv.text = "Error"
-            binding.addressTv.text = "Unable to fetch location"
+
+            binding.addressTv.text =
+                "Unable to fetch location"
+
             binding.useMyCurrLocation.isEnabled = true
         }
     }
@@ -409,11 +454,17 @@ class AddNewAddressFragment : Fragment(R.layout.fragment_add_new_address), OnMap
     }
 
     private fun isLocationEnabled(): Boolean {
-        val locationManager = requireContext().getSystemService(
-            Context.LOCATION_SERVICE
-        ) as LocationManager
+        val locationManager =
+            requireContext().getSystemService(
+                Context.LOCATION_SERVICE
+            ) as LocationManager
 
-        return locationManager.isProviderEnabled(LocationManager.GPS_PROVIDER)
+        return locationManager.isProviderEnabled(
+            LocationManager.GPS_PROVIDER
+        ) ||
+        locationManager.isProviderEnabled(
+            LocationManager.NETWORK_PROVIDER
+        )
     }
 
     private fun showMapAndMoveToCurrentLocation() {
@@ -425,7 +476,6 @@ class AddNewAddressFragment : Fragment(R.layout.fragment_add_new_address), OnMap
         shouldMoveToCurrentLocationWhenMapReady = true
 
         initializeMap()
-        moveToCurrentLocation()
 
     }
 
