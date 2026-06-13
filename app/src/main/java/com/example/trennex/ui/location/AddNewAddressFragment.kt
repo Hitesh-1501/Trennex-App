@@ -330,6 +330,8 @@ class AddNewAddressFragment : Fragment(R.layout.fragment_add_new_address), OnMap
     @SuppressLint("MissingPermission")
     private fun moveToCurrentLocation() {
 
+        if (!isAdded) return
+
         if (!::googleMap.isInitialized) {
             shouldMoveToCurrentLocationWhenMapReady = true
             return
@@ -350,6 +352,7 @@ class AddNewAddressFragment : Fragment(R.layout.fragment_add_new_address), OnMap
             Priority.PRIORITY_HIGH_ACCURACY,
             null
         ).addOnSuccessListener {location ->
+            if (!isAdded || _binding == null) return@addOnSuccessListener
             if (location != null){
                 val latLng = LatLng(
                     location.latitude,
@@ -362,15 +365,23 @@ class AddNewAddressFragment : Fragment(R.layout.fragment_add_new_address), OnMap
                     )
                 )
                 binding.useMyCurrLocation.isEnabled = true
-            }else{
-                binding.addressTitleTv.text =
-                    "Location unavailable"
-
-                binding.addressTv.text =
-                    "Please try again"
-
-                binding.useMyCurrLocation.isEnabled = true
+            }else {
+                fusedLocationClient.lastLocation.addOnSuccessListener { lastLoc ->
+                    if (lastLoc != null) {
+                        val latLng = LatLng(lastLoc.latitude, lastLoc.longitude)
+                        googleMap.animateCamera(CameraUpdateFactory.newLatLngZoom(latLng, 17f))
+                    } else {
+                        binding.addressTitleTv.text = "Location unavailable"
+                        binding.addressTv.text = "Please move the map manually or check GPS"
+                    }
+                    binding.useMyCurrLocation.isEnabled = true
+                }
             }
+        }.addOnFailureListener {
+            if (!isAdded || _binding == null) return@addOnFailureListener
+            binding.addressTitleTv.text = "Error"
+            binding.addressTv.text = "Unable to fetch location"
+            binding.useMyCurrLocation.isEnabled = true
         }
     }
 
