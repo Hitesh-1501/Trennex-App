@@ -6,7 +6,6 @@ import android.app.Activity
 import android.content.Context
 import android.content.IntentSender
 import android.content.pm.PackageManager
-import android.location.Address
 import android.location.Geocoder
 import android.location.LocationManager
 import android.os.Build

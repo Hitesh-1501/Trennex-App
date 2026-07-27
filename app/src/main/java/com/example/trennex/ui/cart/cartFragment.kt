@@ -16,13 +16,11 @@ import androidx.recyclerview.widget.LinearLayoutManager
 import com.example.trennex.R
 import com.example.trennex.databinding.FragmentCartBinding
 import com.example.trennex.ui.cart.adapter.CartAdapter
-import com.example.trennex.ui.cart.model.CartItemModel
 import com.example.trennex.ui.main.MainActivity
 import com.example.trennex.ui.main.ToolBarType
 import com.example.trennex.utils.CurrencyFormator
 import com.example.trennex.viewmodel.cart.CartViewModel
 import com.google.android.material.bottomsheet.BottomSheetDialog
-import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import kotlinx.coroutines.launch
 
 class cartFragment : Fragment(R.layout.fragment_cart) {
