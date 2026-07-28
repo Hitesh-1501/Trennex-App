@@ -9,6 +9,7 @@ import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.collectLatest
+import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
@@ -28,10 +29,14 @@ class MainViewModel : ViewModel() {
 
     private fun observeAddress() {
         viewModelScope.launch {
-            userRepository.observeSavedAddresses().collectLatest { addresses ->
-                val selectedId = userRepository.getSelectedAddressId()
+            combine(
+                userRepository.observeSavedAddresses(),
+                userRepository.observeSelectedAddressId()
+            ) { addresses, selectedId ->
                 val selected = addresses.find { it.id == selectedId } ?: addresses.firstOrNull()
-                _selectedAddress.value = selected?.displayAddress
+                selected?.displayAddress
+            }.collectLatest { address ->
+                _selectedAddress.value = address
             }
         }
     }
