@@ -9,7 +9,6 @@ import android.widget.ProgressBar
 import androidx.activity.enableEdgeToEdge
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.view.ViewCompat
-import androidx.core.view.WindowCompat
 import androidx.core.view.WindowInsetsCompat
 import androidx.core.view.WindowInsetsControllerCompat
 import androidx.navigation.NavController
@@ -34,17 +33,22 @@ import com.example.trennex.utils.cart.CartStore
 import kotlinx.coroutines.launch
 
 
+import androidx.activity.viewModels
+import com.example.trennex.viewmodel.main.MainViewModel
+import android.widget.TextView
+import kotlinx.coroutines.flow.collectLatest
+
 class MainActivity : AppCompatActivity() {
     private lateinit var binding: ActivityMainBinding
     private lateinit var  navController: NavController
-    private var latestCartCount: Int = 0
+    private val viewModel: MainViewModel by viewModels()
+    
     override fun onCreate(savedInstanceState: Bundle?) {
         enableEdgeToEdge()
-        WindowCompat.setDecorFitsSystemWindows(window, false)
         super.onCreate(savedInstanceState)
         binding = ActivityMainBinding.inflate(layoutInflater)
         setContentView(binding.root)
-        window.statusBarColor = Color.TRANSPARENT
+        
         setupWindowInsets()
         val navhostFragement =  supportFragmentManager.findFragmentById(R.id.nav_host_fragment) as NavHostFragment
         navController = navhostFragement.navController
@@ -52,7 +56,7 @@ class MainActivity : AppCompatActivity() {
         initializeBottomMenu()
 
         binding.curveBottomNav.setupWithNavController(navController)
-        observeCartCount()
+        observeViewModel()
 
         navController.addOnDestinationChangedListener {_, destination, _ ->
             when(destination.id){
@@ -133,25 +137,33 @@ class MainActivity : AppCompatActivity() {
                     binding.curveBottomNav.visibility = View.GONE
                 }
             }
-            renderCartBadge()
+            renderCartBadge(viewModel.cartCount.value)
         }
     }
 
-    private fun observeCartCount(){
+    private fun observeViewModel(){
         lifecycleScope.launch {
-            CartStore.totalQuantity.collect { count->
-                latestCartCount = count
-                renderCartBadge()
+            viewModel.cartCount.collect { count->
+                renderCartBadge(count)
+            }
+        }
+        lifecycleScope.launch {
+            viewModel.selectedAddress.collectLatest { address ->
+                updateLocationText(address)
             }
         }
     }
 
+    private fun updateLocationText(address: String?) {
+        val locationAddress = binding.toolbarContainer.findViewById<TextView>(R.id.location_address)
+        locationAddress?.text = address ?: "Your delivery address"
+    }
 
-    private fun renderCartBadge(){
+    private fun renderCartBadge(count: Int){
         val badge = binding.tvCartCountBadge
-        val show = binding.curveBottomNav.isVisible && latestCartCount > 0
+        val show = binding.curveBottomNav.isVisible && count > 0
         if(show){
-            badge.text = if(latestCartCount > 99) "99+" else latestCartCount.toString()
+            badge.text = if(count > 99) "99+" else count.toString()
             badge.visibility = View.VISIBLE
         }else{
             badge.visibility = View.GONE
@@ -164,11 +176,10 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun setupWindowInsets(){
-        ViewCompat.setOnApplyWindowInsetsListener(binding.root){ view, insets ->
+        ViewCompat.setOnApplyWindowInsetsListener(binding.root){ _, insets ->
             val systemBars = insets.getInsets(WindowInsetsCompat.Type.systemBars())
             binding.appBarLayout.setPadding(0, systemBars.top, 0, 0)
-            binding.root.setPadding(0, 0, 0, systemBars.bottom)
-
+            binding.curveBottomNav.setPadding(0, 0, 0, systemBars.bottom)
             insets
         }
     }
@@ -192,6 +203,9 @@ class MainActivity : AppCompatActivity() {
                 val toolbarBinding = ToolbarHomeBinding.inflate(layoutInflater)
                 binding.toolbarContainer.addView(toolbarBinding.root)
                 binding.appBarLayout.setBackgroundResource(R.drawable.toolbar_home_gradient_color)
+                
+                toolbarBinding.locationAddress.text = viewModel.selectedAddress.value ?: "Your delivery address"
+                
                 toolbarBinding.wishlistBar.setOnClickListener {
                     if(navController.currentDestination?.id == R.id.homeFragment){
                         navController.navigate(R.id.action_homeFragment_to_wishlistFragment)
