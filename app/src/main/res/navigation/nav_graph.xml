@@ -96,12 +96,12 @@
     </fragment>
     <fragment
         android:id="@+id/categoryFragment"
-        android:name="com.example.trennex.ui.category.categoryFragment"
+        android:name="com.example.trennex.ui.category.CategoryFragment"
         android:label="fragment_category"
         tools:layout="@layout/fragment_category" />
     <fragment
         android:id="@+id/profileFragment"
-        android:name="com.example.trennex.ui.profile.profileFragment"
+        android:name="com.example.trennex.ui.profile.ProfileFragment"
         android:label="fragment_profile"
         tools:layout="@layout/fragment_profile" >
         <action
@@ -120,7 +120,7 @@
     </fragment>
     <fragment
         android:id="@+id/cartFragment"
-        android:name="com.example.trennex.ui.cart.cartFragment"
+        android:name="com.example.trennex.ui.cart.CartFragment"
         android:label="fragment_cart"
         tools:layout="@layout/fragment_cart">
 
