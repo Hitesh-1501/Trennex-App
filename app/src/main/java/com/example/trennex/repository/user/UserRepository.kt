@@ -27,6 +27,19 @@ class UserRepository {
         }
     }
 
+    suspend fun getUserDetails(): Map<String, String>? {
+        val uid = getUserId() ?: return null
+        return try {
+            val snapshot = firestore.collection("users").document(uid).get().await()
+            mapOf(
+                "name" to snapshot.getString("name").orEmpty(),
+                "phone" to snapshot.getString("phone").orEmpty()
+            )
+        } catch (e: Exception) {
+            null
+        }
+    }
+
     fun observeSavedAddresses(): Flow<List<AddressEntity>> = callbackFlow {
         val uid = getUserId()
         if (uid == null) {
@@ -64,6 +77,24 @@ class UserRepository {
         awaitClose { listener.remove() }
     }
 
+    fun observeSelectedAddressId(): Flow<String?> = callbackFlow {
+        val uid = getUserId()
+        if (uid == null) {
+            trySend(null)
+            close()
+            return@callbackFlow
+        }
+        val listener = firestore.collection("users").document(uid)
+            .addSnapshotListener { snapshot, error ->
+                if (error != null) {
+                    close(error)
+                    return@addSnapshotListener
+                }
+                trySend(snapshot?.getString("selectedAddressId"))
+            }
+        awaitClose { listener.remove() }
+    }
+
     suspend fun getSelectedAddressId(): String? {
         val uid = getUserId() ?: return null
         return try {
@@ -81,7 +112,13 @@ class UserRepository {
         } else {
             mapOf("selectedAddressId" to FieldValue.delete())
         }
-        firestore.collection("users").document(uid).set(data, SetOptions.merge()).await()
+        try {
+            firestore.collection("users").document(uid).update(data).await()
+        } catch (e: Exception) {
+            if (addressId != null) {
+                firestore.collection("users").document(uid).set(data, SetOptions.merge()).await()
+            }
+        }
     }
 
     suspend fun saveAddress(addressData: Map<String, Any>): String? {
@@ -94,6 +131,17 @@ class UserRepository {
                 "updatedAt" to FieldValue.serverTimestamp()
             )).await()
         return docRef.id
+    }
+
+    suspend fun updateAddress(addressId: String, addressData: Map<String, Any>) {
+        val uid = getUserId() ?: return
+        firestore.collection("users")
+            .document(uid)
+            .collection("savedAddresses")
+            .document(addressId)
+            .update(addressData + mapOf(
+                "updatedAt" to FieldValue.serverTimestamp()
+            )).await()
     }
 
     suspend fun deleteAddress(addressId: String) {
