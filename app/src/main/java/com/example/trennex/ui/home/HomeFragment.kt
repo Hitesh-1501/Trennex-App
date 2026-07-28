@@ -5,7 +5,6 @@ import android.annotation.SuppressLint
 import android.app.Activity
 import android.content.Context
 import android.content.pm.PackageManager
-import android.content.Intent
 import android.content.IntentSender
 import android.location.Geocoder
 import android.location.LocationManager
@@ -47,7 +46,8 @@ import com.example.trennex.ui.home.model.BannerModel
 import com.example.trennex.ui.home.model.CategoryModel
 import com.example.trennex.ui.home.model.ProductModel
 import com.example.trennex.ui.main.MainActivity
-import com.example.trennex.viewmodel.product.ProductViewModel
+import com.example.trennex.viewmodel.home.HomeViewModel
+import com.example.trennex.repository.user.AddressEntity
 import com.google.android.gms.common.api.ResolvableApiException
 import com.google.android.gms.location.FusedLocationProviderClient
 import com.google.android.gms.location.LocationRequest
@@ -60,38 +60,23 @@ import com.google.android.libraries.places.widget.model.AutocompleteActivityMode
 import com.google.android.material.bottomsheet.BottomSheetBehavior
 import com.google.android.material.bottomsheet.BottomSheetDialog
 import com.google.android.material.tabs.TabLayoutMediator
-import com.google.firebase.auth.FirebaseAuth
-import com.google.firebase.firestore.FieldValue
-import com.google.firebase.firestore.FirebaseFirestore
-import com.google.firebase.firestore.ListenerRegistration
-import com.google.firebase.firestore.Query
-import com.google.firebase.firestore.SetOptions
 import kotlinx.coroutines.launch
 import java.util.Locale
-
 
 class HomeFragment : Fragment(R.layout.fragment_home) {
     private var _binding: FragmentHomeBinding? = null
     private val binding get()  = _binding!!
-    private val viewModel:  ProductViewModel by viewModels()
+    private val viewModel: HomeViewModel by viewModels()
+    
     private var bannerMediator: TabLayoutMediator? = null
-    private val saveAddresses = mutableListOf<SaveAddressAdapter.SavedAddressItem>()
     private var loginUserName = "Guest User"
-    private var selectedAddress: String? = null
-
-    private var selectedAddressId: String? = null
-    private var selectedAddressLoaded = false
-
+    
     private lateinit var saveAddressAdapter: SaveAddressAdapter
     private var bottomSheetBinding: BottomSheetSelectLocationBinding? = null
-    private var   locationBottomSheet: BottomSheetDialog? = null
+    private var locationBottomSheet: BottomSheetDialog? = null
     private lateinit var fusedLocationClient: FusedLocationProviderClient
 
     private var shouldNavigateToAddress = false
-    private val firestore by lazy { FirebaseFirestore.getInstance() }
-    private val auth by lazy { FirebaseAuth.getInstance() }
-    private var savedAddressListener: ListenerRegistration? = null
-
 
     private val locationPermissionRequester = registerForActivityResult(
         ActivityResultContracts.RequestMultiplePermissions()
@@ -109,9 +94,7 @@ class HomeFragment : Fragment(R.layout.fragment_home) {
         ActivityResultContracts.StartActivityForResult()
     ){result ->
         if (result.resultCode == Activity.RESULT_OK) {
-            val place = Autocomplete.getPlaceFromIntent(
-                result.data!!
-            )
+            val place = Autocomplete.getPlaceFromIntent(result.data!!)
             navigateToMapScreen(place)
         }
     }
@@ -120,8 +103,7 @@ class HomeFragment : Fragment(R.layout.fragment_home) {
         inflater: LayoutInflater, container: ViewGroup?,
         savedInstanceState: Bundle?
     ): View? {
-        // Inflate the layout for this fragment
-        _binding = FragmentHomeBinding.inflate(layoutInflater,container,false)
+        _binding = FragmentHomeBinding.inflate(inflater, container, false)
         return binding.root
     }
 
@@ -133,7 +115,6 @@ class HomeFragment : Fragment(R.layout.fragment_home) {
             binding.rvBanners.setCurrentItem(nextItem,true)
             bannerHandler.postDelayed(this,3000)
         }
-
     }
 
     override fun onResume() {
@@ -149,63 +130,36 @@ class HomeFragment : Fragment(R.layout.fragment_home) {
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
         fusedLocationClient = LocationServices.getFusedLocationProviderClient(requireContext())
-        viewModel.fetchProducts()
-        viewModel.fetchCategories()
         UserDetailsDialog.showIfNeeded(this){}
-        fetchLoggedInUserName()
-        fetchSavedAddresses()
-        parentFragmentManager.setFragmentResultListener(
-            "address_updated",
-            viewLifecycleOwner
-        ) { _, _ ->
-
-            fetchSavedAddresses()
-        }
+        
         setupLocationUi()
-        if (selectedAddress == null && !hasLocationPermission()) {
-            showLocationPermissionDialog()
-        }
-        viewLifecycleOwner.lifecycleScope.launch {
-            viewLifecycleOwner.repeatOnLifecycle(Lifecycle.State.STARTED){
-                launch {
-                    viewModel.products.collect { apiList ->
-                        val list = apiList.map {
-                            ProductModel(
-                                id = it.id,
-                                image = it.thumbnail,
-                                name  = it.title,
-                                price = it.price
-                            )
-                        }
-                        setupProducts(list)
-                        setupBanners(apiList.map{ it.thumbnail }.filter { it.isNotBlank() })
-                    }
-                }
-                launch {
-                    viewModel.categories.collect {categoryList ->
-                        val categories = buildList {
-                                add(CategoryModel(id = 0, title = "All",slug = null))
-                                addAll(categoryList.mapIndexed { index , category->
-                                    CategoryModel(
-                                        id = index + 1,
-                                        title = category.name,
-                                        slug = category.slug
-                                    )
-                                })
+        observeViewModel()
+    }
 
-                        }
-                        setupCategories(categories)
+    private fun observeViewModel() {
+        viewLifecycleOwner.lifecycleScope.launch {
+            viewLifecycleOwner.repeatOnLifecycle(Lifecycle.State.STARTED) {
+                viewModel.uiState.collect { state ->
+                    setupProducts(state.products)
+                    setupCategories(state.categories)
+                    setupBanners(state.banners)
+                    loginUserName = state.userName
+                    renderSaveAddresses(state.savedAddresses, state.selectedAddress)
+                    
+                    if (state.selectedAddress == null && !hasLocationPermission()) {
+                        showLocationPermissionDialog()
                     }
                 }
             }
         }
-
     }
 
     private fun setupLocationUi() {
-        (activity as MainActivity).findViewById<LinearLayout>(R.id.location_bar).setOnClickListener { showLocationBottomSheet() }
-        updateLocationBar()
+        (activity as? MainActivity)?.findViewById<LinearLayout>(R.id.location_bar)?.setOnClickListener { 
+            showLocationBottomSheet() 
+        }
     }
+
     private fun showLocationPermissionDialog(){
         val dialogBinding = DialogLocationPermissionBinding.inflate(layoutInflater)
         val dialog = AlertDialog.Builder(requireContext())
@@ -250,24 +204,22 @@ class HomeFragment : Fragment(R.layout.fragment_home) {
             isFocusable = false
             isCursorVisible = false
             keyListener = null
-
-            setOnClickListener {
-                openPlaceSearch()
-            }
+            setOnClickListener { openPlaceSearch() }
         }
         sheetBinding.addNewAddress.setOnClickListener {
             shouldNavigateToAddress = true
             sheet.dismiss()
         }
         saveAddressAdapter = SaveAddressAdapter(
-           onItemClick = {item ->
-             selectSaveAddress(item)
-           },
-           onMoreClick = {anchor, item -> showAddressMenu(anchor,item)}
+           onItemClick = { item -> selectSaveAddress(item) },
+           onMoreClick = { anchor, item -> showAddressMenu(anchor, item) }
         )
         sheetBinding.savedAddressRv.adapter =  saveAddressAdapter
         sheetBinding.savedAddressRv.layoutManager = LinearLayoutManager(requireContext())
-        renderSaveAddresses()
+        
+        val state = viewModel.uiState.value
+        renderSaveAddresses(state.savedAddresses, state.selectedAddress)
+        
         sheet.show()
         val bottomSheet = sheet.findViewById<View>(com.google.android.material.R.id.design_bottom_sheet)
         bottomSheet?.let {
@@ -281,111 +233,80 @@ class HomeFragment : Fragment(R.layout.fragment_home) {
     }
 
     private fun openPlaceSearch(){
-        val fields = listOf(
-            Place.Field.ID,
-            Place.Field.NAME,
-            Place.Field.ADDRESS,
-            Place.Field.LAT_LNG
-        )
-        val intent = Autocomplete.IntentBuilder(
-            AutocompleteActivityMode.FULLSCREEN,
-            fields
-        ).build(requireContext())
-
+        val fields = listOf(Place.Field.ID, Place.Field.NAME, Place.Field.ADDRESS, Place.Field.LAT_LNG)
+        val intent = Autocomplete.IntentBuilder(AutocompleteActivityMode.FULLSCREEN, fields).build(requireContext())
         placesSearchLauncher.launch(intent)
     }
 
-    private fun navigateToMapScreen(
-        place: Place
-    ){
-        val action = HomeFragmentDirections
-            .actionHomeFragmentToAddNewAddressFragment(
+    private fun navigateToMapScreen(place: Place){
+        val action = HomeFragmentDirections.actionHomeFragmentToAddNewAddressFragment(
                 latitude = place.latLng?.latitude?.toString() ?: "",
                 longitude = place.latLng?.longitude?.toString() ?: "",
                 address = place.address ?: "",
                 placeName = place.name ?: "",
                 openedFromSearch = true
-
             )
         findNavController().navigate(action)
     }
 
-    private fun renderSaveAddresses(){
+    private fun renderSaveAddresses(addresses: List<AddressEntity>, selected: AddressEntity?){
         val sheetBinding = bottomSheetBinding
         if(sheetBinding != null){
-            val hasSavedAddress = saveAddresses.isNotEmpty()
+            val hasSavedAddress = addresses.isNotEmpty()
             sheetBinding.savedAddressRv.isVisible = hasSavedAddress
             sheetBinding.emptyAddressView.root.isVisible = !hasSavedAddress
         }
-        if(saveAddresses.isNotEmpty()){
-            val selectedItem = selectedAddressId?.let { id ->
-                saveAddresses.find { it.id == id }
-            }
-            if (selectedItem != null){
-                selectedAddress = selectedItem.displayAddress
-                updateLocationBar()
-            } else if (selectedAddressLoaded) {
-                val firstAddress = saveAddresses.first()
-                selectedAddressId = firstAddress.id
-                selectedAddress = firstAddress.displayAddress
-                updateSelectedAddressInFirestore(firstAddress.id)
-                updateLocationBar()
-            }
-        } else if (selectedAddressLoaded) {
-            selectedAddressId = null
-            selectedAddress = null
-            updateLocationBar()
-        }
+
         if (this::saveAddressAdapter.isInitialized) {
-            saveAddressAdapter.submitData(saveAddresses, selectedAddressId)
+            val items = addresses.map { 
+                SaveAddressAdapter.SavedAddressItem(
+                    id = it.id,
+                    userName = it.userName,
+                    flatNo = it.flatNo,
+                    address = it.address,
+                    mobile = it.mobile,
+                    latitude = it.latitude,
+                    longitude = it.longitude,
+                    placeName = it.placeName,
+                    addressType = it.addressType
+                )
+            }
+            saveAddressAdapter.submitData(items, selected?.id)
         }
     }
+
     private fun showAddressMenu(anchor: View, item: SaveAddressAdapter.SavedAddressItem){
-        val popupView = LayoutInflater.from(requireContext())
-            .inflate(R.layout.item_popup_menu,null)
-        val popupWindow = PopupWindow(
-            popupView,
-            ViewGroup.LayoutParams.WRAP_CONTENT,
-            ViewGroup.LayoutParams.WRAP_CONTENT,
-            true
-        )
+        val popupView = LayoutInflater.from(requireContext()).inflate(R.layout.item_popup_menu,null)
+        val popupWindow = PopupWindow(popupView, ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT, true)
 
         popupView.findViewById<View>(R.id.actionEdit).setOnClickListener {
-            val action = HomeFragmentDirections
-                .actionHomeFragmentToAddNewAddressFragment(
+            val action = HomeFragmentDirections.actionHomeFragmentToAddNewAddressFragment(
                     latitude = item.latitude.toString(),
                     longitude = item.longitude.toString(),
-
                     address = item.address,
-
                     placeName = item.placeName,
-
                     openedFromSearch = true,
-
                     isEditMode = true,
-
                     addressId = item.id,
-
                     flatNo = item.flatNo,
-
                     mobile = item.mobile,
-
                     addressType = item.addressType
                 )
             popupWindow.dismiss()
             locationBottomSheet?.dismiss()
             findNavController().navigate(action)
-            true
         }
 
         popupView.findViewById<View>(R.id.actionDelete).setOnClickListener {
-            deleteSaveAddress(item)
+            val entity = viewModel.uiState.value.savedAddresses.find { it.id == item.id }
+            if (entity != null) viewModel.deleteAddress(entity)
             popupWindow.dismiss()
         }
         popupWindow.elevation = 12f
         popupWindow.isOutsideTouchable = true
         popupWindow.showAsDropDown(anchor, -anchor.width / 2 , 8)
     }
+
     private fun hasLocationPermission(): Boolean {
         val fineGranted = ContextCompat.checkSelfPermission(requireContext(), Manifest.permission.ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_GRANTED
         val coarseGranted = ContextCompat.checkSelfPermission(requireContext(), Manifest.permission.ACCESS_COARSE_LOCATION) == PackageManager.PERMISSION_GRANTED
@@ -395,16 +316,11 @@ class HomeFragment : Fragment(R.layout.fragment_home) {
     private fun requestLocationPermissionAndFetch(){
         if(hasLocationPermission()){
             promptEnableLocationServicesAndFetch()
-            return
         }else{
-            locationPermissionRequester.launch(
-                arrayOf(
-                    Manifest.permission.ACCESS_FINE_LOCATION,
-                    Manifest.permission.ACCESS_COARSE_LOCATION
-                )
-            )
+            locationPermissionRequester.launch(arrayOf(Manifest.permission.ACCESS_FINE_LOCATION, Manifest.permission.ACCESS_COARSE_LOCATION))
         }
     }
+    
     private fun promptEnableLocationServicesAndFetch(){
         if(!isLocationServicesEnabled()){
             showTurnOnLocationDialog()
@@ -414,295 +330,61 @@ class HomeFragment : Fragment(R.layout.fragment_home) {
     }
 
     private fun showTurnOnLocationDialog(){
-        val locationRequest = LocationRequest.Builder(
-            Priority.PRIORITY_HIGH_ACCURACY,
-            1000
-        ).build()
-        val builder = LocationSettingsRequest.Builder()
-            .addLocationRequest(locationRequest)
+        val locationRequest = LocationRequest.Builder(Priority.PRIORITY_HIGH_ACCURACY, 1000).build()
+        val builder = LocationSettingsRequest.Builder().addLocationRequest(locationRequest)
         val client = LocationServices.getSettingsClient(requireActivity())
         val task = client.checkLocationSettings(builder.build())
-        task.addOnSuccessListener {
-            fetchCurrentAddress()
-        }
+        task.addOnSuccessListener { fetchCurrentAddress() }
         task.addOnFailureListener { exception ->
             if(exception is ResolvableApiException){
                 try {
-
-                    exception.startResolutionForResult(
-                        requireActivity(),
-                        1001
-                    )
+                    exception.startResolutionForResult(requireActivity(), 1001)
                 }catch (sendEx: IntentSender.SendIntentException){
                     sendEx.printStackTrace()
                 }
             }
         }
     }
+
     private fun isLocationServicesEnabled(): Boolean{
         val locationManager = requireContext().getSystemService(Context.LOCATION_SERVICE) as LocationManager
         return locationManager.isProviderEnabled(LocationManager.GPS_PROVIDER) ||
                 locationManager.isProviderEnabled(LocationManager.NETWORK_PROVIDER)
     }
+
     @SuppressLint("MissingPermission")
     private fun fetchCurrentAddress(){
-        fusedLocationClient.getCurrentLocation(
-            Priority.PRIORITY_HIGH_ACCURACY,
-            null
-        ).addOnSuccessListener { location ->
+        fusedLocationClient.getCurrentLocation(Priority.PRIORITY_HIGH_ACCURACY, null).addOnSuccessListener { location ->
             if(location == null){
-                Toast.makeText(
-                    requireContext(),
-                    "Unable to fetch current location",
-                    Toast.LENGTH_SHORT
-                ).show()
+                Toast.makeText(requireContext(), "Unable to fetch current location", Toast.LENGTH_SHORT).show()
                 return@addOnSuccessListener
             }
             val geocoder = Geocoder(requireContext(), Locale.getDefault())
             try {
-                val result  = geocoder.getFromLocation(
-                    location.latitude,
-                    location.longitude,
-                    1
-                )
-                val address = result?.firstOrNull()?.getAddressLine(0)
-                    ?: "Lat:${location.latitude},Lng:${location.longitude}"
-
-                saveCurrentAddressToFirestore(address)
+                val result  = geocoder.getFromLocation(location.latitude, location.longitude, 1)
+                val address = result?.firstOrNull()?.getAddressLine(0) ?: "Lat:${location.latitude},Lng:${location.longitude}"
+                viewModel.saveCurrentAddress(address)
             }catch (e: Exception){
-                Toast.makeText(
-                    requireContext(),
-                    "Failed to get address",
-                    Toast.LENGTH_SHORT
-                ).show()
+                Toast.makeText(requireContext(), "Failed to get address", Toast.LENGTH_SHORT).show()
             }
         }.addOnFailureListener {
-            Toast.makeText(
-                requireContext(),
-                "Failed to get current location",
-                Toast.LENGTH_SHORT
-            ).show()
+            Toast.makeText(requireContext(), "Failed to get current location", Toast.LENGTH_SHORT).show()
         }
-    }
-
-    private fun fetchSavedAddresses() {
-        val uid = auth.currentUser?.uid ?: return
-        savedAddressListener?.remove()
-        savedAddressListener = firestore.collection("users")
-            .document(uid)
-            .collection(SAVED_ADDRESSES_COLLECTION)
-            .orderBy(CREATED_AT_FIELD, Query.Direction.DESCENDING)
-            .addSnapshotListener { snapshot, exception ->
-                 if (exception != null){
-                     if (isAdded){
-                         Toast.makeText(
-                             requireContext(),
-                             "Failed to fetch saved addresses",
-                             Toast.LENGTH_SHORT
-                         ).show()
-                     }
-                     return@addSnapshotListener
-                 }
-
-                saveAddresses.clear()
-
-                snapshot?.documents?.forEach { documentSnapshot ->
-                    val address = documentSnapshot.getString(ADDRESS_FIELD).orEmpty().trim()
-                    if (address.isNotEmpty()){
-                        saveAddresses.add(
-                            SaveAddressAdapter.SavedAddressItem(
-                                id = documentSnapshot.id,
-                                userName = documentSnapshot.getString(USER_NAME_FIELD).orEmpty().ifBlank { loginUserName },
-                                flatNo = documentSnapshot.getString(FLAT_NO_FIELD).orEmpty(),
-                                address = address,
-                                mobile = documentSnapshot.getString(MOBILE).orEmpty(),
-                                latitude = documentSnapshot.getDouble(LATITUDE_FIELD) ?: 0.0,
-                                longitude = documentSnapshot.getDouble(LONGITUDE_FIELD) ?: 0.0,
-                                placeName = documentSnapshot.getString(PLACE_NAME_FIELD).orEmpty(),
-                                addressType = documentSnapshot.getString(ADDRESS_TYPE_FIELD).orEmpty().ifBlank {
-                                    SaveAddressAdapter.ADDRESS_TYPE_HOME
-                                }
-                            )
-                        )
-                    }
-                }
-                fetchSelectedAddress()
-                if (this::saveAddressAdapter.isInitialized) {
-                    saveAddressAdapter.submitData(saveAddresses, selectedAddressId)
-                }
-            }
-    }
-
-    private fun deleteSaveAddress(item: SaveAddressAdapter.SavedAddressItem) {
-        val uid = auth.currentUser?.uid ?: return
-        if (item.id.isBlank()) return
-        firestore.collection("users")
-            .document(uid)
-            .collection(SAVED_ADDRESSES_COLLECTION)
-            .document(item.id)
-            .delete()
-            .addOnSuccessListener {
-                if (item.id == selectedAddressId && saveAddresses.none { it.id != item.id }){
-                    selectedAddressId = null
-                    selectedAddress = null
-                    clearSelectedAddressInFirestore()
-                    updateLocationBar()
-                    renderSaveAddresses()
-                }
-            }
-            .addOnFailureListener {
-                if (isAdded) {
-                    Toast.makeText(requireContext(), "Failed to delete address", Toast.LENGTH_SHORT).show()
-                }
-            }
-    }
-
-    private fun saveCurrentAddressToFirestore(address: String){
-        val user = auth.currentUser
-        if (user == null){
-            Toast.makeText(requireContext(), "Please login before saving address", Toast.LENGTH_SHORT).show()
-            return
-        }
-
-        val cleanedAddress = address.trim()
-        if (cleanedAddress.isBlank()) return
-
-        val existingAddress = saveAddresses.firstOrNull{
-            it.address.normalizeAddressKey() == cleanedAddress.normalizeAddressKey()
-        }
-
-        if (existingAddress != null){
-            selectSaveAddress(existingAddress)
-            return
-        }
-
-        val userDocument = firestore.collection("users").document(user.uid)
-        userDocument.collection(SAVED_ADDRESSES_COLLECTION)
-            .whereEqualTo(ADDRESS_FIELD,cleanedAddress)
-            .limit(1)
-            .get()
-            .addOnSuccessListener { snapshot ->
-                val duplicateDocument = snapshot.documents.firstOrNull()
-                if (duplicateDocument != null) {
-                    val item = SaveAddressAdapter.SavedAddressItem(
-                        id = duplicateDocument.id,
-                        userName = duplicateDocument.getString(USER_NAME_FIELD).orEmpty().ifBlank { loginUserName },
-                        flatNo = duplicateDocument.getString(FLAT_NO_FIELD).orEmpty(),
-                        address = duplicateDocument.getString(ADDRESS_FIELD).orEmpty(),
-                        addressType = duplicateDocument.getString(ADDRESS_TYPE_FIELD).orEmpty().ifBlank {
-                            SaveAddressAdapter.ADDRESS_TYPE_HOME
-                        }
-                    )
-                    selectSaveAddress(item)
-                    return@addOnSuccessListener
-                }
-
-                val addressData = hashMapOf(
-                    FLAT_NO_FIELD to "",
-                    ADDRESS_FIELD to cleanedAddress,
-                    USER_NAME_FIELD to loginUserName,
-                    ADDRESS_TYPE_FIELD to SaveAddressAdapter.ADDRESS_TYPE_HOME,
-                    CREATED_AT_FIELD to FieldValue.serverTimestamp(),
-                    UPDATED_AT_FIELD to FieldValue.serverTimestamp()
-                )
-
-                userDocument.collection(SAVED_ADDRESSES_COLLECTION)
-                    .add(addressData)
-                    .addOnSuccessListener { documentReference ->
-                        selectedAddress = cleanedAddress
-                        selectedAddressId = documentReference.id
-                        selectedAddressLoaded = true
-                        updateSelectedAddressInFirestore(documentReference.id)
-                        renderSaveAddresses()
-                        locationBottomSheet?.dismiss()
-                    }
-                    .addOnFailureListener { exception ->
-                        Log.e("AddressSelection", "Could not save current address: ${exception.message}", exception)
-                        if (isAdded) {
-                            Toast.makeText(requireContext(), "Failed to save current location", Toast.LENGTH_SHORT).show()
-                        }
-                    }
-            }.addOnFailureListener {exception ->
-                Log.e("AddressSelection", "Could not check duplicate address: ${exception.message}", exception)
-                if (isAdded) {
-                    Toast.makeText(requireContext(), "Failed to save current location", Toast.LENGTH_SHORT).show()
-                }
-            }
     }
 
     private fun selectSaveAddress(item: SaveAddressAdapter.SavedAddressItem){
-        if (item.id.isBlank()) return
-        selectedAddress = item.displayAddress
-        selectedAddressId = item.id
-        selectedAddressLoaded = true
-        updateSelectedAddressInFirestore(item.id)
-        updateLocationBar()
-        renderSaveAddresses()
-        locationBottomSheet?.dismiss()
-    }
-
-    private fun String.normalizeAddressKey(): String = trim()
-        .replace(Regex("\\s+"), " ")
-        .lowercase(Locale.getDefault())
-
-    private fun fetchSelectedAddress() {
-        val uid = auth.currentUser?.uid ?: return
-
-        firestore.collection("users")
-            .document(uid)
-            .get()
-            .addOnSuccessListener { snapshot ->
-                selectedAddressId = snapshot.getString(SELECTED_ADDRESS_ID_FIELD)
-                selectedAddressLoaded = true
-                renderSaveAddresses()
-            }
-            .addOnFailureListener {
-                selectedAddressLoaded = true
-                renderSaveAddresses()
-            }
-    }
-
-    private fun updateSelectedAddressInFirestore(addressId: String) {
-        val uid = auth.currentUser?.uid ?: return
-        firestore.collection("users")
-            .document(uid)
-            .set(mapOf(SELECTED_ADDRESS_ID_FIELD to addressId), SetOptions.merge())
-    }
-
-    private fun updateLocationBar() {
-        val locationAddress = (activity as MainActivity).findViewById<TextView>(R.id.location_address)
-        locationAddress.text = selectedAddress ?: "Your delivery address"
-    }
-
-    private fun clearSelectedAddressInFirestore() {
-        val uid = auth.currentUser?.uid ?: return
-        firestore.collection("users")
-            .document(uid)
-            .set(mapOf(SELECTED_ADDRESS_ID_FIELD to FieldValue.delete()), SetOptions.merge())
-    }
-
-    private fun fetchLoggedInUserName(){
-        val uid = auth.currentUser?.uid?: return
-        firestore.collection("users").document(uid).get().addOnSuccessListener { snapshot ->
-            val value = snapshot.getString("name").orEmpty().trim()
-            if(value.isNotEmpty()){
-                loginUserName = value
-                if(this::saveAddressAdapter.isInitialized) renderSaveAddresses()
-            }
+        val entity = viewModel.uiState.value.savedAddresses.find { it.id == item.id }
+        if (entity != null) {
+            viewModel.selectAddress(entity)
+            locationBottomSheet?.dismiss()
         }
     }
-
-
 
     private fun setupCategories(categories: List<CategoryModel>){
         binding.rvCategories.apply {
             layoutManager = LinearLayoutManager(requireContext(), LinearLayoutManager.HORIZONTAL,false)
             adapter = CategoryAdapter(categories){
-                if(it.slug.isNullOrBlank()){
-                    viewModel.fetchProducts()
-                }else{
-                    viewModel.fetchProductsByCategory(it.slug)
-                }
+                viewModel.fetchProductsByCategory(it.slug)
             }
         }
     }
@@ -723,12 +405,9 @@ class HomeFragment : Fragment(R.layout.fragment_home) {
         bannerPageCallbacks?.let { binding.rvBanners.unregisterOnPageChangeCallback(it) }
         bannerMediator?.detach()
 
-        if(images.isEmpty()){
-            return
-        }
-        val banner = images.take(5).mapIndexed { index, image ->
-            BannerModel(index + 1 , image)
-        }
+        if(images.isEmpty()) return
+        
+        val banner = images.take(5).mapIndexed { index, image -> BannerModel(index + 1 , image) }
 
         if(banner.size == 1){
             val adapter = HomeFragmentPagerAdapter(this,banner)
@@ -752,40 +431,28 @@ class HomeFragment : Fragment(R.layout.fragment_home) {
         bannerMediator?.attach()
         for (i in 0 until binding.bannerIndicator.tabCount) {
             val tab = binding.bannerIndicator.getTabAt(i)
-            tab?.customView =
-                layoutInflater.inflate(R.layout.banner_dot_tab, binding.bannerIndicator, false)
+            tab?.customView = layoutInflater.inflate(R.layout.banner_dot_tab, binding.bannerIndicator, false)
         }
         val callback = object : ViewPager2.OnPageChangeCallback() {
-
                 override fun onPageScrollStateChanged(state: Int) {
                     if (state == ViewPager2.SCROLL_STATE_IDLE) {
                         val position = binding.rvBanners.currentItem
-
                         when (position) {
-                            0 -> binding.rvBanners.setCurrentItem(
-                                bannerList.size - 2,
-                                false
-                            )
-
-                            bannerList.size - 1 -> binding.rvBanners.setCurrentItem(
-                                1,
-                                false
-                            )
+                            0 -> binding.rvBanners.setCurrentItem(bannerList.size - 2, false)
+                            bannerList.size - 1 -> binding.rvBanners.setCurrentItem(1, false)
                         }
                     }
                 }
             }
         bannerPageCallbacks = callback
         binding.rvBanners.registerOnPageChangeCallback(callback)
-        binding.rvBanners.getChildAt(0)
-                .setOnTouchListener { _,event ->
-                    when(event.action){
-                        MotionEvent.ACTION_DOWN -> bannerHandler.removeCallbacks(bannerRunnable)
-                        MotionEvent.ACTION_UP, MotionEvent.ACTION_CANCEL ->
-                            bannerHandler.postDelayed(bannerRunnable,3000)
-                    }
-                    false
-                }
+        binding.rvBanners.getChildAt(0).setOnTouchListener { _,event ->
+            when(event.action){
+                MotionEvent.ACTION_DOWN -> bannerHandler.removeCallbacks(bannerRunnable)
+                MotionEvent.ACTION_UP, MotionEvent.ACTION_CANCEL -> bannerHandler.postDelayed(bannerRunnable,3000)
+            }
+            false
+        }
     }
 
     override fun onDestroyView() {
@@ -795,31 +462,9 @@ class HomeFragment : Fragment(R.layout.fragment_home) {
         bannerMediator?.detach()
         bannerMediator = null
         shouldNavigateToAddress = false
-        savedAddressListener?.remove()
-        savedAddressListener = null
         locationBottomSheet?.dismiss()
         locationBottomSheet = null
         bottomSheetBinding = null
         _binding = null
-    }
-
-    private companion object {
-        const val SAVED_ADDRESSES_COLLECTION = "savedAddresses"
-        const val FLAT_NO_FIELD = "flatNo"
-        const val ADDRESS_FIELD = "address"
-        const val USER_NAME_FIELD = "userName"
-        const val ADDRESS_TYPE_FIELD = "addressType"
-        const val CREATED_AT_FIELD = "createdAt"
-        const val UPDATED_AT_FIELD = "updatedAt"
-        const val SELECTED_ADDRESS_ID_FIELD = "selectedAddressId"
-
-        const val LATITUDE_FIELD = "latitude"
-
-        const val LONGITUDE_FIELD = "longitude"
-
-        const val PLACE_NAME_FIELD = "placeName"
-
-        const val MOBILE = "mobile"
-
     }
 }
