@@ -16,6 +16,7 @@ import androidx.recyclerview.widget.LinearLayoutManager
 import com.example.trennex.R
 import com.example.trennex.databinding.FragmentCartBinding
 import com.example.trennex.ui.cart.adapter.CartAdapter
+import com.example.trennex.ui.cart.CartFragmentDirections
 import com.example.trennex.ui.main.MainActivity
 import com.example.trennex.ui.main.ToolBarType
 import com.example.trennex.utils.CurrencyFormator
@@ -23,7 +24,7 @@ import com.example.trennex.viewmodel.cart.CartViewModel
 import com.google.android.material.bottomsheet.BottomSheetDialog
 import kotlinx.coroutines.launch
 
-class cartFragment : Fragment(R.layout.fragment_cart) {
+class CartFragment : Fragment(R.layout.fragment_cart) {
     private var _binding: FragmentCartBinding? = null
     private val binding get() = _binding!!
 
@@ -35,7 +36,7 @@ class cartFragment : Fragment(R.layout.fragment_cart) {
             onQuantitySelected = {itemId, quantity -> viewModel.updateQuantity(itemId, quantity)},
             onItemRemoveClicked = {itemId -> viewModel.removeItem(itemId)},
             onItemClicked =  {item->
-                val direction = cartFragmentDirections.actionCartFragmentToProductDetailFragment(item.id)
+                val direction = CartFragmentDirections.actionCartFragmentToProductDetailFragment(item.id)
                 findNavController().navigate(direction)
             }
         )

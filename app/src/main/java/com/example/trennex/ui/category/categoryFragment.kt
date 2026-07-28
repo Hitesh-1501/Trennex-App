@@ -23,7 +23,7 @@ import com.example.trennex.ui.category.subcategories.SportsFragment
 import com.example.trennex.ui.category.subcategories.TopPicksFragment
 import com.example.trennex.ui.category.subcategories.ToysFragment
 
-class categoryFragment : Fragment(R.layout.fragment_category) {
+class CategoryFragment : Fragment(R.layout.fragment_category) {
     private var _binding : FragmentCategoryBinding? = null
     private val binding get() = _binding!!
 
