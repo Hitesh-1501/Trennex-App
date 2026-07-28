@@ -58,9 +58,9 @@ class HomeViewModel : ViewModel() {
         viewModelScope.launch {
             combine(
                 userRepository.observeSavedAddresses(),
-                MutableStateFlow(userRepository.getUserName()) // Simplified, could be observed if needed
-            ) { addresses, name ->
-                val selectedId = userRepository.getSelectedAddressId()
+                userRepository.observeSelectedAddressId(),
+                MutableStateFlow(userRepository.getUserName())
+            ) { addresses, selectedId, name ->
                 val selected = addresses.find { it.id == selectedId }
                 
                 _uiState.update { 
@@ -108,8 +108,20 @@ class HomeViewModel : ViewModel() {
 
     fun saveCurrentAddress(address: String) {
         viewModelScope.launch {
+            val cleanedAddress = address.trim()
+            if (cleanedAddress.isBlank()) return@launch
+
+            val existingAddress = _uiState.value.savedAddresses.find {
+                it.address.normalizeAddressKey() == cleanedAddress.normalizeAddressKey()
+            }
+
+            if (existingAddress != null) {
+                selectAddress(existingAddress)
+                return@launch
+            }
+
             val data = mapOf(
-                "address" to address,
+                "address" to cleanedAddress,
                 "userName" to _uiState.value.userName,
                 "addressType" to "Home"
             )
@@ -119,4 +131,8 @@ class HomeViewModel : ViewModel() {
             }
         }
     }
+
+    private fun String.normalizeAddressKey(): String = trim()
+        .replace(Regex("\\s+"), " ")
+        .lowercase(java.util.Locale.getDefault())
 }
