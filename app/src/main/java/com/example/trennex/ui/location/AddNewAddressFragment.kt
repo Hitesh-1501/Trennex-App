@@ -8,7 +8,6 @@ import android.content.IntentSender
 import android.content.pm.PackageManager
 import android.location.Geocoder
 import android.location.LocationManager
-import android.os.Build
 import android.os.Bundle
 import android.os.Handler
 import android.os.Looper
@@ -21,11 +20,13 @@ import android.view.WindowManager
 import android.widget.Toast
 import androidx.activity.result.IntentSenderRequest
 import androidx.activity.result.contract.ActivityResultContracts
-import androidx.annotation.RequiresApi
 import androidx.appcompat.app.AlertDialog
 import androidx.core.content.ContextCompat
-import androidx.core.widget.addTextChangedListener
 import androidx.core.widget.doAfterTextChanged
+import androidx.fragment.app.viewModels
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.lifecycleScope
+import androidx.lifecycle.repeatOnLifecycle
 import androidx.navigation.fragment.findNavController
 import androidx.navigation.fragment.navArgs
 import androidx.recyclerview.widget.LinearLayoutManager
@@ -53,12 +54,7 @@ import com.google.android.libraries.places.api.net.FetchPlaceRequest
 import com.google.android.libraries.places.api.net.FindAutocompletePredictionsRequest
 import com.google.android.libraries.places.api.net.PlacesClient
 import com.google.android.material.bottomsheet.BottomSheetDialog
-import com.google.firebase.Firebase
-import com.google.firebase.FirebaseApp
-import com.google.firebase.auth.FirebaseAuth
-import com.google.firebase.firestore.FieldValue
-import com.google.firebase.firestore.FirebaseFirestore
-import kotlinx.coroutines.tasks.await
+import kotlinx.coroutines.launch
 import java.util.Locale
 
 class AddNewAddressFragment : Fragment(R.layout.fragment_add_new_address), OnMapReadyCallback {
@@ -66,84 +62,49 @@ class AddNewAddressFragment : Fragment(R.layout.fragment_add_new_address), OnMap
     private val binding get() = _binding!!
     private var addAddressDialog: AlertDialog? = null
     private lateinit var googleMap: GoogleMap
-
     private lateinit var fusedLocationClient: FusedLocationProviderClient
-
     private lateinit var placesClient: PlacesClient
-
     private lateinit var searchSuggestionAdapter: SearchSuggestionAdapter
-
     private var autoCompleteSessionToken: AutocompleteSessionToken? = null
 
-    private val auth: FirebaseAuth by lazy { FirebaseAuth.getInstance() }
-    private val firestore: FirebaseFirestore by lazy { FirebaseFirestore.getInstance() }
-
-    private var isSelectingPlace = false
-
+    private val viewModel: LocationViewModel by viewModels()
     private val args by navArgs<AddNewAddressFragmentArgs>()
 
     private var searchedLat = 0.0
     private var searchedLng = 0.0
     private var searchedAddress = ""
     private var searchedPlaceName = ""
-
     private var openWithCurrentLocation = false
     private var shouldMoveToCurrentLocationWhenMapReady = false
-
     private var isMapInitialized = false
-
-    private var isEditMode = false
-
-    private var editingAddressId = ""
-
+    private var isSelectingPlace = false
     private var skipNextAddresssLookup = false
     private var addressLookupRequestId = 0
-
-
 
     private val locationPermissionLauncher = registerForActivityResult(
         ActivityResultContracts.RequestPermission()
     ) {granted ->
-        if (!isAdded) return@registerForActivityResult
-        if (granted) {
-            checkLocationServicesAndMove()
-        }else{
+        if (granted) checkLocationServicesAndMove()
+        else {
             openWithCurrentLocation = false
-            Toast.makeText(
-                requireContext(),
-                "Location permission is required to use current location",
-                Toast.LENGTH_SHORT
-            ).show()
+            Toast.makeText(requireContext(), "Location permission is required", Toast.LENGTH_SHORT).show()
         }
     }
 
     private val locationSettingsLauncher = registerForActivityResult(
         ActivityResultContracts.StartIntentSenderForResult()
     ){result ->
-        if (!isAdded || !openWithCurrentLocation) return@registerForActivityResult
-        if (result.resultCode == Activity.RESULT_OK){
+        if (result.resultCode == Activity.RESULT_OK && openWithCurrentLocation){
             Handler(Looper.getMainLooper()).postDelayed({
-
-                if (!isAdded) return@postDelayed
-
-                checkLocationServicesAndMove()
-
+                if (isAdded) checkLocationServicesAndMove()
             }, 1500)
-        }else{
-            Toast.makeText(
-                requireContext(),
-                "Please turn on GPS to use current location",
-                Toast.LENGTH_SHORT
-            ).show()
+        } else if (openWithCurrentLocation) {
+            Toast.makeText(requireContext(), "GPS must be on", Toast.LENGTH_SHORT).show()
             showTurnOnLocationDialog()
         }
-
     }
 
-    override fun onCreateView(
-        inflater: LayoutInflater, container: ViewGroup?,
-        savedInstanceState: Bundle?
-    ): View? {
+    override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?): View? {
         _binding = FragmentAddNewAddressBinding.inflate(inflater, container, false)
         return binding.root
     }
@@ -151,74 +112,39 @@ class AddNewAddressFragment : Fragment(R.layout.fragment_add_new_address), OnMap
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
         fusedLocationClient = LocationServices.getFusedLocationProviderClient(requireContext())
-
-        val apiKey = getString(R.string.MAP_API_KEY).trim()
-        if (apiKey.isBlank()) {
-            Toast.makeText(requireContext(), "Places API key is missing", Toast.LENGTH_LONG).show()
-            Log.e("PlacesDebug", "MAP_API_KEY is blank. Add a valid Places key in strings.xml")
-        } else if (!Places.isInitialized()) {
-            Places.initialize(requireContext(), apiKey)
-        }
         placesClient = Places.createClient(requireContext())
+        
         searchedLat = args.latitude.toDoubleOrNull() ?: 0.0
         searchedLng = args.longitude.toDoubleOrNull() ?: 0.0
         searchedAddress = args.address
         searchedPlaceName = args.placeName
-        isEditMode = args.isEditMode
-        editingAddressId = args.addressId
 
-        when {
-            args.isEditMode -> {
-                binding.mainContentLayout.visibility =
-                    View.VISIBLE
-
-                initializeMap()
-            }
-
-            args.openedFromSearch -> {
-
-                binding.mainContentLayout.visibility =
-                    View.VISIBLE
-
-                initializeMap()
-            }
-
-            else -> {
-
-                showLocationDialog()
-            }
+        if (args.isEditMode || args.openedFromSearch) {
+            binding.mainContentLayout.visibility = View.VISIBLE
+            initializeMap()
+        } else {
+            showLocationDialog()
         }
-
 
         if (searchedPlaceName.isNotBlank()){
             binding.locationSearchInput.setText(searchedPlaceName)
-            binding.locationSearchInput.setSelection(
-                searchedPlaceName.length
-            )
+            binding.locationSearchInput.setSelection(searchedPlaceName.length)
         }
 
-        binding.useMyCurrLocation.setOnClickListener {
-            checkLocationPermission()
-        }
+        binding.useMyCurrLocation.setOnClickListener { checkLocationPermission() }
 
         searchSuggestionAdapter = SearchSuggestionAdapter { prediction ->
-            fetchPlaceAndMoveMap(
-                prediction.placeId
-            )
+            fetchPlaceAndMoveMap(prediction.placeId)
         }
 
         binding.searchSuggestionsRv.apply {
             adapter = searchSuggestionAdapter
-
             layoutManager = LinearLayoutManager(requireContext())
         }
 
-
-        binding.locationSearchInput.addTextChangedListener{
+        binding.locationSearchInput.doAfterTextChanged {
             val query = it.toString()
-
-            if (isSelectingPlace) return@addTextChangedListener
-
+            if (isSelectingPlace) return@doAfterTextChanged
             if (query.length > 2){
                 autoCompleteSessionToken = AutocompleteSessionToken.newInstance()
                 searchPlaces(query.trim())
@@ -226,9 +152,31 @@ class AddNewAddressFragment : Fragment(R.layout.fragment_add_new_address), OnMap
                 binding.searchSuggestionsRv.visibility = View.GONE
             }
         }
+        
         binding.addLocationBtn.text = if(args.isEditMode) "Update Location" else "Add Location"
-        binding.addLocationBtn.setOnClickListener {
-            showDeliverToBottomSheet()
+        binding.addLocationBtn.setOnClickListener { showDeliverToBottomSheet() }
+        
+        observeViewModel()
+    }
+
+    private fun observeViewModel() {
+        viewLifecycleOwner.lifecycleScope.launch {
+            viewLifecycleOwner.repeatOnLifecycle(Lifecycle.State.STARTED) {
+                viewModel.uiState.collect { state ->
+                    when (state.status) {
+                        LocationUiState.Status.Success -> {
+                            Toast.makeText(requireContext(), if(args.isEditMode) "Address updated" else "Address saved", Toast.LENGTH_SHORT).show()
+                            parentFragmentManager.setFragmentResult("address_updated", Bundle())
+                            findNavController().popBackStack()
+                        }
+                        LocationUiState.Status.Error -> {
+                            Toast.makeText(requireContext(), state.error ?: "An error occurred", Toast.LENGTH_SHORT).show()
+                            viewModel.resetStatus()
+                        }
+                        else -> {}
+                    }
+                }
+            }
         }
     }
 
@@ -241,12 +189,6 @@ class AddNewAddressFragment : Fragment(R.layout.fragment_add_new_address), OnMap
         dialogBinding.farFromLocationBtn.setOnClickListener {
             addAddressDialog?.dismiss()
             binding.mainContentLayout.visibility = View.VISIBLE
-            binding.mainContentLayout.alpha = 0f
-
-            binding.mainContentLayout.animate()
-                .alpha(1f)
-                .setDuration(300)
-                .start()
             initializeMap()
         }
         dialogBinding.useCurrentLocationBtn.setOnClickListener {
@@ -254,764 +196,234 @@ class AddNewAddressFragment : Fragment(R.layout.fragment_add_new_address), OnMap
             checkLocationPermission()
         }
         addAddressDialog?.show()
-
-        addAddressDialog?.window?.apply {
-            setBackgroundDrawableResource(android.R.color.transparent)
-
-            setDimAmount(0.5f)
-
-            addFlags(WindowManager.LayoutParams.FLAG_DIM_BEHIND)
-        }
+        addAddressDialog?.window?.setBackgroundDrawableResource(android.R.color.transparent)
     }
 
-    @RequiresApi(Build.VERSION_CODES.TIRAMISU)
     override fun onMapReady(map: GoogleMap) {
         googleMap = map
-
-
-        skipNextAddresssLookup = isEditMode &&
-                searchedAddress.isNotBlank() &&
-                searchedLat != 0.0 &&
-                searchedLng != 0.0
+        skipNextAddresssLookup = args.isEditMode && searchedAddress.isNotBlank()
 
         googleMap.setOnCameraIdleListener {
             val center = googleMap.cameraPosition.target
             animateCenterMarker()
-
             if (skipNextAddresssLookup){
                 skipNextAddresssLookup = false
                 return@setOnCameraIdleListener
             }
-
-            getAddressFromLatLng(
-                center.latitude,
-                center.longitude
-            )
+            getAddressFromLatLng(center.latitude, center.longitude)
         }
         handleInitialLocation()
     }
 
-    @SuppressLint("NewApi")
-    private fun getAddressFromLatLng(
-        latitude: Double,
-        longitude: Double
-    ) {
-       try {
-           val requestId = ++addressLookupRequestId
-           val geocoder = Geocoder(requireContext(), Locale.getDefault())
-           geocoder.getFromLocation(
-               latitude,
-               longitude,
-               1
-           ) { addresses ->
-               if (addresses.isNotEmpty()) {
-                   val address = addresses[0]
-                   val title = address?.subLocality
-                       ?: address?.locality
-                       ?: address?.featureName
-                       ?: "Selected Location"
-                   val fullAddress =
-                       address?.getAddressLine(0)
-                           ?: "Address not found"
-                   activity?.runOnUiThread {
-                       if (!isAdded || _binding == null || requestId != addressLookupRequestId) {
-                           return@runOnUiThread
-                       }
-                       val cameraTarget = googleMap.cameraPosition.target
-                       val cameraStillMatchesRequest =
-                           kotlin.math.abs(cameraTarget.latitude - latitude) < COORDINATE_EPSILON &&
-                                   kotlin.math.abs(cameraTarget.longitude - longitude) < COORDINATE_EPSILON
-                       if (!cameraStillMatchesRequest) return@runOnUiThread
-
-                       binding.addressTitleTv.text = title
-                       binding.addressTv.text = fullAddress
-                   }
-               }
-           }
-       } catch (e: Exception){
-           e.printStackTrace()
-       }
+    private fun getAddressFromLatLng(latitude: Double, longitude: Double) {
+        val requestId = ++addressLookupRequestId
+        viewLifecycleOwner.lifecycleScope.launch(kotlinx.coroutines.Dispatchers.IO) {
+            try {
+                val geocoder = Geocoder(requireContext(), Locale.getDefault())
+                @Suppress("DEPRECATION")
+                val addresses = geocoder.getFromLocation(latitude, longitude, 1)
+                
+                if (!addresses.isNullOrEmpty()) {
+                    val address = addresses[0]
+                    val title = address.subLocality ?: address.locality ?: address.featureName ?: "Selected Location"
+                    val fullAddress = address.getAddressLine(0) ?: "Address not found"
+                    
+                    kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.Main) {
+                        if (isAdded && _binding != null && requestId == addressLookupRequestId) {
+                            binding.addressTitleTv.text = title
+                            binding.addressTv.text = fullAddress
+                        }
+                    }
+                }
+            } catch (e: Exception) {
+                e.printStackTrace()
+            }
+        }
     }
+
     @SuppressLint("MissingPermission")
     private fun moveToCurrentLocation() {
-
-        if (!isAdded) return
-
         if (!::googleMap.isInitialized) {
             shouldMoveToCurrentLocationWhenMapReady = true
             return
         }
-
         shouldMoveToCurrentLocationWhenMapReady = false
-
-        binding.addressTitleTv.text =
-            "Fetching location..."
-
-        binding.addressTv.text =
-            "Please wait while we get your current location"
-
+        binding.addressTitleTv.text = "Fetching location..."
         binding.useMyCurrLocation.isEnabled = false
 
-
-        fusedLocationClient.getCurrentLocation(
-            Priority.PRIORITY_HIGH_ACCURACY,
-            null
-        ).addOnSuccessListener {location ->
+        fusedLocationClient.getCurrentLocation(Priority.PRIORITY_HIGH_ACCURACY, null).addOnSuccessListener { location ->
             if (!isAdded || _binding == null) return@addOnSuccessListener
             if (location != null){
-                val latLng = LatLng(
-                    location.latitude,
-                    location.longitude
-                )
-                googleMap.animateCamera(
-                    CameraUpdateFactory.newLatLngZoom(
-                        latLng,
-                        17f
-                    )
-                )
-                getAddressFromLatLng(
-                    location.latitude,
-                    location.longitude
-                )
-
-                binding.useMyCurrLocation.isEnabled = true
-            }else {
-
-                Handler(Looper.getMainLooper()).postDelayed({
-
-                    fusedLocationClient.getCurrentLocation(
-                        Priority.PRIORITY_HIGH_ACCURACY,
-                        null
-                    ).addOnSuccessListener { retryLocation ->
-
-                        if (retryLocation != null) {
-
-                            val latLng = LatLng(
-                                retryLocation.latitude,
-                                retryLocation.longitude
-                            )
-
-                            googleMap.animateCamera(
-                                CameraUpdateFactory.newLatLngZoom(
-                                    latLng,
-                                    17f
-                                )
-                            )
-
-                            getAddressFromLatLng(
-                                retryLocation.latitude,
-                                retryLocation.longitude
-                            )
-
-                        } else {
-
-                            binding.addressTitleTv.text =
-                                "Location unavailable"
-
-                            binding.addressTv.text =
-                                "Please move the map manually or check GPS"
-                        }
-
-                        binding.useMyCurrLocation.isEnabled = true
-                    }
-
-                }, 2000)
+                val latLng = LatLng(location.latitude, location.longitude)
+                googleMap.animateCamera(CameraUpdateFactory.newLatLngZoom(latLng, 17f))
+                getAddressFromLatLng(location.latitude, location.longitude)
             }
-
+            binding.useMyCurrLocation.isEnabled = true
         }.addOnFailureListener {
-
-            binding.addressTitleTv.text = "Error"
-
-            binding.addressTv.text =
-                "Unable to fetch location"
-
             binding.useMyCurrLocation.isEnabled = true
         }
     }
 
     private fun checkLocationPermission() {
-        if (
-            ContextCompat.checkSelfPermission(
-                requireContext(),
-                Manifest.permission.ACCESS_FINE_LOCATION
-            ) == PackageManager.PERMISSION_GRANTED
-        ){
+        if (ContextCompat.checkSelfPermission(requireContext(), Manifest.permission.ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_GRANTED){
             checkLocationServicesAndMove()
         }else{
-            locationPermissionLauncher.launch(
-                Manifest.permission.ACCESS_FINE_LOCATION
-            )
+            locationPermissionLauncher.launch(Manifest.permission.ACCESS_FINE_LOCATION)
         }
     }
 
     private fun checkLocationServicesAndMove(){
-        if(isLocationEnabled()) {
-            showMapAndMoveToCurrentLocation()
-        }else{
-            showTurnOnLocationDialog()
-        }
+        if(isLocationEnabled()) showMapAndMoveToCurrentLocation()
+        else showTurnOnLocationDialog()
     }
 
     private fun isLocationEnabled(): Boolean {
-        val locationManager =
-            requireContext().getSystemService(
-                Context.LOCATION_SERVICE
-            ) as LocationManager
-
-        return locationManager.isProviderEnabled(
-            LocationManager.GPS_PROVIDER
-        ) ||
-        locationManager.isProviderEnabled(
-            LocationManager.NETWORK_PROVIDER
-        )
+        val locationManager = requireContext().getSystemService(Context.LOCATION_SERVICE) as LocationManager
+        return locationManager.isProviderEnabled(LocationManager.GPS_PROVIDER) || locationManager.isProviderEnabled(LocationManager.NETWORK_PROVIDER)
     }
 
     private fun showMapAndMoveToCurrentLocation() {
         addAddressDialog?.dismiss()
-
         binding.mainContentLayout.visibility = View.VISIBLE
-        binding.mainContentLayout.alpha = 1f
-
         shouldMoveToCurrentLocationWhenMapReady = true
-
         initializeMap()
-
     }
 
     private fun handleInitialLocation() {
-
         when  {
-            searchedLat != 0.0 && searchedLng != 0.0 -> {
-                moveToSearchedLocation()
-            }
-
-            openWithCurrentLocation || shouldMoveToCurrentLocationWhenMapReady -> {
-                moveToCurrentLocation()
-            }
-
-            else -> {
-                val defaultLocation = LatLng(20.5937, 78.9629)
-                googleMap.moveCamera(
-                    CameraUpdateFactory.newLatLngZoom(
-                        defaultLocation,
-                        5f
-                    )
-                )
-            }
+            searchedLat != 0.0 && searchedLng != 0.0 -> moveToSearchedLocation()
+            openWithCurrentLocation || shouldMoveToCurrentLocationWhenMapReady -> moveToCurrentLocation()
+            else -> googleMap.moveCamera(CameraUpdateFactory.newLatLngZoom(LatLng(20.5937, 78.9629), 5f))
         }
     }
 
     private fun moveToSearchedLocation(){
-        val latlng = LatLng(
-            searchedLat,
-            searchedLng
-        )
-        googleMap.animateCamera(
-            CameraUpdateFactory.newLatLngZoom(
-                latlng,
-                17f
-            )
-        )
+        googleMap.animateCamera(CameraUpdateFactory.newLatLngZoom(LatLng(searchedLat, searchedLng), 17f))
         binding.addressTitleTv.text = searchedPlaceName
         binding.addressTv.text = searchedAddress
     }
 
     private fun showTurnOnLocationDialog(){
-        val locationRequest = LocationRequest.Builder(
-            Priority.PRIORITY_HIGH_ACCURACY,
-            5000
-        ).build()
-        val builder =
-            LocationSettingsRequest.Builder()
-                .addLocationRequest(locationRequest)
-                .setAlwaysShow(true)
-
-        val client =
-            LocationServices.getSettingsClient(
-                requireActivity()
-            )
-
-        val task =
-            client.checkLocationSettings(
-                builder.build()
-            )
-
-        task.addOnSuccessListener {
-            if (!isAdded) return@addOnSuccessListener
-            showMapAndMoveToCurrentLocation()
-        }
-        task.addOnFailureListener { exception ->
-
-            if (exception is ResolvableApiException) {
-                if (!isAdded) return@addOnFailureListener
-                try {
-
-                    val intentSenderRequest = IntentSenderRequest.Builder(
-                        exception.resolution
-                    ).build()
-
-                    locationSettingsLauncher.launch(intentSenderRequest)
-
-                } catch (e: IntentSender.SendIntentException) {
-                    openWithCurrentLocation = false
-                    e.printStackTrace()
+        val locationRequest = LocationRequest.Builder(Priority.PRIORITY_HIGH_ACCURACY, 5000).build()
+        val builder = LocationSettingsRequest.Builder().addLocationRequest(locationRequest).setAlwaysShow(true)
+        LocationServices.getSettingsClient(requireActivity()).checkLocationSettings(builder.build())
+            .addOnSuccessListener { if (isAdded) showMapAndMoveToCurrentLocation() }
+            .addOnFailureListener { exception ->
+                if (exception is ResolvableApiException && isAdded) {
+                    try {
+                        locationSettingsLauncher.launch(IntentSenderRequest.Builder(exception.resolution).build())
+                    } catch (e: IntentSender.SendIntentException) { e.printStackTrace() }
                 }
-            }else{
-                openWithCurrentLocation = false
-                Toast.makeText(
-                    requireContext(),
-                    "Unable to open location settings",
-                    Toast.LENGTH_SHORT
-                ).show()
             }
-        }
     }
 
     private fun animateCenterMarker(){
-        binding.centerMarker.animate()
-            .scaleX(0.9f)
-            .scaleY(0.9f)
-            .setDuration(120)
-            .withEndAction {
-                binding.centerMarker.animate()
-                    .scaleX(1f)
-                    .scaleY(1f)
-                    .setDuration(120)
-                    .start()
-            }
-            .start()
+        binding.centerMarker.animate().scaleX(0.9f).scaleY(0.9f).setDuration(120).withEndAction {
+            binding.centerMarker.animate().scaleX(1f).scaleY(1f).setDuration(120).start()
+        }.start()
     }
 
     private fun initializeMap(){
         if (isMapInitialized) return
         isMapInitialized = true
-        val mapFragment =
-            childFragmentManager.findFragmentById(R.id.mapFragment) as SupportMapFragment
-        mapFragment.getMapAsync(this)
+        (childFragmentManager.findFragmentById(R.id.mapFragment) as SupportMapFragment).getMapAsync(this)
     }
 
+    private fun searchPlaces(query: String){
+        val request = FindAutocompletePredictionsRequest.builder()
+            .setQuery(query)
+            .setSessionToken(autoCompleteSessionToken)
+            .build()
 
-
-    private fun searchPlaces(
-        query: String
-    ){
-        val request =
-            FindAutocompletePredictionsRequest.builder()
-                .setQuery(query)
-                .setSessionToken(autoCompleteSessionToken)
-                .build()
-
-        placesClient.findAutocompletePredictions(
-            request
-        ).addOnSuccessListener { response ->
+        placesClient.findAutocompletePredictions(request).addOnSuccessListener { response ->
             val predictions = response.autocompletePredictions
-
             if (predictions.isNotEmpty()) {
-                Log.d(
-                    "PlacesDebug",
-                    "Predictions size = ${predictions.size}"
-                )
                 binding.searchSuggestionsRv.visibility = View.VISIBLE
-                searchSuggestionAdapter.submitList(
-                    predictions
-                )
+                searchSuggestionAdapter.submitList(predictions)
             }else{
                 binding.searchSuggestionsRv.visibility = View.GONE
             }
-        }.addOnFailureListener { exception ->
+        }.addOnFailureListener { binding.searchSuggestionsRv.visibility = View.GONE }
+    }
+
+    private fun fetchPlaceAndMoveMap(placeId: String){
+        val fields = listOf(Place.Field.LAT_LNG, Place.Field.NAME, Place.Field.ADDRESS)
+        placesClient.fetchPlace(FetchPlaceRequest.newInstance(placeId, fields)).addOnSuccessListener { response ->
+            val place = response.place
+            place.latLng?.let { latLng -> googleMap.animateCamera(CameraUpdateFactory.newLatLngZoom(latLng, 17f)) }
+            isSelectingPlace = true
             binding.searchSuggestionsRv.visibility = View.GONE
-            Log.e("PlacesDebug", "Autocomplete failed: ${exception.message}", exception)
-            Toast.makeText(requireContext(), "Unable to load place suggestions", Toast.LENGTH_SHORT).show()
+            binding.locationSearchInput.setText(place.name)
+            binding.locationSearchInput.setSelection(place.name?.length ?: 0)
+            binding.locationSearchInput.clearFocus()
+            isSelectingPlace = false
         }
     }
-
-    private fun fetchPlaceAndMoveMap(
-        placeId: String
-    ){
-        val fields = listOf(
-            Place.Field.LAT_LNG,
-            Place.Field.NAME,
-            Place.Field.ADDRESS
-        )
-
-        val request = FetchPlaceRequest.newInstance(
-            placeId,
-            fields
-        )
-
-        placesClient.fetchPlace(request)
-            .addOnSuccessListener { response ->
-
-                val place = response.place
-
-                place.latLng?.let { latLng ->
-                    googleMap.animateCamera(
-                        CameraUpdateFactory
-                            .newLatLngZoom(
-                                latLng,
-                                17f
-                            )
-                    )
-                }
-                isSelectingPlace = true
-                binding.searchSuggestionsRv
-                    .visibility = View.GONE
-
-                binding.locationSearchInput
-                    .setText(place.name)
-
-                binding.locationSearchInput
-                    .setSelection(
-                        place.name?.length ?: 0
-                    )
-
-                binding.locationSearchInput.clearFocus()
-
-                isSelectingPlace = false
-
-            }.addOnFailureListener {exception ->
-                Log.e("PlacesDebug", "Fetch place failed: ${exception.message}", exception)
-                Toast.makeText(requireContext(), "Unable to fetch selected place", Toast.LENGTH_SHORT).show()
-            }
-    }
-
 
     private fun showDeliverToBottomSheet(){
         val sheetBinding = BottomSheetDeliverToBinding.inflate(layoutInflater)
         val bottomSheetDialog = BottomSheetDialog(requireContext())
         bottomSheetDialog.setContentView(sheetBinding.root)
 
+        var currentSelectedAddress = binding.addressTv.text.toString()
+        sheetBinding.selectedAddressText.text = currentSelectedAddress
 
-        var selectedAddress = binding.addressTv.text.toString()
-        sheetBinding.selectedAddressText.text = selectedAddress
-
-        prefilledUserDetails(sheetBinding)
+        val userState = viewModel.uiState.value
+        sheetBinding.fullNameInput.setText(userState.userName)
+        sheetBinding.mobileInput.setText(userState.userPhone)
 
         if (args.isEditMode){
-            sheetBinding.flatInput.setText(
-                args.flatNo
-            )
-
-            sheetBinding.mobileInput.setText(
-                args.mobile
-            )
-
-            when(args.addressType){
-                SaveAddressAdapter.ADDRESS_TYPE_HOME ->
-                    sheetBinding.homeRadio.isChecked =
-                        true
-
-                SaveAddressAdapter.ADDRESS_TYPE_OFFICE ->
-                    sheetBinding.officeRadio.isChecked =
-                        true
-            }
+            sheetBinding.flatInput.setText(args.flatNo)
+            sheetBinding.mobileInput.setText(args.mobile)
+            if (args.addressType == SaveAddressAdapter.ADDRESS_TYPE_OFFICE) sheetBinding.officeRadio.isChecked = true
+            else sheetBinding.homeRadio.isChecked = true
         }
-        sheetBinding.closeBtn.setOnClickListener {
-            bottomSheetDialog.dismiss()
-        }
+
+        sheetBinding.closeBtn.setOnClickListener { bottomSheetDialog.dismiss() }
         sheetBinding.editAddressBtn.setOnClickListener {
             sheetBinding.addressCard.visibility = View.GONE
             sheetBinding.editAddressInputLayout.visibility = View.VISIBLE
-            sheetBinding.editAddressInput.setText(
-                selectedAddress
-            )
-            sheetBinding.editAddressInput.setSelection(
-                selectedAddress.length
-            )
+            sheetBinding.editAddressInput.setText(currentSelectedAddress)
             sheetBinding.editAddressInput.requestFocus()
         }
         sheetBinding.editAddressInputLayout.setEndIconOnClickListener{
-            val updatedAddress = sheetBinding.editAddressInput
-                .text
-                .toString()
-                .trim()
-            if (updatedAddress.isNotEmpty()){
-                selectedAddress = updatedAddress
-                addressLookupRequestId++
-                binding.addressTv.text = selectedAddress
-                sheetBinding.selectedAddressText.text = selectedAddress
+            val updated = sheetBinding.editAddressInput.text.toString().trim()
+            if (updated.isNotEmpty()){
+                currentSelectedAddress = updated
+                binding.addressTv.text = currentSelectedAddress
+                sheetBinding.selectedAddressText.text = currentSelectedAddress
                 sheetBinding.addressCard.visibility = View.VISIBLE
                 sheetBinding.editAddressInputLayout.visibility = View.GONE
             }
         }
         sheetBinding.saveAddressBtn.text = if (args.isEditMode) "Update Address" else "Save Address"
         sheetBinding.saveAddressBtn.setOnClickListener {
-            if(isEditMode){
-                updateAddress(sheetBinding , bottomSheetDialog)
-            } else {
-                saveAddressToFirestore(sheetBinding, selectedAddress, bottomSheetDialog)
-            }
+            val flatNo = sheetBinding.flatInput.text.toString().trim()
+            val fullName = sheetBinding.fullNameInput.text.toString().trim()
+            val mobile = sheetBinding.mobileInput.text.toString().trim()
+            val addressType = if (sheetBinding.officeRadio.isChecked) SaveAddressAdapter.ADDRESS_TYPE_OFFICE else SaveAddressAdapter.ADDRESS_TYPE_HOME
+
+            if (flatNo.isBlank()) { sheetBinding.flatInputLayout.error = "Required"; return@setOnClickListener }
+            if (fullName.isBlank()) { sheetBinding.fullNameInputLayout.error = "Required"; return@setOnClickListener }
+            if (mobile.length != 10) { sheetBinding.mobileInputLayout.error = "Invalid"; return@setOnClickListener }
+
+            val cameraTarget = googleMap.cameraPosition.target
+            val data = mapOf(
+                "flatNo" to flatNo,
+                "address" to currentSelectedAddress,
+                "userName" to fullName,
+                "mobile" to mobile,
+                "addressType" to addressType,
+                "latitude" to cameraTarget.latitude,
+                "longitude" to cameraTarget.longitude,
+                "placeName" to binding.addressTitleTv.text.toString()
+            )
+
+            if (args.isEditMode) viewModel.updateAddress(args.addressId, data)
+            else viewModel.saveAddress(data)
         }
-        sheetBinding.flatInput.doAfterTextChanged { sheetBinding.flatInputLayout.error = null }
-        sheetBinding.fullNameInput.doAfterTextChanged { sheetBinding.fullNameInputLayout.error = null }
-        sheetBinding.mobileInput.doAfterTextChanged { sheetBinding.mobileInputLayout.error = null }
         bottomSheetDialog.show()
     }
-
-    private fun prefilledUserDetails(sheetBinding: BottomSheetDeliverToBinding){
-        if (!isAdded || FirebaseApp.getApps(requireContext()).isEmpty()) return
-        val user = auth.currentUser ?: return
-        val authPhone = user.phoneNumber.orEmpty().toEditablePhoneNumber()
-        if (authPhone.isNotEmpty()) {
-            sheetBinding.mobileInput.setText(authPhone)
-        }
-
-        firestore.collection(USERS_COLLECTION)
-            .document(user.uid)
-            .get()
-            .addOnSuccessListener { snapshot ->
-                if (!isAdded) return@addOnSuccessListener
-
-                val name = snapshot.getString(NAME_FIELD).orEmpty().trim()
-                val phone = snapshot.getString(PHONE_FIELD).orEmpty().toEditablePhoneNumber()
-
-                if (name.isNotEmpty() && sheetBinding.fullNameInput.text.isNullOrBlank()) {
-                    sheetBinding.fullNameInput.setText(name)
-                    sheetBinding.fullNameInput.setSelection(name.length)
-
-                }
-                val currentPhoneInput = sheetBinding.mobileInput.text?.toString().orEmpty()
-                if (phone.isNotEmpty() && (currentPhoneInput.isBlank() || currentPhoneInput == authPhone)) {
-                    sheetBinding.mobileInput.setText(phone)
-                    sheetBinding.mobileInput.setSelection(phone.length)
-                }
-            }
-            .addOnFailureListener { exception ->
-                Log.e("AddAddress", "Could not load user details: ${exception.message}", exception)
-            }
-
-    }
-
-    private fun String.toEditablePhoneNumber(): String {
-        val digits = filter(Char::isDigit)
-        return if (digits.length > PHONE_NUMBER_LENGTH) {
-            digits.takeLast(PHONE_NUMBER_LENGTH)
-        } else {
-            digits
-        }
-
-    }
-    private fun saveAddressToFirestore(
-        sheetBinding: BottomSheetDeliverToBinding,
-        selectedAddress: String,
-        bottomSheetDialog: BottomSheetDialog
-    ) {
-        val user = auth.currentUser
-        if (user == null) {
-            Toast.makeText(requireContext(), "Please login before saving address", Toast.LENGTH_SHORT).show()
-            return
-        }
-        val flatNo = sheetBinding.flatInput.text?.toString().orEmpty().trim()
-        val fullName = sheetBinding.fullNameInput.text?.toString().orEmpty().trim()
-        val mobile = sheetBinding.mobileInput.text?.toString().orEmpty().trim()
-        val address = selectedAddress.trim()
-
-        val addressType = if (sheetBinding.officeRadio.isChecked) {
-            ADDRESS_TYPE_OFFICE
-        } else {
-            ADDRESS_TYPE_HOME
-        }
-
-        sheetBinding.flatInputLayout.error = null
-        sheetBinding.fullNameInputLayout.error = null
-        sheetBinding.mobileInputLayout.error = null
-
-        when {
-            flatNo.isBlank() -> {
-                sheetBinding.flatInputLayout.error = "Enter flat, house, or building number"
-                return
-            }
-            address.isBlank() || address == "Address not found" -> {
-                Toast.makeText(requireContext(), "Please select a valid address", Toast.LENGTH_SHORT).show()
-                return
-            }
-            fullName.isBlank() -> {
-                sheetBinding.fullNameInputLayout.error = "Enter full name"
-                return
-            }
-            mobile.length != PHONE_NUMBER_LENGTH -> {
-                sheetBinding.mobileInputLayout.error = "Enter valid 10-digit mobile number"
-                return
-            }
-        }
-
-        sheetBinding.saveAddressBtn.isEnabled = false
-        val cameraTarget = googleMap.cameraPosition.target
-        val addressData = hashMapOf(
-            FLAT_NO_FIELD to flatNo,
-            ADDRESS_FIELD to address,
-            USER_NAME_FIELD to fullName,
-            MOBILE_FIELD to mobile,
-            ADDRESS_TYPE_FIELD to addressType,
-            LATITUDE_FIELD to cameraTarget.latitude,
-            LONGITUDE_FIELD to cameraTarget.longitude,
-            PLACE_NAME_FIELD to binding.addressTitleTv.text.toString(),
-            CREATED_AT_FIELD to FieldValue.serverTimestamp(),
-            UPDATED_AT_FIELD to FieldValue.serverTimestamp()
-        )
-
-        firestore.collection(USERS_COLLECTION)
-            .document(user.uid)
-            .collection(SAVED_ADDRESSES_COLLECTION)
-            .add(addressData)
-            .addOnSuccessListener {documentReference ->
-                firestore.collection(USERS_COLLECTION)
-                    .document(user.uid)
-                    .update(
-                        SELECTED_ADDRESS_ID_FIELD,
-                        documentReference.id
-                    )
-                    .addOnSuccessListener {
-                        if (!isAdded) return@addOnSuccessListener
-                        Toast.makeText(requireContext(), "Address saved", Toast.LENGTH_SHORT).show()
-                        bottomSheetDialog.dismiss()
-                        findNavController().popBackStack()
-                    }
-
-            }
-            .addOnFailureListener { exception ->
-                if (!isAdded) return@addOnFailureListener
-                sheetBinding.saveAddressBtn.isEnabled = true
-                Log.e("AddAddress", "Could not save address: ${exception.message}", exception)
-                Toast.makeText(requireContext(), "Failed to save address", Toast.LENGTH_SHORT).show()
-            }
-
-    }
-
-    private fun updateAddress(
-        sheetBinding: BottomSheetDeliverToBinding,
-        bottomSheetDialog: BottomSheetDialog
-    ){
-
-        val flatNo =
-            sheetBinding.flatInput.text
-                .toString()
-                .trim()
-
-        val fullName =
-            sheetBinding.fullNameInput.text
-                .toString()
-                .trim()
-
-        val mobile =
-            sheetBinding.mobileInput.text
-                .toString()
-                .trim()
-
-        val address =
-            sheetBinding.selectedAddressText.text
-                .toString()
-                .trim()
-
-        val addressType =
-            if (sheetBinding.homeRadio.isChecked)
-                SaveAddressAdapter.ADDRESS_TYPE_HOME
-            else
-                SaveAddressAdapter.ADDRESS_TYPE_OFFICE
-
-        sheetBinding.flatInputLayout.error = null
-        sheetBinding.fullNameInputLayout.error = null
-        sheetBinding.mobileInputLayout.error = null
-
-        when {
-            flatNo.isBlank() -> {
-                sheetBinding.flatInputLayout.error = "Enter flat, house, or building number"
-                return
-            }
-            address.isBlank() || address == "Address not found" -> {
-                Toast.makeText(requireContext(), "Please select a valid address", Toast.LENGTH_SHORT).show()
-                return
-            }
-            fullName.isBlank() -> {
-                sheetBinding.fullNameInputLayout.error = "Enter full name"
-                return
-            }
-            mobile.length != PHONE_NUMBER_LENGTH -> {
-                sheetBinding.mobileInputLayout.error = "Enter valid 10-digit mobile number"
-                return
-            }
-        }
-
-        val user = auth.currentUser
-        if (user == null) {
-            Toast.makeText(requireContext(), "Please login before updating address", Toast.LENGTH_SHORT).show()
-            return
-        }
-        if (editingAddressId.isBlank()) {
-            Toast.makeText(requireContext(), "Unable to identify the saved address", Toast.LENGTH_SHORT).show()
-            return
-        }
-        Log.d(
-            "AddressUpdate",
-            "editingAddressId = $editingAddressId"
-        )
-        sheetBinding.saveAddressBtn.isEnabled = false
-        val cameraTarget = googleMap.cameraPosition.target
-
-        firestore
-            .collection(USERS_COLLECTION)
-            .document(user.uid)
-            .collection(SAVED_ADDRESSES_COLLECTION)
-            .document(editingAddressId)
-            .update(
-                mapOf(
-                    FLAT_NO_FIELD to flatNo,
-
-                    ADDRESS_FIELD to address,
-
-                    USER_NAME_FIELD to fullName,
-
-                    MOBILE_FIELD to mobile,
-
-                    ADDRESS_TYPE_FIELD to addressType,
-
-                    LATITUDE_FIELD to cameraTarget.latitude,
-
-                    LONGITUDE_FIELD to cameraTarget.longitude,
-
-                    PLACE_NAME_FIELD to
-                            binding.addressTitleTv
-                                .text.toString(),
-
-                    UPDATED_AT_FIELD to
-                            FieldValue.serverTimestamp()
-                )
-            )
-            .addOnSuccessListener {
-                firestore.collection(USERS_COLLECTION)
-                    .document(user.uid)
-                    .update(
-                        SELECTED_ADDRESS_ID_FIELD,
-                        editingAddressId
-                    )
-                    .addOnSuccessListener {
-                        Toast.makeText(requireContext(), "Address updated", Toast.LENGTH_SHORT).show()
-                    }
-                Log.d(
-                    "AddressUpdate",
-                    "Updated doc id = $editingAddressId"
-                )
-                parentFragmentManager.setFragmentResult(
-                    "address_updated",
-                    Bundle()
-                )
-
-                bottomSheetDialog.dismiss()
-                Handler(Looper.getMainLooper()).postDelayed({
-                    findNavController().popBackStack()
-                },300)
-
-            }
-
-            .addOnFailureListener { exception ->
-                if (!isAdded) return@addOnFailureListener
-                sheetBinding.saveAddressBtn.isEnabled = true
-                Log.e("AddAddress", "Could not update address: ${exception.message}", exception)
-                Toast.makeText(requireContext(), "Failed to update address", Toast.LENGTH_SHORT).show()
-            }
-    }
-
-
 
     override fun onDestroyView() {
         super.onDestroyView()
@@ -1020,32 +432,5 @@ class AddNewAddressFragment : Fragment(R.layout.fragment_add_new_address), OnMap
         shouldMoveToCurrentLocationWhenMapReady = false
         addAddressDialog = null
         _binding = null
-    }
-
-    private companion object {
-        const val USERS_COLLECTION = "users"
-        const val NAME_FIELD = "name"
-        const val PHONE_FIELD = "phone"
-
-        const val SAVED_ADDRESSES_COLLECTION = "savedAddresses"
-        const val SELECTED_ADDRESS_ID_FIELD = "selectedAddressId"
-        const val FLAT_NO_FIELD = "flatNo"
-        const val ADDRESS_FIELD = "address"
-        const val USER_NAME_FIELD = "userName"
-        const val MOBILE_FIELD = "mobile"
-        const val ADDRESS_TYPE_FIELD = "addressType"
-        const val CREATED_AT_FIELD = "createdAt"
-        const val UPDATED_AT_FIELD = "updatedAt"
-        const val ADDRESS_TYPE_HOME = "Home"
-        const val ADDRESS_TYPE_OFFICE = "Office"
-        const val PHONE_NUMBER_LENGTH = 10
-
-        const val LATITUDE_FIELD = "latitude"
-
-        const val LONGITUDE_FIELD = "longitude"
-
-        const val PLACE_NAME_FIELD = "placeName"
-
-        const val COORDINATE_EPSILON = 0.000001
     }
 }
