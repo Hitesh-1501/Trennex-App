@@ -1,5 +1,6 @@
 package com.example.trennex.ui.home.adapters
 
+import android.annotation.SuppressLint
 import android.view.LayoutInflater
 import android.view.ViewGroup
 import androidx.recyclerview.widget.RecyclerView
@@ -9,9 +10,16 @@ import com.example.trennex.ui.home.model.ProductModel
 import com.example.trennex.utils.CurrencyFormator
 
 class ProductAdapter(
-    private val products: List<ProductModel>,
+    private var products: List<ProductModel>,
     private val onProductClick : (ProductModel) -> Unit
 ): RecyclerView.Adapter<ProductAdapter.ProductVieewHolder>(){
+
+    @SuppressLint("NotifyDataSetChanged")
+    fun updateData(newList: List<ProductModel>) {
+        if (products == newList) return
+        products = newList
+        notifyDataSetChanged()
+    }
     override fun onCreateViewHolder(
         parent: ViewGroup,
         viewType: Int
