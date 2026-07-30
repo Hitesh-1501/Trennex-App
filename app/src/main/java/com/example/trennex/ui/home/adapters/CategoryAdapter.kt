@@ -1,5 +1,6 @@
 package com.example.trennex.ui.home.adapters
 
+import android.annotation.SuppressLint
 import android.view.LayoutInflater
 import android.view.ViewGroup
 import androidx.recyclerview.widget.RecyclerView
@@ -8,10 +9,17 @@ import com.example.trennex.databinding.ItemCategoryBinding
 import com.example.trennex.ui.home.model.CategoryModel
 
 class CategoryAdapter(
-    private val list : List<CategoryModel>,
+    private var list : List<CategoryModel>,
     private val onClick : (CategoryModel) -> Unit
 ): RecyclerView.Adapter<CategoryAdapter.CategoryViewHolder>(){
     private var selectedPosition = 0
+
+    @SuppressLint("NotifyDataSetChanged")
+    fun updateData(newList: List<CategoryModel>) {
+        if (list == newList) return
+        list = newList
+        notifyDataSetChanged()
+    }
     override fun onCreateViewHolder(
         parent: ViewGroup,
         viewType: Int
