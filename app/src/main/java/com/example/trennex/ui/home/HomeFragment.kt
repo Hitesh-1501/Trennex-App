@@ -18,7 +18,6 @@ import android.view.MotionEvent
 import android.view.View
 import android.view.ViewGroup
 import android.widget.LinearLayout
-import android.widget.PopupWindow
 import android.widget.TextView
 import android.widget.Toast
 import androidx.activity.result.contract.ActivityResultContracts
@@ -60,6 +59,8 @@ import com.google.android.libraries.places.widget.model.AutocompleteActivityMode
 import com.google.android.material.bottomsheet.BottomSheetBehavior
 import com.google.android.material.bottomsheet.BottomSheetDialog
 import com.google.android.material.tabs.TabLayoutMediator
+import kotlinx.coroutines.flow.distinctUntilChanged
+import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.launch
 import java.util.Locale
 
@@ -72,11 +73,13 @@ class HomeFragment : Fragment(R.layout.fragment_home) {
     private var loginUserName = "Guest User"
     
     private lateinit var saveAddressAdapter: SaveAddressAdapter
+    private lateinit var categoryAdapter: CategoryAdapter
+    private lateinit var productAdapter: ProductAdapter
+    private var bannerAdapter: HomeFragmentPagerAdapter? = null
+    
     private var bottomSheetBinding: BottomSheetSelectLocationBinding? = null
     private var locationBottomSheet: BottomSheetDialog? = null
     private lateinit var fusedLocationClient: FusedLocationProviderClient
-
-    private var shouldNavigateToAddress = false
 
     private val locationPermissionRequester = registerForActivityResult(
         ActivityResultContracts.RequestMultiplePermissions()
@@ -132,22 +135,62 @@ class HomeFragment : Fragment(R.layout.fragment_home) {
         fusedLocationClient = LocationServices.getFusedLocationProviderClient(requireContext())
         UserDetailsDialog.showIfNeeded(this){}
         
+        initAdapters()
         setupLocationUi()
         observeViewModel()
+    }
+
+    private fun initAdapters() {
+        categoryAdapter = CategoryAdapter(emptyList()) {
+            viewModel.fetchProductsByCategory(it.slug)
+        }
+        binding.rvCategories.apply {
+            layoutManager = LinearLayoutManager(requireContext(), LinearLayoutManager.HORIZONTAL, false)
+            adapter = categoryAdapter
+        }
+
+        productAdapter = ProductAdapter(emptyList()) { product ->
+            val action = HomeFragmentDirections.actionHomeFragmentToProductDetailFragment(product.id)
+            findNavController().navigate(action)
+        }
+        binding.rvProducts.apply {
+            layoutManager = GridLayoutManager(requireContext(), 3)
+            isNestedScrollingEnabled = false
+            adapter = productAdapter
+        }
+
+        saveAddressAdapter = SaveAddressAdapter(
+            onItemClick = { item -> selectSaveAddress(item) },
+            onMoreClick = { anchor, item -> showAddressMenu(anchor, item) }
+        )
     }
 
     private fun observeViewModel() {
         viewLifecycleOwner.lifecycleScope.launch {
             viewLifecycleOwner.repeatOnLifecycle(Lifecycle.State.STARTED) {
-                viewModel.uiState.collect { state ->
-                    setupProducts(state.products)
-                    setupCategories(state.categories)
-                    setupBanners(state.banners)
-                    loginUserName = state.userName
-                    renderSaveAddresses(state.savedAddresses, state.selectedAddress)
-                    
-                    if (state.selectedAddress == null && !hasLocationPermission()) {
-                        showLocationPermissionDialog()
+                launch {
+                    viewModel.uiState.map { it.products }.distinctUntilChanged().collect {
+                        productAdapter.updateData(it)
+                    }
+                }
+                launch {
+                    viewModel.uiState.map { it.categories }.distinctUntilChanged().collect {
+                        categoryAdapter.updateData(it)
+                    }
+                }
+                launch {
+                    viewModel.uiState.map { it.banners }.distinctUntilChanged().collect {
+                        setupBanners(it)
+                    }
+                }
+                launch {
+                    viewModel.uiState.collect { state ->
+                        loginUserName = state.userName
+                        renderSaveAddresses(state.savedAddresses, state.selectedAddress)
+                        
+                        if (state.selectedAddress == null && !hasLocationPermission()) {
+                            showLocationPermissionDialog()
+                        }
                     }
                 }
             }
@@ -184,21 +227,10 @@ class HomeFragment : Fragment(R.layout.fragment_home) {
         bottomSheetBinding = sheetBinding
         sheet.setContentView(sheetBinding.root)
         sheetBinding.closeBtn.setOnClickListener {
-            shouldNavigateToAddress = false
             sheet.dismiss()
         }
         sheetBinding.currentLocationRow.setOnClickListener {
-            shouldNavigateToAddress = false
             requestLocationPermissionAndFetch()
-        }
-        sheet.setOnDismissListener {
-            if (shouldNavigateToAddress && isAdded){
-                shouldNavigateToAddress = false
-                val navController = findNavController()
-                if (navController.currentDestination?.id == R.id.homeFragment){
-                    navController.navigate(R.id.action_homeFragment_to_addNewAddressFragment)
-                }
-            }
         }
         sheetBinding.locationSearchInput.apply {
             isFocusable = false
@@ -207,13 +239,12 @@ class HomeFragment : Fragment(R.layout.fragment_home) {
             setOnClickListener { openPlaceSearch() }
         }
         sheetBinding.addNewAddress.setOnClickListener {
-            shouldNavigateToAddress = true
             sheet.dismiss()
+            val navController = findNavController()
+            if (navController.currentDestination?.id == R.id.homeFragment){
+                navController.navigate(R.id.action_homeFragment_to_addNewAddressFragment)
+            }
         }
-        saveAddressAdapter = SaveAddressAdapter(
-           onItemClick = { item -> selectSaveAddress(item) },
-           onMoreClick = { anchor, item -> showAddressMenu(anchor, item) }
-        )
         sheetBinding.savedAddressRv.adapter =  saveAddressAdapter
         sheetBinding.savedAddressRv.layoutManager = LinearLayoutManager(requireContext())
         
@@ -276,35 +307,37 @@ class HomeFragment : Fragment(R.layout.fragment_home) {
     }
 
     private fun showAddressMenu(anchor: View, item: SaveAddressAdapter.SavedAddressItem){
-        val popupView = LayoutInflater.from(requireContext()).inflate(R.layout.item_popup_menu,null)
-        val popupWindow = PopupWindow(popupView, ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT, true)
+        val popupMenu = androidx.appcompat.widget.PopupMenu(requireContext(), anchor)
+        popupMenu.menuInflater.inflate(R.menu.menu_address_item, popupMenu.menu)
 
-        popupView.findViewById<View>(R.id.actionEdit).setOnClickListener {
-            val action = HomeFragmentDirections.actionHomeFragmentToAddNewAddressFragment(
-                    latitude = item.latitude.toString(),
-                    longitude = item.longitude.toString(),
-                    address = item.address,
-                    placeName = item.placeName,
-                    openedFromSearch = true,
-                    isEditMode = true,
-                    addressId = item.id,
-                    flatNo = item.flatNo,
-                    mobile = item.mobile,
-                    addressType = item.addressType
-                )
-            popupWindow.dismiss()
-            locationBottomSheet?.dismiss()
-            findNavController().navigate(action)
+        popupMenu.setOnMenuItemClickListener { menuItem ->
+            when(menuItem.itemId) {
+                R.id.actionEdit -> {
+                    val action = HomeFragmentDirections.actionHomeFragmentToAddNewAddressFragment(
+                        latitude = item.latitude.toString(),
+                        longitude = item.longitude.toString(),
+                        address = item.address,
+                        placeName = item.placeName,
+                        openedFromSearch = true,
+                        isEditMode = true,
+                        addressId = item.id,
+                        flatNo = item.flatNo,
+                        mobile = item.mobile,
+                        addressType = item.addressType
+                    )
+                    locationBottomSheet?.dismiss()
+                    findNavController().navigate(action)
+                    true
+                }
+                R.id.actionDelete -> {
+                    val entity = viewModel.uiState.value.savedAddresses.find { it.id == item.id }
+                    if (entity != null) viewModel.deleteAddress(entity)
+                    true
+                }
+                else -> false
+            }
         }
-
-        popupView.findViewById<View>(R.id.actionDelete).setOnClickListener {
-            val entity = viewModel.uiState.value.savedAddresses.find { it.id == item.id }
-            if (entity != null) viewModel.deleteAddress(entity)
-            popupWindow.dismiss()
-        }
-        popupWindow.elevation = 12f
-        popupWindow.isOutsideTouchable = true
-        popupWindow.showAsDropDown(anchor, -anchor.width / 2 , 8)
+        popupMenu.show()
     }
 
     private fun hasLocationPermission(): Boolean {
@@ -380,39 +413,23 @@ class HomeFragment : Fragment(R.layout.fragment_home) {
         }
     }
 
-    private fun setupCategories(categories: List<CategoryModel>){
-        binding.rvCategories.apply {
-            layoutManager = LinearLayoutManager(requireContext(), LinearLayoutManager.HORIZONTAL,false)
-            adapter = CategoryAdapter(categories){
-                viewModel.fetchProductsByCategory(it.slug)
-            }
-        }
-    }
-
-    private fun setupProducts(list: List<ProductModel>){
-        binding.rvProducts.apply {
-            layoutManager = GridLayoutManager(requireContext(),3)
-            isNestedScrollingEnabled = false
-            adapter = ProductAdapter(list) {product->
-                val action = HomeFragmentDirections.actionHomeFragmentToProductDetailFragment(product.id)
-                findNavController().navigate(action)
-            }
-        }
-    }
-
     @SuppressLint("ClickableViewAccessibility")
     private fun setupBanners(images: List<String>) {
-        bannerPageCallbacks?.let { binding.rvBanners.unregisterOnPageChangeCallback(it) }
-        bannerMediator?.detach()
-
-        if(images.isEmpty()) return
+        if (images.isEmpty()) return
         
         val banner = images.take(5).mapIndexed { index, image -> BannerModel(index + 1 , image) }
+        
+        // Only update if banners changed
+        if (bannerAdapter != null && images.size == bannerAdapter?.itemCount) {
+             return
+        }
 
         if(banner.size == 1){
-            val adapter = HomeFragmentPagerAdapter(this,banner)
-            binding.rvBanners.adapter = adapter
-            binding.bannerIndicator.removeAllTabs()
+            if (bannerAdapter == null || bannerAdapter?.itemCount != 1) {
+                bannerAdapter = HomeFragmentPagerAdapter(this, banner)
+                binding.rvBanners.adapter = bannerAdapter
+                binding.bannerIndicator.removeAllTabs()
+            }
             return
         }
 
@@ -420,20 +437,26 @@ class HomeFragment : Fragment(R.layout.fragment_home) {
         bannerList.add(banner.last())
         bannerList.addAll(banner)
         bannerList.add(banner.first())
-        val adapter = HomeFragmentPagerAdapter(this, bannerList)
-        binding.rvBanners.adapter = adapter
-        binding.rvBanners.setCurrentItem(1, false)
-        bannerMediator =  TabLayoutMediator(binding.bannerIndicator, binding.rvBanners) { tab, position ->
-            if (position == 0 || position == bannerList.size - 1) {
-                tab.view.visibility = View.GONE
+        
+        if (bannerAdapter == null || bannerAdapter?.itemCount != bannerList.size) {
+            bannerAdapter = HomeFragmentPagerAdapter(this, bannerList)
+            binding.rvBanners.adapter = bannerAdapter
+            binding.rvBanners.setCurrentItem(1, false)
+            
+            bannerMediator?.detach()
+            bannerMediator =  TabLayoutMediator(binding.bannerIndicator, binding.rvBanners) { tab, position ->
+                if (position == 0 || position == bannerList.size - 1) {
+                    tab.view.visibility = View.GONE
+                }
             }
-        }
-        bannerMediator?.attach()
-        for (i in 0 until binding.bannerIndicator.tabCount) {
-            val tab = binding.bannerIndicator.getTabAt(i)
-            tab?.customView = layoutInflater.inflate(R.layout.banner_dot_tab, binding.bannerIndicator, false)
-        }
-        val callback = object : ViewPager2.OnPageChangeCallback() {
+            bannerMediator?.attach()
+            for (i in 0 until binding.bannerIndicator.tabCount) {
+                val tab = binding.bannerIndicator.getTabAt(i)
+                tab?.customView = layoutInflater.inflate(R.layout.banner_dot_tab, binding.bannerIndicator, false)
+            }
+            
+            bannerPageCallbacks?.let { binding.rvBanners.unregisterOnPageChangeCallback(it) }
+            val callback = object : ViewPager2.OnPageChangeCallback() {
                 override fun onPageScrollStateChanged(state: Int) {
                     if (state == ViewPager2.SCROLL_STATE_IDLE) {
                         val position = binding.rvBanners.currentItem
@@ -444,14 +467,15 @@ class HomeFragment : Fragment(R.layout.fragment_home) {
                     }
                 }
             }
-        bannerPageCallbacks = callback
-        binding.rvBanners.registerOnPageChangeCallback(callback)
-        binding.rvBanners.getChildAt(0).setOnTouchListener { _,event ->
-            when(event.action){
-                MotionEvent.ACTION_DOWN -> bannerHandler.removeCallbacks(bannerRunnable)
-                MotionEvent.ACTION_UP, MotionEvent.ACTION_CANCEL -> bannerHandler.postDelayed(bannerRunnable,3000)
+            bannerPageCallbacks = callback
+            binding.rvBanners.registerOnPageChangeCallback(callback)
+            binding.rvBanners.getChildAt(0).setOnTouchListener { _,event ->
+                when(event.action){
+                    MotionEvent.ACTION_DOWN -> bannerHandler.removeCallbacks(bannerRunnable)
+                    MotionEvent.ACTION_UP, MotionEvent.ACTION_CANCEL -> bannerHandler.postDelayed(bannerRunnable,3000)
+                }
+                false
             }
-            false
         }
     }
 
@@ -461,7 +485,6 @@ class HomeFragment : Fragment(R.layout.fragment_home) {
         bannerPageCallbacks = null
         bannerMediator?.detach()
         bannerMediator = null
-        shouldNavigateToAddress = false
         locationBottomSheet?.dismiss()
         locationBottomSheet = null
         bottomSheetBinding = null
