@@ -61,6 +61,7 @@ class AddNewAddressFragment : Fragment(R.layout.fragment_add_new_address), OnMap
     private var _binding: FragmentAddNewAddressBinding? = null
     private val binding get() = _binding!!
     private var addAddressDialog: AlertDialog? = null
+    private var bottomSheetDialog: BottomSheetDialog? = null
     private lateinit var googleMap: GoogleMap
     private lateinit var fusedLocationClient: FusedLocationProviderClient
     private lateinit var placesClient: PlacesClient
@@ -165,6 +166,7 @@ class AddNewAddressFragment : Fragment(R.layout.fragment_add_new_address), OnMap
                 viewModel.uiState.collect { state ->
                     when (state.status) {
                         LocationUiState.Status.Success -> {
+                            bottomSheetDialog?.dismiss()
                             Toast.makeText(requireContext(), if(args.isEditMode) "Address updated" else "Address saved", Toast.LENGTH_SHORT).show()
                             parentFragmentManager.setFragmentResult("address_updated", Bundle())
                             findNavController().popBackStack()
@@ -230,6 +232,9 @@ class AddNewAddressFragment : Fragment(R.layout.fragment_add_new_address), OnMap
                     
                     kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.Main) {
                         if (isAdded && _binding != null && requestId == addressLookupRequestId) {
+                            isSelectingPlace = true
+                            binding.locationSearchInput.setText(title)
+                            isSelectingPlace = false
                             binding.addressTitleTv.text = title
                             binding.addressTv.text = fullAddress
                         }
@@ -362,8 +367,8 @@ class AddNewAddressFragment : Fragment(R.layout.fragment_add_new_address), OnMap
 
     private fun showDeliverToBottomSheet(){
         val sheetBinding = BottomSheetDeliverToBinding.inflate(layoutInflater)
-        val bottomSheetDialog = BottomSheetDialog(requireContext())
-        bottomSheetDialog.setContentView(sheetBinding.root)
+        bottomSheetDialog = BottomSheetDialog(requireContext())
+        bottomSheetDialog?.setContentView(sheetBinding.root)
 
         var currentSelectedAddress = binding.addressTv.text.toString()
         sheetBinding.selectedAddressText.text = currentSelectedAddress
@@ -379,7 +384,7 @@ class AddNewAddressFragment : Fragment(R.layout.fragment_add_new_address), OnMap
             else sheetBinding.homeRadio.isChecked = true
         }
 
-        sheetBinding.closeBtn.setOnClickListener { bottomSheetDialog.dismiss() }
+        sheetBinding.closeBtn.setOnClickListener { bottomSheetDialog?.dismiss() }
         sheetBinding.editAddressBtn.setOnClickListener {
             sheetBinding.addressCard.visibility = View.GONE
             sheetBinding.editAddressInputLayout.visibility = View.VISIBLE
@@ -390,6 +395,9 @@ class AddNewAddressFragment : Fragment(R.layout.fragment_add_new_address), OnMap
             val updated = sheetBinding.editAddressInput.text.toString().trim()
             if (updated.isNotEmpty()){
                 currentSelectedAddress = updated
+                isSelectingPlace = true
+                binding.locationSearchInput.setText(currentSelectedAddress)
+                isSelectingPlace = false
                 binding.addressTv.text = currentSelectedAddress
                 sheetBinding.selectedAddressText.text = currentSelectedAddress
                 sheetBinding.addressCard.visibility = View.VISIBLE
@@ -422,12 +430,13 @@ class AddNewAddressFragment : Fragment(R.layout.fragment_add_new_address), OnMap
             if (args.isEditMode) viewModel.updateAddress(args.addressId, data)
             else viewModel.saveAddress(data)
         }
-        bottomSheetDialog.show()
+        bottomSheetDialog?.show()
     }
 
     override fun onDestroyView() {
         super.onDestroyView()
         addAddressDialog?.dismiss()
+        bottomSheetDialog?.dismiss()
         isMapInitialized = false
         shouldMoveToCurrentLocationWhenMapReady = false
         addAddressDialog = null
