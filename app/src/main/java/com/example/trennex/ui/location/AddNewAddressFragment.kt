@@ -127,9 +127,10 @@ class AddNewAddressFragment : Fragment(R.layout.fragment_add_new_address), OnMap
             showLocationDialog()
         }
 
-        if (searchedPlaceName.isNotBlank()){
-            binding.locationSearchInput.setText(searchedPlaceName)
-            binding.locationSearchInput.setSelection(searchedPlaceName.length)
+        val initialText = if (searchedAddress.isNotBlank()) searchedAddress else searchedPlaceName
+        if (initialText.isNotBlank()){
+            binding.locationSearchInput.setText(initialText)
+            binding.locationSearchInput.setSelection(initialText.length)
         }
 
         binding.useMyCurrLocation.setOnClickListener { checkLocationPermission() }
@@ -233,7 +234,7 @@ class AddNewAddressFragment : Fragment(R.layout.fragment_add_new_address), OnMap
                     kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.Main) {
                         if (isAdded && _binding != null && requestId == addressLookupRequestId) {
                             isSelectingPlace = true
-                            binding.locationSearchInput.setText(title)
+                            binding.locationSearchInput.setText(fullAddress)
                             isSelectingPlace = false
                             binding.addressTitleTv.text = title
                             binding.addressTv.text = fullAddress
@@ -304,8 +305,12 @@ class AddNewAddressFragment : Fragment(R.layout.fragment_add_new_address), OnMap
 
     private fun moveToSearchedLocation(){
         googleMap.animateCamera(CameraUpdateFactory.newLatLngZoom(LatLng(searchedLat, searchedLng), 17f))
-        binding.addressTitleTv.text = searchedPlaceName
+        binding.addressTitleTv.text = searchedPlaceName.ifBlank { "Selected Location" }
         binding.addressTv.text = searchedAddress
+        
+        isSelectingPlace = true
+        binding.locationSearchInput.setText(searchedAddress)
+        isSelectingPlace = false
     }
 
     private fun showTurnOnLocationDialog(){
@@ -352,14 +357,14 @@ class AddNewAddressFragment : Fragment(R.layout.fragment_add_new_address), OnMap
     }
 
     private fun fetchPlaceAndMoveMap(placeId: String){
-        val fields = listOf(Place.Field.LAT_LNG, Place.Field.NAME, Place.Field.ADDRESS)
+        val fields = listOf(Place.Field.LAT_LNG, Place.Field.NAME, Place.Field.FORMATTED_ADDRESS)
         placesClient.fetchPlace(FetchPlaceRequest.newInstance(placeId, fields)).addOnSuccessListener { response ->
             val place = response.place
             place.latLng?.let { latLng -> googleMap.animateCamera(CameraUpdateFactory.newLatLngZoom(latLng, 17f)) }
             isSelectingPlace = true
             binding.searchSuggestionsRv.visibility = View.GONE
-            binding.locationSearchInput.setText(place.name)
-            binding.locationSearchInput.setSelection(place.name?.length ?: 0)
+            binding.locationSearchInput.setText(place.formattedAddress ?: place.name)
+            binding.locationSearchInput.setSelection(binding.locationSearchInput.text?.length ?: 0)
             binding.locationSearchInput.clearFocus()
             isSelectingPlace = false
         }
@@ -395,10 +400,8 @@ class AddNewAddressFragment : Fragment(R.layout.fragment_add_new_address), OnMap
             val updated = sheetBinding.editAddressInput.text.toString().trim()
             if (updated.isNotEmpty()){
                 currentSelectedAddress = updated
-                isSelectingPlace = true
-                binding.locationSearchInput.setText(currentSelectedAddress)
-                isSelectingPlace = false
-                binding.addressTv.text = currentSelectedAddress
+                syncLocationUi(currentSelectedAddress)
+                moveMapToAddress(currentSelectedAddress)
                 sheetBinding.selectedAddressText.text = currentSelectedAddress
                 sheetBinding.addressCard.visibility = View.VISIBLE
                 sheetBinding.editAddressInputLayout.visibility = View.GONE
@@ -406,6 +409,14 @@ class AddNewAddressFragment : Fragment(R.layout.fragment_add_new_address), OnMap
         }
         sheetBinding.saveAddressBtn.text = if (args.isEditMode) "Update Address" else "Save Address"
         sheetBinding.saveAddressBtn.setOnClickListener {
+            if (sheetBinding.editAddressInputLayout.visibility == View.VISIBLE) {
+                val updated = sheetBinding.editAddressInput.text.toString().trim()
+                if (updated.isNotEmpty()) {
+                    currentSelectedAddress = updated
+                    syncLocationUi(currentSelectedAddress)
+                }
+            }
+
             val flatNo = sheetBinding.flatInput.text.toString().trim()
             val fullName = sheetBinding.fullNameInput.text.toString().trim()
             val mobile = sheetBinding.mobileInput.text.toString().trim()
@@ -431,6 +442,36 @@ class AddNewAddressFragment : Fragment(R.layout.fragment_add_new_address), OnMap
             else viewModel.saveAddress(data)
         }
         bottomSheetDialog?.show()
+    }
+
+    private fun syncLocationUi(address: String) {
+        isSelectingPlace = true
+        binding.locationSearchInput.setText(address)
+        isSelectingPlace = false
+        binding.addressTv.text = address
+        binding.addressTitleTv.text = address.take(30) + if(address.length > 30) "..." else ""
+    }
+
+    private fun moveMapToAddress(addressStr: String) {
+        viewLifecycleOwner.lifecycleScope.launch(kotlinx.coroutines.Dispatchers.IO) {
+            try {
+                val geocoder = Geocoder(requireContext(), Locale.getDefault())
+                @Suppress("DEPRECATION")
+                val addresses = geocoder.getFromLocationName(addressStr, 1)
+                if (!addresses.isNullOrEmpty()) {
+                    val address = addresses[0]
+                    val latLng = LatLng(address.latitude, address.longitude)
+                    kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.Main) {
+                        if (isAdded && ::googleMap.isInitialized) {
+                            skipNextAddresssLookup = true
+                            googleMap.animateCamera(CameraUpdateFactory.newLatLngZoom(latLng, 17f))
+                        }
+                    }
+                }
+            } catch (e: Exception) {
+                e.printStackTrace()
+            }
+        }
     }
 
     override fun onDestroyView() {
