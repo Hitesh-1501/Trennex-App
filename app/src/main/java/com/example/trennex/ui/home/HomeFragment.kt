@@ -17,6 +17,8 @@ import android.view.LayoutInflater
 import android.view.MotionEvent
 import android.view.View
 import android.view.ViewGroup
+import android.graphics.Color
+import android.graphics.drawable.ColorDrawable
 import android.widget.LinearLayout
 import android.widget.PopupWindow
 import android.widget.TextView
@@ -305,6 +307,7 @@ class HomeFragment : Fragment(R.layout.fragment_home) {
             if (entity != null) viewModel.deleteAddress(entity)
             popupWindow.dismiss()
         }
+        popupWindow.setBackgroundDrawable(ColorDrawable(Color.TRANSPARENT))
         popupWindow.elevation = 12f
         popupWindow.isOutsideTouchable = true
         popupWindow.showAsDropDown(anchor, -anchor.width / 2 , 8)
@@ -366,7 +369,7 @@ class HomeFragment : Fragment(R.layout.fragment_home) {
             try {
                 val result  = geocoder.getFromLocation(location.latitude, location.longitude, 1)
                 val address = result?.firstOrNull()?.getAddressLine(0) ?: "Lat:${location.latitude},Lng:${location.longitude}"
-                viewModel.saveCurrentAddress(address)
+                viewModel.saveCurrentAddress(address, location.latitude, location.longitude)
             }catch (e: Exception){
                 Toast.makeText(requireContext(), "Failed to get address", Toast.LENGTH_SHORT).show()
             }
@@ -383,7 +386,10 @@ class HomeFragment : Fragment(R.layout.fragment_home) {
         }
     }
 
+    private var currentCategories: List<CategoryModel>? = null
     private fun setupCategories(categories: List<CategoryModel>){
+        if (currentCategories == categories) return
+        currentCategories = categories
         binding.rvCategories.apply {
             layoutManager = LinearLayoutManager(requireContext(), LinearLayoutManager.HORIZONTAL,false)
             adapter = CategoryAdapter(categories){
@@ -392,7 +398,10 @@ class HomeFragment : Fragment(R.layout.fragment_home) {
         }
     }
 
+    private var currentProducts: List<ProductModel>? = null
     private fun setupProducts(list: List<ProductModel>){
+        if (currentProducts == list) return
+        currentProducts = list
         binding.rvProducts.apply {
             layoutManager = GridLayoutManager(requireContext(),3)
             isNestedScrollingEnabled = false
@@ -403,8 +412,12 @@ class HomeFragment : Fragment(R.layout.fragment_home) {
         }
     }
 
+    private var currentBanners: List<String>? = null
     @SuppressLint("ClickableViewAccessibility")
     private fun setupBanners(images: List<String>) {
+        if (currentBanners == images) return
+        currentBanners = images
+        
         bannerPageCallbacks?.let { binding.rvBanners.unregisterOnPageChangeCallback(it) }
         bannerMediator?.detach()
 
