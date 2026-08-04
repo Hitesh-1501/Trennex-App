@@ -73,6 +73,8 @@ class AddNewAddressFragment : Fragment(R.layout.fragment_add_new_address), OnMap
 
     private var searchedLat = 0.0
     private var searchedLng = 0.0
+    private var manualLat: Double? = null
+    private var manualLng: Double? = null
     private var searchedAddress = ""
     private var searchedPlaceName = ""
     private var openWithCurrentLocation = false
@@ -165,20 +167,35 @@ class AddNewAddressFragment : Fragment(R.layout.fragment_add_new_address), OnMap
         viewLifecycleOwner.lifecycleScope.launch {
             viewLifecycleOwner.repeatOnLifecycle(Lifecycle.State.STARTED) {
                 viewModel.uiState.collect { state ->
-                    when (state.status) {
-                        LocationUiState.Status.Success -> {
-                            bottomSheetDialog?.dismiss()
-                            Toast.makeText(requireContext(), if(args.isEditMode) "Address updated" else "Address saved", Toast.LENGTH_SHORT).show()
-                            parentFragmentManager.setFragmentResult("address_updated", Bundle())
-                            findNavController().popBackStack()
-                        }
-                        LocationUiState.Status.Error -> {
-                            Toast.makeText(requireContext(), state.error ?: "An error occurred", Toast.LENGTH_SHORT).show()
-                            viewModel.resetStatus()
-                        }
-                        else -> {}
-                    }
+                    handleUiState(state)
                 }
+            }
+        }
+    }
+
+    private fun handleUiState(state: LocationUiState) {
+        when (state.status) {
+            LocationUiState.Status.Loading -> {
+                // Show loading on current button if sheet is open, otherwise on main button
+                bottomSheetDialog?.findViewById<View>(R.id.saveAddressBtn)?.isEnabled = false
+                binding.addLocationBtn.isEnabled = false
+            }
+            LocationUiState.Status.Success -> {
+                bottomSheetDialog?.dismiss()
+                binding.addLocationBtn.isEnabled = true
+                Toast.makeText(requireContext(), if(args.isEditMode) "Address updated" else "Address saved", Toast.LENGTH_SHORT).show()
+                parentFragmentManager.setFragmentResult("address_updated", Bundle())
+                findNavController().popBackStack()
+            }
+            LocationUiState.Status.Error -> {
+                bottomSheetDialog?.findViewById<View>(R.id.saveAddressBtn)?.isEnabled = true
+                binding.addLocationBtn.isEnabled = true
+                Toast.makeText(requireContext(), state.error ?: "An error occurred", Toast.LENGTH_SHORT).show()
+                viewModel.resetStatus()
+            }
+            LocationUiState.Status.Idle -> {
+                bottomSheetDialog?.findViewById<View>(R.id.saveAddressBtn)?.isEnabled = true
+                binding.addLocationBtn.isEnabled = true
             }
         }
     }
@@ -207,6 +224,8 @@ class AddNewAddressFragment : Fragment(R.layout.fragment_add_new_address), OnMap
         skipNextAddresssLookup = args.isEditMode && searchedAddress.isNotBlank()
 
         googleMap.setOnCameraIdleListener {
+            manualLat = null
+            manualLng = null
             val center = googleMap.cameraPosition.target
             animateCenterMarker()
             if (skipNextAddresssLookup){
@@ -427,14 +446,17 @@ class AddNewAddressFragment : Fragment(R.layout.fragment_add_new_address), OnMap
             if (mobile.length != 10) { sheetBinding.mobileInputLayout.error = "Invalid"; return@setOnClickListener }
 
             val cameraTarget = googleMap.cameraPosition.target
+            val finalLat = manualLat ?: cameraTarget.latitude
+            val finalLng = manualLng ?: cameraTarget.longitude
+
             val data = mapOf(
                 "flatNo" to flatNo,
                 "address" to currentSelectedAddress,
                 "userName" to fullName,
                 "mobile" to mobile,
                 "addressType" to addressType,
-                "latitude" to cameraTarget.latitude,
-                "longitude" to cameraTarget.longitude,
+                "latitude" to finalLat,
+                "longitude" to finalLng,
                 "placeName" to binding.addressTitleTv.text.toString()
             )
 
@@ -445,6 +467,8 @@ class AddNewAddressFragment : Fragment(R.layout.fragment_add_new_address), OnMap
     }
 
     private fun syncLocationUi(address: String) {
+        manualLat = null
+        manualLng = null
         isSelectingPlace = true
         binding.locationSearchInput.setText(address)
         isSelectingPlace = false
@@ -458,18 +482,26 @@ class AddNewAddressFragment : Fragment(R.layout.fragment_add_new_address), OnMap
                 val geocoder = Geocoder(requireContext(), Locale.getDefault())
                 @Suppress("DEPRECATION")
                 val addresses = geocoder.getFromLocationName(addressStr, 1)
-                if (!addresses.isNullOrEmpty()) {
-                    val address = addresses[0]
-                    val latLng = LatLng(address.latitude, address.longitude)
-                    kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.Main) {
-                        if (isAdded && ::googleMap.isInitialized) {
+                kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.Main) {
+                    if (isAdded && ::googleMap.isInitialized) {
+                        if (!addresses.isNullOrEmpty()) {
+                            val address = addresses[0]
+                            manualLat = address.latitude
+                            manualLng = address.longitude
+                            val latLng = LatLng(address.latitude, address.longitude)
                             skipNextAddresssLookup = true
                             googleMap.animateCamera(CameraUpdateFactory.newLatLngZoom(latLng, 17f))
+                        } else {
+                            Toast.makeText(requireContext(), "Could not find location for this address", Toast.LENGTH_SHORT).show()
                         }
                     }
                 }
             } catch (e: Exception) {
-                e.printStackTrace()
+                kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.Main) {
+                    if (isAdded) {
+                        Toast.makeText(requireContext(), "Error finding address: ${e.localizedMessage}", Toast.LENGTH_SHORT).show()
+                    }
+                }
             }
         }
     }
