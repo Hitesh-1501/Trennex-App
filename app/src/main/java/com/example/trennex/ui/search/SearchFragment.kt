@@ -1,7 +1,9 @@
 package com.example.trennex.ui.search
 
+import android.content.Context
 import android.os.Bundle
 import android.view.KeyEvent
+import android.view.inputmethod.InputMethodManager
 import androidx.fragment.app.Fragment
 import android.view.LayoutInflater
 import android.view.View
@@ -17,7 +19,6 @@ import androidx.recyclerview.widget.GridLayoutManager
 import androidx.recyclerview.widget.LinearLayoutManager
 import com.example.trennex.R
 import com.example.trennex.data.local.cart.AppDatabase
-import com.example.trennex.data.local.search.RecentSearchEntity
 import com.example.trennex.databinding.FragmentSearchBinding
 import com.example.trennex.ui.main.MainActivity
 import com.example.trennex.ui.search.adapter.SearchOptionAdapter
@@ -49,12 +50,17 @@ class SearchFragment : Fragment(R.layout.fragment_search){
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
+        viewModel.initDao(AppDatabase.getInstance(requireContext()).recentSearchDao())
         setupAdapters()
         setupToolbar()
         setupRecyclerViews()
         setupListeners()
         observeViewModel()
-        loadRecentSearches()
+        
+        // Focus search input and show keyboard
+        searchInput?.requestFocus()
+        val imm = requireContext().getSystemService(Context.INPUT_METHOD_SERVICE) as InputMethodManager
+        imm.showSoftInput(searchInput, InputMethodManager.SHOW_IMPLICIT)
     }
     private fun setupAdapters(){
         searchOptionAdapter = SearchOptionAdapter(
@@ -67,10 +73,7 @@ class SearchFragment : Fragment(R.layout.fragment_search){
                 }
             },
             onRemoveClick = {text ->
-                viewLifecycleOwner.lifecycleScope.launch {
-                    AppDatabase.getInstance(requireContext()).recentSearchDao()
-                        .deleteRecentSearch(text)
-                }
+                viewModel.deleteRecentSearch(text)
             }
         )
         searchResultAdapter = SearchResultAdapter{product ->
@@ -125,9 +128,7 @@ class SearchFragment : Fragment(R.layout.fragment_search){
                     clearSearch?.isVisible = false
                     wishlistIcon?.isVisible = false
                     cartIcon?.isVisible = false
-                    viewModel.clearRecommendations()
-                    loadRecentSearches()
-                    showSuggestions(hasQuery = false)
+                    viewModel.clearSearch()
                 }
                 q.length >= 1 ->{
                     wishlistIcon?.isVisible = false
@@ -146,7 +147,26 @@ class SearchFragment : Fragment(R.layout.fragment_search){
 
     private fun observeViewModel(){
         viewLifecycleOwner.lifecycleScope.launch {
+            viewModel.recentSearches.collectLatest { searches ->
+                val query = searchInput?.text?.toString()?.trim().orEmpty()
+                if (query.isEmpty()) {
+                    if (searches.isNotEmpty()) {
+                        binding.listTitle.text = "RECENT SEARCHES"
+                        binding.listTitle.isVisible = true
+                        searchOptionAdapter.submitItems(searches, isRecommendation = false)
+                    } else {
+                        binding.listTitle.isVisible = false
+                        searchOptionAdapter.submitItems(emptyList(), isRecommendation = false)
+                    }
+                    showSuggestions(hasQuery = false)
+                }
+            }
+        }
+
+        viewLifecycleOwner.lifecycleScope.launch {
             viewModel.uiState.collectLatest { state ->
+                binding.searchProgressBar.isVisible = state.isLoading
+                
                 when{
                     state.recommendations.isNotEmpty() && state.showRecommendations ->{
                         binding.listTitle.text = "RECOMMEND SEARCHES"
@@ -155,12 +175,22 @@ class SearchFragment : Fragment(R.layout.fragment_search){
                         showSuggestions(hasQuery = true)
                     }
                     state.hasResults ->{
-                        binding.searchResultRecyclerView.layoutManager = if(state.isGridLayout){
-                            GridLayoutManager(requireContext(),2)
-                        }else{
-                            LinearLayoutManager(requireContext())
+                        val currentLM = binding.searchResultRecyclerView.layoutManager
+                        val needsNewLM = if (state.isGridLayout) {
+                            currentLM !is GridLayoutManager
+                        } else {
+                            currentLM !is LinearLayoutManager || currentLM is GridLayoutManager
                         }
-                        searchResultAdapter.submitItems(state.searchResults,state.isGridLayout)
+                        
+                        if (needsNewLM) {
+                            binding.searchResultRecyclerView.layoutManager = if (state.isGridLayout) {
+                                GridLayoutManager(requireContext(), 2)
+                            } else {
+                                LinearLayoutManager(requireContext())
+                            }
+                        }
+                        
+                        searchResultAdapter.submitItems(state.searchResults, state.isGridLayout)
                         binding.searchRecyclerView.isVisible = false
                         binding.listTitle.isVisible = false
                         binding.photoSearchSection.isVisible = false
@@ -174,61 +204,40 @@ class SearchFragment : Fragment(R.layout.fragment_search){
                         wishlistIcon?.isVisible = true
                         cartIcon?.isVisible = true
                         clearSearch?.isVisible = searchInput?.text?.toString()?.isNotEmpty() ?: false
-
                     }
                     state.error != null -> {
                         binding.searchRecyclerView.isVisible = false
-                        binding.listTitle.text = state.error
-                        binding.listTitle.isVisible = true
+                        binding.listTitle.isVisible = false
                         binding.bottomOptions.isVisible = false
                         binding.photoSearchSection.isVisible = false
                         binding.searchResultRecyclerView.isVisible = false
                         binding.noProductsContainer.isVisible = true
                         clearSearch?.isVisible = searchInput?.text?.toString()?.isNotEmpty() ?: false
                     }
-
-                }
-            }
-        }
-    }
-
-    private fun loadRecentSearches(){
-        viewLifecycleOwner.lifecycleScope.launch {
-            AppDatabase.getInstance(requireContext()).recentSearchDao()
-                .getRecentSearches().collectLatest {searches->
-                    if(searches.isNotEmpty()){
-                        binding.listTitle.text = "RECENT SEARCHES"
-                        binding.listTitle.isVisible = true
-                        searchOptionAdapter.submitItems(
-                            searches.map { it.query },
-                            isRecommendation = false
-                        )
-                    }else{
-                        binding.listTitle.isVisible = false
-                        searchOptionAdapter.submitItems(emptyList(),false)
+                    !state.isLoading && !state.showRecommendations && !state.hasResults && searchInput?.text?.toString()?.trim()?.isEmpty() == true -> {
+                        // Handled by recent searches observer
                     }
                 }
+            }
         }
     }
+
     private fun performSearch(query: String) {
         if (query.isBlank()) return
-        viewLifecycleOwner.lifecycleScope.launch {
-            if (searchInput?.text?.toString() != query) {
-                searchInput?.setText(query)
-                searchInput?.setSelection(query.length)
-            }
+        
+        // Hide keyboard
+        val imm = requireContext().getSystemService(Context.INPUT_METHOD_SERVICE) as InputMethodManager
+        imm.hideSoftInputFromWindow(searchInput?.windowToken, 0)
 
-            viewLifecycleOwner.lifecycleScope.launch {
-                AppDatabase.getInstance(requireContext()).recentSearchDao()
-                    .deleteRecentSearch(query)
-                AppDatabase.getInstance(requireContext()).recentSearchDao()
-                    .insertRecentSearch(RecentSearchEntity(query = query))
-                viewModel.searchProducts(query)
-            }
+        if (searchInput?.text?.toString() != query) {
+            searchInput?.setText(query)
+            searchInput?.setSelection(query.length)
         }
+        viewModel.searchProducts(query)
     }
     private fun showSuggestions(hasQuery: Boolean){
         binding.searchResultRecyclerView.isVisible = false
+        binding.noProductsContainer.isVisible = false
         binding.searchRecyclerView.isVisible = true
         binding.photoSearchSection.isVisible = !hasQuery
         binding.bottomOptions.isVisible = false
