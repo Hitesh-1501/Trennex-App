@@ -42,10 +42,12 @@
 
         <ImageView
             android:id="@+id/actionIcon"
-            android:layout_width="16dp"
-            android:layout_height="16dp"
+            android:layout_width="32dp"
+            android:layout_height="32dp"
+            android:padding="8dp"
             android:src="@drawable/remove_icon"
             android:contentDescription="Action Icon"
+            android:background="?attr/selectableItemBackgroundBorderless"
             app:tint="@color/textSecondary" />
     </LinearLayout>
 
