@@ -57,7 +57,7 @@ class SearchOptionAdapter(
                     onItemClick(text, isRecommendation)
                 }
             }
-            binding.root.setOnClickListener {
+            binding.itemContentLayout.setOnClickListener {
                 onItemClick(text, isRecommendation)
             }
         }
