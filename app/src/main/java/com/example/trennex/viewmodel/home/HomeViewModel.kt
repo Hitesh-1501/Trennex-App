@@ -106,7 +106,7 @@ class HomeViewModel : ViewModel() {
         }
     }
 
-    fun saveCurrentAddress(address: String) {
+    fun saveCurrentAddress(address: String, latitude: Double, longitude: Double) {
         viewModelScope.launch {
             val cleanedAddress = address.trim()
             if (cleanedAddress.isBlank()) return@launch
@@ -123,7 +123,10 @@ class HomeViewModel : ViewModel() {
             val data = mapOf(
                 "address" to cleanedAddress,
                 "userName" to _uiState.value.userName,
-                "addressType" to "Home"
+                "addressType" to "Home",
+                "latitude" to latitude,
+                "longitude" to longitude,
+                "placeName" to (cleanedAddress.take(20) + if(cleanedAddress.length > 20) "..." else "")
             )
             val id = userRepository.saveAddress(data)
             if (id != null) {
