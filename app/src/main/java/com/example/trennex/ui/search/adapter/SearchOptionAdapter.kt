@@ -48,7 +48,7 @@ class SearchOptionAdapter(
         fun bind(text: String, isRecommendation: Boolean) {
             binding.title.text = text
             binding.leftIcon.setImageResource(if (isRecommendation) R.drawable.search_mini_icon else R.drawable.history_icon)
-            binding.actionIcon.setImageResource(if (isRecommendation) R.drawable.upper_icon else R.drawable.remove_icon)
+            binding.actionIcon.setImageResource(if (isRecommendation) R.drawable.upper_icon else R.drawable.baseline_close_24)
             
             binding.actionIcon.setOnClickListener {
                 if(!isRecommendation){
