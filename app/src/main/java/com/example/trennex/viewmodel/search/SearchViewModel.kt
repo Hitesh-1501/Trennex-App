@@ -147,25 +147,23 @@ class SearchViewModel: ViewModel(){
     }
     private fun shouldShowGenderFilter(query: String, results: List<ProductResponse>): Boolean{
         val queryLower = query.lowercase()
-        val clothingCategories = setOf(
+        val clothingKeywords = setOf(
             "shirt", "dress", "cloth", "tshirt", "t-shirt", "polo", "hoodie",
             "sweater", "jacket", "coat", "blazer", "cardigan", "pant", "pants",
             "jeans", "shorts", "skirt", "saree", "lehenga", "top", "camisole",
-            "tank", "vest", "robe", "gown", "suit",
-            "shoe", "shoes", "sneaker", "boot", "sandal", "flip", "flop",
-            "slipper", "heel", "pump", "loafer", "oxford", "athletic",
-            "accessory", "accessories", "belt", "bag", "purse", "wallet",
-            "watch", "jewelry", "necklace", "bracelet", "earring", "ring",
-            "pendant", "chain", "brooch", "pin", "tie", "necktie", "scarf",
-            "cap", "hat", "beret", "beanie", "glove", "mitten", "sock",
-            "sunglasses", "glass", "headband", "hairpin"
+            "tank", "vest", "robe", "gown", "suit", "wear", "bottom", "apparel"
         )
-        if(clothingCategories.any{queryLower.contains(it)}){
+        
+        // Strictly check if query contains clothing related keywords
+        if(clothingKeywords.any{ queryLower.contains(it) }){
             return true
         }
+        
+        // Also check result categories
         if(results.isNotEmpty()){
             val category = results[0].category?.lowercase() ?: ""
-            if (clothingCategories.any { category.contains(it) }) {
+            val clothingCategories = setOf("clothing", "apparel", "men's fashion", "women's fashion", "kids' fashion")
+            if (clothingCategories.any { category.contains(it) } || clothingKeywords.any { category.contains(it) }) {
                 return true
             }
         }
