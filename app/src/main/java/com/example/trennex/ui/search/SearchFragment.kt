@@ -176,10 +176,23 @@ class SearchFragment : Fragment(R.layout.fragment_search){
                         }
                         
                         searchResultAdapter.submitItems(state.searchResults, state.isGridLayout)
-                        binding.searchRecyclerView.isVisible = false
+                        
+                        if (binding.searchRecyclerView.isVisible) {
+                            binding.searchResultRecyclerView.alpha = 0f
+                            binding.searchResultRecyclerView.isVisible = true
+                            binding.searchResultRecyclerView.animate().alpha(1f).setDuration(300).start()
+                            
+                            binding.searchRecyclerView.animate().alpha(0f).setDuration(200).withEndAction {
+                                binding.searchRecyclerView.isVisible = false
+                                binding.searchRecyclerView.alpha = 1f
+                            }.start()
+                        } else {
+                            binding.searchResultRecyclerView.isVisible = true
+                            binding.searchRecyclerView.isVisible = false
+                        }
+
                         binding.listTitle.isVisible = false
                         binding.photoSearchSection.isVisible = false
-                        binding.searchResultRecyclerView.isVisible = true
                         binding.noProductsContainer.isVisible = false
                         binding.bottomOptions.isVisible = true
 
