@@ -10,6 +10,7 @@ import android.view.View
 import android.view.ViewGroup
 import android.widget.EditText
 import android.widget.ImageView
+import android.widget.Toast
 import androidx.core.view.isVisible
 import androidx.core.widget.doAfterTextChanged
 import androidx.fragment.app.viewModels
@@ -37,8 +38,7 @@ class SearchFragment : Fragment(R.layout.fragment_search){
 
     private var searchInput: EditText? = null
     private var clearSearch: ImageView? = null
-    private var wishlistIcon: ImageView? = null
-    private var cartIcon: ImageView? = null
+    private var micSearch: ImageView? = null
 
     override fun onCreateView(
         inflater: LayoutInflater, container: ViewGroup?,
@@ -89,28 +89,17 @@ class SearchFragment : Fragment(R.layout.fragment_search){
         val mainActivity = (requireActivity() as MainActivity)
         searchInput = mainActivity.findViewById(R.id.searchInput)
         clearSearch = mainActivity.findViewById(R.id.clearSearch)
-        wishlistIcon = mainActivity.findViewById(R.id.ivwishlist)
-        cartIcon = mainActivity.findViewById(R.id.ivcart)
+        micSearch = mainActivity.findViewById(R.id.micSearch)
 
-        wishlistIcon?.isVisible = false
-        cartIcon?.isVisible = false
         clearSearch?.isVisible = false
 
         clearSearch?.setOnClickListener {
             searchInput?.text?.clear()
             clearSearch?.isVisible = false
         }
-
-        wishlistIcon?.setOnClickListener {
-            if (findNavController().currentDestination?.id == R.id.searchFragment) {
-                findNavController().navigate(R.id.wishlistFragment)
-            }
-        }
-
-        cartIcon?.setOnClickListener {
-            if (findNavController().currentDestination?.id == R.id.searchFragment) {
-                findNavController().navigate(R.id.cartFragment)
-            }
+        
+        micSearch?.setOnClickListener {
+            Toast.makeText(requireContext(), "Voice Search coming soon", Toast.LENGTH_SHORT).show()
         }
     }
     private fun setupRecyclerViews() {
@@ -122,17 +111,13 @@ class SearchFragment : Fragment(R.layout.fragment_search){
         searchInput?.doAfterTextChanged { query ->
             val q = query?.toString()?.trim().orEmpty()
             clearSearch?.isVisible = q.isNotEmpty()
+            micSearch?.isVisible = q.isEmpty()
 
             when{
                 q.isEmpty() -> {
-                    clearSearch?.isVisible = false
-                    wishlistIcon?.isVisible = false
-                    cartIcon?.isVisible = false
                     viewModel.clearSearch()
                 }
                 q.length >= 1 ->{
-                    wishlistIcon?.isVisible = false
-                    cartIcon?.isVisible = false
                     viewModel.loadRecommendations(q)
                 }
             }
@@ -201,8 +186,6 @@ class SearchFragment : Fragment(R.layout.fragment_search){
                         binding.optionSecondary.isVisible = state.showGenderFilter
                         binding.optionDivider.isVisible = state.showGenderFilter
 
-                        wishlistIcon?.isVisible = true
-                        cartIcon?.isVisible = true
                         clearSearch?.isVisible = searchInput?.text?.toString()?.isNotEmpty() ?: false
                     }
                     state.error != null -> {
@@ -247,8 +230,7 @@ class SearchFragment : Fragment(R.layout.fragment_search){
         super.onDestroyView()
         searchInput = null
         clearSearch = null
-        wishlistIcon = null
-        cartIcon = null
+        micSearch = null
         _binding = null
     }
 }
