@@ -154,19 +154,23 @@ class SearchViewModel: ViewModel(){
             "tank", "vest", "robe", "gown", "suit", "wear", "bottom", "apparel"
         )
         
-        // Strictly check if query contains clothing related keywords
-        if(clothingKeywords.any{ queryLower.contains(it) }){
+        // Split query into words to avoid partial matches like "laptop" matching "top"
+        val words = queryLower.split(Regex("[\\s,.-]+")).filter { it.isNotBlank() }
+        
+        // Check for exact word match
+        if(words.any { word -> clothingKeywords.contains(word) }){
             return true
         }
         
-        // Also check result categories
+        // Also check result categories if available
         if(results.isNotEmpty()){
             val category = results[0].category?.lowercase() ?: ""
             val clothingCategories = setOf("clothing", "apparel", "men's fashion", "women's fashion", "kids' fashion")
-            if (clothingCategories.any { category.contains(it) } || clothingKeywords.any { category.contains(it) }) {
+            if (clothingCategories.any { category.contains(it) }) {
                 return true
             }
         }
+        
         return false
     }
 }
