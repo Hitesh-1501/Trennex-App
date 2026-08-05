@@ -235,7 +235,7 @@ class MainActivity : AppCompatActivity() {
             ToolBarType.SEARCH -> {
                 val toolbarBinding = SearchToolbarBinding.inflate(layoutInflater)
                 binding.toolbarContainer.addView(toolbarBinding.root)
-                binding.appBarLayout.setBackgroundColor("#332962FF".toColorInt())
+                binding.appBarLayout.setBackgroundColor("#E3EBFF".toColorInt())
                 toolbarBinding.backArrow.setOnClickListener {
                     navController.popBackStack()
                 }
