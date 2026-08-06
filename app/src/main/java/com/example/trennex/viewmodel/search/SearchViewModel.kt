@@ -147,6 +147,16 @@ class SearchViewModel: ViewModel(){
     }
     private fun shouldShowGenderFilter(query: String, results: List<ProductResponse>): Boolean{
         val queryLower = query.lowercase()
+        
+        // Define non-clothing items to exclude early (exact or partial matches that shouldn't trigger gender)
+        val nonClothingKeywords = setOf(
+            "laptop", "phone", "mobile", "tv", "television", "computer", "pc", 
+            "camera", "watch", "smartwatch", "headphone", "earphone", "speaker",
+            "tablet", "ipad", "macbook", "desktop", "tabletop", "stop", "photoshop",
+            "fridge", "refrigerator", "ac", "conditioner", "oven", "microwave"
+        )
+        if (nonClothingKeywords.any { queryLower.contains(it) }) return false
+
         val clothingKeywords = setOf(
             "shirt", "dress", "cloth", "tshirt", "t-shirt", "polo", "hoodie",
             "sweater", "jacket", "coat", "blazer", "cardigan", "pant", "pants",
