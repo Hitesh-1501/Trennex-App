@@ -11,6 +11,8 @@ import android.view.ViewGroup
 import android.widget.EditText
 import android.widget.ImageView
 import android.widget.Toast
+import androidx.core.view.ViewCompat
+import androidx.core.view.WindowInsetsCompat
 import androidx.core.view.isVisible
 import androidx.core.widget.doAfterTextChanged
 import androidx.fragment.app.viewModels
@@ -56,11 +58,20 @@ class SearchFragment : Fragment(R.layout.fragment_search){
         setupRecyclerViews()
         setupListeners()
         observeViewModel()
+        setupWindowInsets()
         
         // Focus search input and show keyboard
         searchInput?.requestFocus()
         val imm = requireContext().getSystemService(Context.INPUT_METHOD_SERVICE) as InputMethodManager
         imm.showSoftInput(searchInput, InputMethodManager.SHOW_IMPLICIT)
+    }
+
+    private fun setupWindowInsets() {
+        ViewCompat.setOnApplyWindowInsetsListener(binding.bottomOptions) { v, insets ->
+            val systemBars = insets.getInsets(WindowInsetsCompat.Type.systemBars())
+            v.setPadding(v.paddingLeft, v.paddingTop, v.paddingRight, systemBars.bottom)
+            insets
+        }
     }
     private fun setupAdapters(){
         searchOptionAdapter = SearchOptionAdapter(
