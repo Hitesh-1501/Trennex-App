@@ -142,7 +142,8 @@
     <LinearLayout
         android:id="@+id/bottomOptions"
         android:layout_width="match_parent"
-        android:layout_height="48dp"
+        android:layout_height="wrap_content"
+        android:minHeight="48dp"
         android:background="@color/colorBackground"
         android:elevation="8dp"
         android:gravity="center_vertical"
