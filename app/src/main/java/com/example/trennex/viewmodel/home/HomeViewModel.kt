@@ -14,6 +14,8 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.update
+import kotlinx.coroutines.async
+import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.launch
 
 class HomeViewModel : ViewModel() {
@@ -32,21 +34,29 @@ class HomeViewModel : ViewModel() {
         viewModelScope.launch {
             _uiState.update { it.copy(isLoading = true) }
             try {
-                val categories = productRepository.getCategory().mapIndexed { index, cat ->
-                    CategoryModel(id = index + 1, title = cat.name, slug = cat.slug)
-                }
-                val products = productRepository.getProducts().map {
-                    ProductModel(id = it.id, image = it.thumbnail, name = it.title, price = it.price)
-                }
-                val banners = products.mapNotNull { it.image }.filter { it.isNotBlank() }.take(5)
-                
-                _uiState.update { 
-                    it.copy(
-                        categories = listOf(CategoryModel(0, "All", null)) + categories,
-                        products = products,
-                        banners = banners,
-                        isLoading = false
-                    ) 
+                coroutineScope {
+                    val categoriesDeferred = async { productRepository.getCategory() }
+                    val productsDeferred = async { productRepository.getProducts() }
+                    
+                    val categoryResponse = categoriesDeferred.await()
+                    val productResponse = productsDeferred.await()
+
+                    val categories = categoryResponse.mapIndexed { index, cat ->
+                        CategoryModel(id = index + 1, title = cat.name, slug = cat.slug)
+                    }
+                    val products = productResponse.map {
+                        ProductModel(id = it.id, image = it.thumbnail, name = it.title, price = it.price)
+                    }
+                    val banners = products.mapNotNull { it.image }.filter { it.isNotBlank() }.take(5)
+                    
+                    _uiState.update { 
+                        it.copy(
+                            categories = listOf(CategoryModel(0, "All", null)) + categories,
+                            products = products,
+                            banners = banners,
+                            isLoading = false
+                        ) 
+                    }
                 }
             } catch (e: Exception) {
                 _uiState.update { it.copy(isLoading = false, error = e.localizedMessage) }
