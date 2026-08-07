@@ -5,8 +5,8 @@ import com.example.trennex.data.model.ProductResponse
 import com.example.trennex.data.remote.network.RetrofitInstance
 
 class ProductRepository {
-    suspend fun getProducts(): List<ProductResponse>{
-        return RetrofitInstance.api.getProducts().products
+    suspend fun getProducts(limit: Int = 30, skip: Int = 0): List<ProductResponse>{
+        return RetrofitInstance.api.getProducts(limit, skip).products
     }
 
     suspend fun getProductDetail(id: Int) : ProductResponse {
