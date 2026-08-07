@@ -40,11 +40,28 @@ class HomeViewModel : ViewModel() {
                     
                     val categoryResponse = categoriesDeferred.await()
                     val productResponse = productsDeferred.await()
+                    
+                    // Fetch top deals separately (e.g. from 30 onwards)
+                    val topDealsDeferred = async { productRepository.getProducts(limit = 10, skip = 30) }
+                    
+                    // Fetch new arrivals (e.g. from 40 onwards)
+                    val newArrivalsDeferred = async { productRepository.getProducts(limit = 10, skip = 40) }
+                    
+                    val catRes = categoriesDeferred.await()
+                    val prodRes = productsDeferred.await()
+                    val dealRes = topDealsDeferred.await()
+                    val arrivalRes = newArrivalsDeferred.await()
 
-                    val categories = categoryResponse.mapIndexed { index, cat ->
+                    val categories = catRes.mapIndexed { index, cat ->
                         CategoryModel(id = index + 1, title = cat.name, slug = cat.slug)
                     }
-                    val products = productResponse.map {
+                    val products = prodRes.map {
+                        ProductModel(id = it.id, image = it.thumbnail, name = it.title, price = it.price)
+                    }
+                    val topDeals = dealRes.map {
+                        ProductModel(id = it.id, image = it.thumbnail, name = it.title, price = it.price)
+                    }
+                    val newArrivals = arrivalRes.map {
                         ProductModel(id = it.id, image = it.thumbnail, name = it.title, price = it.price)
                     }
                     val banners = products.mapNotNull { it.image }.filter { it.isNotBlank() }.take(5)
@@ -53,6 +70,8 @@ class HomeViewModel : ViewModel() {
                         it.copy(
                             categories = listOf(CategoryModel(0, "All", null)) + categories,
                             products = products,
+                            topDeals = topDeals,
+                            newArrivals = newArrivals,
                             banners = banners,
                             isLoading = false
                         ) 
@@ -82,6 +101,10 @@ class HomeViewModel : ViewModel() {
                 }
             }.collectLatest { }
         }
+    }
+
+    fun refreshData() {
+        fetchInitialData()
     }
 
     fun fetchProductsByCategory(slug: String?) {
