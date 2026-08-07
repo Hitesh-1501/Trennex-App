@@ -138,7 +138,10 @@ class HomeFragment : Fragment(R.layout.fragment_home) {
         viewLifecycleOwner.lifecycleScope.launch {
             viewLifecycleOwner.repeatOnLifecycle(Lifecycle.State.STARTED) {
                 viewModel.uiState.collect { state ->
-                    binding.swipeRefreshLayout.isRefreshing = state.isLoading
+                    val isFirstLoad = state.isLoading && state.products.isEmpty()
+                    binding.homeProgressBar.isVisible = isFirstLoad
+                    binding.homeContentScrollView.isVisible = state.products.isNotEmpty()
+                    binding.swipeRefreshLayout.isRefreshing = state.isLoading && !isFirstLoad
                     
                     setupProducts(state.products)
                     setupTopDeals(state.topDeals)
@@ -570,6 +573,13 @@ class HomeFragment : Fragment(R.layout.fragment_home) {
         locationBottomSheet?.dismiss()
         locationBottomSheet = null
         bottomSheetBinding = null
+        
+        currentCategories = null
+        currentProducts = null
+        currentTopDeals = null
+        currentNewArrivals = null
+        currentBanners = null
+        
         _binding = null
     }
 }
