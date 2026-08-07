@@ -62,6 +62,8 @@ import com.google.android.libraries.places.widget.model.AutocompleteActivityMode
 import com.google.android.material.bottomsheet.BottomSheetBehavior
 import com.google.android.material.bottomsheet.BottomSheetDialog
 import com.google.android.material.tabs.TabLayoutMediator
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.launch
@@ -76,6 +78,9 @@ class HomeFragment : Fragment(R.layout.fragment_home) {
     private var loginUserName = "Guest User"
     
     private lateinit var saveAddressAdapter: SaveAddressAdapter
+    
+    private var bannerJob: Job? = null
+    private var bannerPageCallbacks: ViewPager2.OnPageChangeCallback? = null
     
     private var bottomSheetBinding: BottomSheetSelectLocationBinding? = null
     private var locationBottomSheet: BottomSheetDialog? = null
@@ -112,40 +117,32 @@ class HomeFragment : Fragment(R.layout.fragment_home) {
         return binding.root
     }
 
-    private val bannerHandler = Handler(Looper.getMainLooper())
-    private var bannerPageCallbacks: ViewPager2.OnPageChangeCallback? = null
-    private val bannerRunnable = object : Runnable{
-        override fun run() {
-            val nextItem = binding.rvBanners.currentItem+1
-            binding.rvBanners.setCurrentItem(nextItem,true)
-            bannerHandler.postDelayed(this,3000)
-        }
-    }
-
-    override fun onResume() {
-        super.onResume()
-        bannerHandler.postDelayed(bannerRunnable,3000)
-    }
-
-    override fun onPause() {
-        super.onPause()
-        bannerHandler.removeCallbacks(bannerRunnable)
-    }
-
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
         fusedLocationClient = LocationServices.getFusedLocationProviderClient(requireContext())
         UserDetailsDialog.showIfNeeded(this){}
         
+        setupRefreshLayout()
         setupLocationUi()
         observeViewModel()
+    }
+
+    private fun setupRefreshLayout() {
+        binding.swipeRefreshLayout.setColorSchemeColors(ContextCompat.getColor(requireContext(), R.color.colorPrimary))
+        binding.swipeRefreshLayout.setOnRefreshListener {
+            viewModel.refreshData()
+        }
     }
 
     private fun observeViewModel() {
         viewLifecycleOwner.lifecycleScope.launch {
             viewLifecycleOwner.repeatOnLifecycle(Lifecycle.State.STARTED) {
                 viewModel.uiState.collect { state ->
+                    binding.swipeRefreshLayout.isRefreshing = state.isLoading
+                    
                     setupProducts(state.products)
+                    setupTopDeals(state.topDeals)
+                    setupNewArrivals(state.newArrivals)
                     setupCategories(state.categories)
                     setupBanners(state.banners)
                     loginUserName = state.userName
@@ -412,21 +409,70 @@ class HomeFragment : Fragment(R.layout.fragment_home) {
         }
     }
 
+    private var currentTopDeals: List<ProductModel>? = null
+    private fun setupTopDeals(list: List<ProductModel>) {
+        if (currentTopDeals == list) return
+        currentTopDeals = list
+        
+        val hasDeals = list.isNotEmpty()
+        binding.topDealsHeader.isVisible = hasDeals
+        binding.rvTopDeals.isVisible = hasDeals
+        
+        if (!hasDeals) return
+        
+        binding.rvTopDeals.apply {
+            layoutManager = GridLayoutManager(requireContext(), 2) // Larger items for top deals
+            isNestedScrollingEnabled = false
+            adapter = ProductAdapter(list) { product ->
+                val action = HomeFragmentDirections.actionHomeFragmentToProductDetailFragment(product.id)
+                findNavController().navigate(action)
+            }
+        }
+    }
+
+    private var currentNewArrivals: List<ProductModel>? = null
+    private fun setupNewArrivals(list: List<ProductModel>) {
+        if (currentNewArrivals == list) return
+        currentNewArrivals = list
+        
+        val hasArrivals = list.isNotEmpty()
+        binding.newArrivalsHeader.isVisible = hasArrivals
+        binding.rvNewArrivals.isVisible = hasArrivals
+        
+        if (!hasArrivals) return
+        
+        binding.rvNewArrivals.apply {
+            layoutManager = GridLayoutManager(requireContext(), 2) 
+            isNestedScrollingEnabled = false
+            adapter = ProductAdapter(list) { product ->
+                val action = HomeFragmentDirections.actionHomeFragmentToProductDetailFragment(product.id)
+                findNavController().navigate(action)
+            }
+        }
+    }
+
     private var currentBanners: List<String>? = null
     @SuppressLint("ClickableViewAccessibility")
     private fun setupBanners(images: List<String>) {
         if (currentBanners == images) return
         currentBanners = images
         
-        bannerPageCallbacks?.let { binding.rvBanners.unregisterOnPageChangeCallback(it) }
+        stopBannerAutoScroll()
         bannerMediator?.detach()
 
-        if(images.isEmpty()) return
+        if(images.isEmpty()) {
+            binding.rvBanners.visibility = View.GONE
+            binding.bannerIndicator.visibility = View.GONE
+            return
+        }
+        
+        binding.rvBanners.visibility = View.VISIBLE
+        binding.bannerIndicator.visibility = View.VISIBLE
         
         val banner = images.take(5).mapIndexed { index, image -> BannerModel(index + 1 , image) }
 
         if(banner.size == 1){
-            val adapter = HomeFragmentPagerAdapter(this,banner)
+            val adapter = HomeFragmentPagerAdapter(this, banner)
             binding.rvBanners.adapter = adapter
             binding.bannerIndicator.removeAllTabs()
             return
@@ -436,44 +482,87 @@ class HomeFragment : Fragment(R.layout.fragment_home) {
         bannerList.add(banner.last())
         bannerList.addAll(banner)
         bannerList.add(banner.first())
+        
         val adapter = HomeFragmentPagerAdapter(this, bannerList)
         binding.rvBanners.adapter = adapter
         binding.rvBanners.setCurrentItem(1, false)
-        bannerMediator =  TabLayoutMediator(binding.bannerIndicator, binding.rvBanners) { tab, position ->
+        
+        bannerMediator = TabLayoutMediator(binding.bannerIndicator, binding.rvBanners) { tab, position ->
             if (position == 0 || position == bannerList.size - 1) {
                 tab.view.visibility = View.GONE
             }
         }
         bannerMediator?.attach()
+        
         for (i in 0 until binding.bannerIndicator.tabCount) {
             val tab = binding.bannerIndicator.getTabAt(i)
             tab?.customView = layoutInflater.inflate(R.layout.banner_dot_tab, binding.bannerIndicator, false)
         }
+
+        if (bannerPageCallbacks != null) {
+            binding.rvBanners.unregisterOnPageChangeCallback(bannerPageCallbacks!!)
+        }
+
         val callback = object : ViewPager2.OnPageChangeCallback() {
-                override fun onPageScrollStateChanged(state: Int) {
-                    if (state == ViewPager2.SCROLL_STATE_IDLE) {
-                        val position = binding.rvBanners.currentItem
-                        when (position) {
-                            0 -> binding.rvBanners.setCurrentItem(bannerList.size - 2, false)
-                            bannerList.size - 1 -> binding.rvBanners.setCurrentItem(1, false)
-                        }
+            override fun onPageScrollStateChanged(state: Int) {
+                if (state == ViewPager2.SCROLL_STATE_IDLE) {
+                    val position = binding.rvBanners.currentItem
+                    if (position == 0) {
+                        binding.rvBanners.setCurrentItem(bannerList.size - 2, false)
+                    } else if (position == bannerList.size - 1) {
+                        binding.rvBanners.setCurrentItem(1, false)
                     }
                 }
             }
+        }
         bannerPageCallbacks = callback
         binding.rvBanners.registerOnPageChangeCallback(callback)
-        binding.rvBanners.getChildAt(0).setOnTouchListener { _,event ->
+        
+        binding.rvBanners.getChildAt(0).setOnTouchListener { _, event ->
             when(event.action){
-                MotionEvent.ACTION_DOWN -> bannerHandler.removeCallbacks(bannerRunnable)
-                MotionEvent.ACTION_UP, MotionEvent.ACTION_CANCEL -> bannerHandler.postDelayed(bannerRunnable,3000)
+                MotionEvent.ACTION_DOWN -> stopBannerAutoScroll()
+                MotionEvent.ACTION_UP, MotionEvent.ACTION_CANCEL -> startBannerAutoScroll()
             }
             false
         }
+        
+        startBannerAutoScroll()
+    }
+
+    private fun startBannerAutoScroll() {
+        stopBannerAutoScroll()
+        bannerJob = viewLifecycleOwner.lifecycleScope.launch {
+            while (true) {
+                delay(3000)
+                if (isAdded && _binding != null) {
+                    val nextItem = binding.rvBanners.currentItem + 1
+                    binding.rvBanners.setCurrentItem(nextItem, true)
+                }
+            }
+        }
+    }
+
+    private fun stopBannerAutoScroll() {
+        bannerJob?.cancel()
+        bannerJob = null
+    }
+
+    override fun onResume() {
+        super.onResume()
+        if (currentBanners?.isNotEmpty() == true) startBannerAutoScroll()
+    }
+
+    override fun onPause() {
+        super.onPause()
+        stopBannerAutoScroll()
     }
 
     override fun onDestroyView() {
         super.onDestroyView()
-        bannerPageCallbacks?.let { binding.rvBanners.unregisterOnPageChangeCallback(it) }
+        stopBannerAutoScroll()
+        if (bannerPageCallbacks != null) {
+            binding.rvBanners.unregisterOnPageChangeCallback(bannerPageCallbacks!!)
+        }
         bannerPageCallbacks = null
         bannerMediator?.detach()
         bannerMediator = null
