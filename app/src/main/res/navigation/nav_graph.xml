@@ -93,7 +93,15 @@
         <action
             android:id="@+id/action_homeFragment_to_addNewAddressFragment"
             app:destination="@id/addNewAddressFragment" />
+        <action
+            android:id="@+id/action_homeFragment_to_notificationFragment"
+            app:destination="@id/notificationFragment" />
     </fragment>
+    <fragment
+        android:id="@+id/notificationFragment"
+        android:name="com.example.trennex.ui.notification.NotificationFragment"
+        android:label="fragment_notification"
+        tools:layout="@layout/fragment_notification" />
     <fragment
         android:id="@+id/categoryFragment"
         android:name="com.example.trennex.ui.category.CategoryFragment"
