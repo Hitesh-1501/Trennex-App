@@ -131,6 +131,11 @@ class MainActivity : AppCompatActivity() {
                     setLightStatusBar(true)
                     binding.curveBottomNav.visibility = View.GONE
                 }
+                R.id.notificationFragment -> {
+                    showToolBar(ToolBarType.NOTIFICATIONS, "Notifications")
+                    setLightStatusBar(true)
+                    binding.curveBottomNav.visibility = View.GONE
+                }
                 R.id.addNewAddressFragment -> {
                     showToolBar(ToolBarType.TITLE,"Add New Address")
                     setLightStatusBar(true)
@@ -206,6 +211,11 @@ class MainActivity : AppCompatActivity() {
                 
                 toolbarBinding.locationAddress.text = viewModel.selectedAddress.value ?: "Your delivery address"
                 
+                toolbarBinding.notificationBar.setOnClickListener {
+                    if(navController.currentDestination?.id == R.id.homeFragment){
+                        navController.navigate(R.id.action_homeFragment_to_notificationFragment)
+                    }
+                }
                 toolbarBinding.wishlistBar.setOnClickListener {
                     if(navController.currentDestination?.id == R.id.homeFragment){
                         navController.navigate(R.id.action_homeFragment_to_wishlistFragment)
@@ -286,6 +296,15 @@ class MainActivity : AppCompatActivity() {
                 val toolbarBinding = WishlistToolbarBinding.inflate(layoutInflater)
                 binding.toolbarContainer.addView(toolbarBinding.root)
                 binding.appBarLayout.setBackgroundColor(Color.WHITE)
+            }
+            ToolBarType.NOTIFICATIONS -> {
+                val toolbarBinding = TitleToolbarBinding.inflate(layoutInflater)
+                binding.toolbarContainer.addView(toolbarBinding.root)
+                toolbarBinding.pageTitle.text = title
+                binding.appBarLayout.setBackgroundColor("#332962FF".toColorInt())
+                toolbarBinding.backArrow.setOnClickListener {
+                    navController.popBackStack()
+                }
             }
         }
     }
