@@ -35,7 +35,7 @@
     </style>
 
     <style name="LoginInputLayout" parent="Widget.MaterialComponents.TextInputLayout.OutlinedBox">
-        <item name="boxStrokeColor">@color/color</item>
+        <item name="boxStrokeColor">@color/colorPrimary</item>
         <item name="errorTextColor">@color/colorError</item>
         <item name="boxStrokeWidth">1dp</item>
         <item name="boxStrokeWidthFocused">2dp</item>
