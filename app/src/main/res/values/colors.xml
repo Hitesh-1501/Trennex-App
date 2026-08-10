@@ -32,6 +32,8 @@
     <color name="wishlist_border_color">#E6EAF2</color>
 
     <color name="toolbar_bg">#332962FF</color>
+    <color name="search_toolbar_bg">#E3EBFF</color>
+    <color name="product_toolbar_bg">#4D2962FF</color>
     <color name="bg_color">#ECECEC</color>
     <color name="borderColor">#D9D9D9</color>
     <color name="notification_toolbar_bg">#DCE6FF</color>
