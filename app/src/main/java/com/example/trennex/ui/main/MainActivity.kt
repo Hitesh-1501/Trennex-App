@@ -22,7 +22,6 @@ import com.example.trennex.databinding.TitleToolbarBinding
 import com.example.trennex.databinding.ToolbarHomeBinding
 import com.example.trennex.databinding.ToolbarProductScreenBinding
 import np.com.susanthapa.curved_bottom_navigation.CbnMenuItem
-import androidx.core.graphics.toColorInt
 import com.example.trennex.databinding.CategoryToolbarBinding
 import com.example.trennex.databinding.ToolbarCartBinding
 import com.example.trennex.databinding.WishlistToolbarBinding
@@ -231,7 +230,7 @@ class MainActivity : AppCompatActivity() {
                 val toolbarBinding = TitleToolbarBinding.inflate(layoutInflater)
                 binding.toolbarContainer.addView(toolbarBinding.root)
                 toolbarBinding.pageTitle.text = title
-                binding.appBarLayout.setBackgroundColor("#332962FF".toColorInt())
+                binding.appBarLayout.setBackgroundColor(getColor(R.color.toolbar_bg))
                 toolbarBinding.backArrow.setOnClickListener {
                     navController.popBackStack()
                 }
@@ -245,7 +244,7 @@ class MainActivity : AppCompatActivity() {
             ToolBarType.SEARCH -> {
                 val toolbarBinding = SearchToolbarBinding.inflate(layoutInflater)
                 binding.toolbarContainer.addView(toolbarBinding.root)
-                binding.appBarLayout.setBackgroundColor( "#E3EBFF".toColorInt())
+                binding.appBarLayout.setBackgroundColor(getColor(R.color.search_toolbar_bg))
                 toolbarBinding.backArrow.setOnClickListener {
                     navController.popBackStack()
                 }
@@ -264,7 +263,7 @@ class MainActivity : AppCompatActivity() {
                 toolbarBinding.backArrow.setOnClickListener {
                     navController.popBackStack()
                 }
-                binding.appBarLayout.setBackgroundColor("#4D2962FF".toColorInt())
+                binding.appBarLayout.setBackgroundColor(getColor(R.color.product_toolbar_bg))
             }
             ToolBarType.CART ->{
                 val toolbarBinding = ToolbarCartBinding.inflate(layoutInflater)
@@ -275,12 +274,12 @@ class MainActivity : AppCompatActivity() {
             ToolBarType.WISHLIST -> {
                 val toolbarBinding = WishlistToolbarBinding.inflate(layoutInflater)
                 binding.toolbarContainer.addView(toolbarBinding.root)
-                binding.appBarLayout.setBackgroundColor("#332962FF".toColorInt())
+                binding.appBarLayout.setBackgroundColor(getColor(R.color.toolbar_bg))
             }
             ToolBarType.CATEGORIES -> {
                 val toolbarBinding = CategoryToolbarBinding.inflate(layoutInflater)
                 binding.toolbarContainer.addView(toolbarBinding.root)
-                binding.appBarLayout.setBackgroundColor("#332962FF".toColorInt())
+                binding.appBarLayout.setBackgroundColor(getColor(R.color.toolbar_bg))
                 toolbarBinding.searchBar.setOnClickListener {
                     if (navController.currentDestination?.id == R.id.categoryFragment) {
                         navController.navigate(R.id.searchFragment)
@@ -301,7 +300,7 @@ class MainActivity : AppCompatActivity() {
                 val toolbarBinding = TitleToolbarBinding.inflate(layoutInflater)
                 binding.toolbarContainer.addView(toolbarBinding.root)
                 toolbarBinding.pageTitle.text = title
-                binding.appBarLayout.setBackgroundColor("#332962FF".toColorInt())
+                binding.appBarLayout.setBackgroundColor(getColor(R.color.notification_toolbar_bg))
                 toolbarBinding.backArrow.setOnClickListener {
                     navController.popBackStack()
                 }
@@ -371,11 +370,11 @@ class MainActivity : AppCompatActivity() {
             2->{
                 pbCart.isIndeterminate = false
                 pbCart.progress = 100
-                pbCart.progressTintList = ColorStateList.valueOf("#21AD60".toColorInt())
+                pbCart.progressTintList = ColorStateList.valueOf(getColor(R.color.colorProgress))
                 statusCart.setImageResource(R.drawable.ic_step_done)
 
                 pbAddress.isIndeterminate = true
-                pbAddress.indeterminateTintList = ColorStateList.valueOf("#2962FF".toColorInt())
+                pbAddress.indeterminateTintList = ColorStateList.valueOf(getColor(R.color.colorPrimary))
                 statusAddress.setImageResource(R.drawable.ic_step_active)
 
                 pbPayment.isIndeterminate = false
@@ -387,16 +386,16 @@ class MainActivity : AppCompatActivity() {
             3 ->{
                 pbCart.isIndeterminate = false
                 pbCart.progress = 100
-                pbCart.progressTintList = ColorStateList.valueOf("#21AD60".toColorInt())
+                pbCart.progressTintList = ColorStateList.valueOf(getColor(R.color.colorProgress))
                 statusCart.setImageResource(R.drawable.ic_step_done)
 
                 pbAddress.isIndeterminate = false
                 pbAddress.progress = 100
-                pbAddress.progressTintList = ColorStateList.valueOf("#21AD60".toColorInt())
+                pbAddress.progressTintList = ColorStateList.valueOf(getColor(R.color.colorProgress))
                 statusAddress.setImageResource(R.drawable.ic_step_done)
 
                 pbPayment.isIndeterminate = true
-                pbPayment.indeterminateTintList = ColorStateList.valueOf("#2962FF".toColorInt())
+                pbPayment.indeterminateTintList = ColorStateList.valueOf(getColor(R.color.colorPrimary))
                 statusPayment.setImageResource(R.drawable.ic_step_active)
             }
         }
