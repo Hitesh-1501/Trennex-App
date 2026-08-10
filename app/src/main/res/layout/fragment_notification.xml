@@ -25,27 +25,27 @@
 
             <TextView
                 android:id="@+id/tvNoNotifications"
-                android:layout_width="wrap_content"
+                android:layout_width="0dp"
                 android:layout_height="wrap_content"
                 android:fontFamily="@font/poppins_bold"
                 android:text="@string/no_notifications_yet"
                 android:textColor="@color/black"
                 android:textSize="18sp"
                 app:layout_constraintStart_toStartOf="parent"
+                app:layout_constraintEnd_toStartOf="@+id/ivEmptyIcon"
                 app:layout_constraintTop_toTopOf="parent" />
 
             <TextView
                 android:id="@+id/tvNotificationDesc"
-                android:layout_width="wrap_content"
+                android:layout_width="0dp"
                 android:layout_height="wrap_content"
                 android:layout_marginTop="16dp"
                 android:fontFamily="@font/poppins_medium"
                 android:text="@string/notification_desc"
                 android:textColor="@color/black"
                 android:textSize="13sp"
-                android:gravity="center"
-                app:layout_constraintStart_toStartOf="@+id/tvNoNotifications"
-                app:layout_constraintEnd_toEndOf="@+id/tvNoNotifications"
+                app:layout_constraintStart_toStartOf="parent"
+                app:layout_constraintEnd_toStartOf="@+id/ivEmptyIcon"
                 app:layout_constraintTop_toBottomOf="@+id/tvNoNotifications" />
 
             <androidx.appcompat.widget.AppCompatButton
@@ -60,17 +60,18 @@
                 android:textAllCaps="false"
                 android:textColor="@color/black"
                 android:textSize="13sp"
-                app:layout_constraintStart_toStartOf="@+id/tvNotificationDesc"
-                app:layout_constraintEnd_toEndOf="@+id/tvNotificationDesc"
+                app:layout_constraintStart_toStartOf="parent"
                 app:layout_constraintTop_toBottomOf="@+id/tvNotificationDesc" />
 
             <ImageView
+                android:id="@+id/ivEmptyIcon"
                 android:layout_width="120dp"
                 android:layout_height="120dp"
                 android:src="@drawable/notification_empty_icon"
                 app:layout_constraintBottom_toBottomOf="parent"
                 app:layout_constraintEnd_toEndOf="parent"
-                app:layout_constraintTop_toTopOf="parent" />
+                app:layout_constraintTop_toTopOf="parent"
+                android:contentDescription="@string/empty_notifications" />
 
         </androidx.constraintlayout.widget.ConstraintLayout>
 

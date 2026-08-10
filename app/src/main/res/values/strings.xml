@@ -27,4 +27,6 @@
     <string name="no_notifications_yet">No Notifications Yet</string>
     <string name="notification_desc">We\'ll let you know when there\'s\nsomething new.</string>
     <string name="explore_app">Explore App</string>
+    <string name="empty_notifications">Empty notifications</string>
+    <string name="MAP_API_KEY">AIzaSyAWNHyX4STaV97ymG_WnRgivaWwwciXf78</string>
 </resources>
