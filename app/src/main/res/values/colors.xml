@@ -40,4 +40,8 @@
     <color name="notification_card_start">#FFD54F</color>
     <color name="notification_card_end">#FF6D00</color>
 
+    <color name="rating_high">#21AD60</color>
+    <color name="rating_medium">#FBC02D</color>
+    <color name="rating_low">#D32F2F</color>
+
 </resources>
