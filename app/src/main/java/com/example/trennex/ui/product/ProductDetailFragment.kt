@@ -24,7 +24,7 @@ import com.example.trennex.ui.product.model.ReviewModel
 import com.example.trennex.ui.product.model.VariantModel
 import com.google.android.material.tabs.TabLayoutMediator
 import com.google.android.material.transition.Hold
-import androidx.core.graphics.toColorInt
+import androidx.core.content.ContextCompat
 import androidx.fragment.app.viewModels
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.lifecycleScope
@@ -400,23 +400,23 @@ class ProductDetailFragment : Fragment(R.layout.fragment_product_detail), WishLi
             binding.tvViewAll.visibility = View.GONE
         } else {
             binding.tvViewAll.visibility = View.VISIBLE
-            binding.tvViewAll.text = "Show ${reviewsList.size - 4} More"
+            binding.tvViewAll.text = getString(R.string.show_more_reviews_format, reviewsList.size - 4)
         }
         var isExpandable = false
         binding.tvViewAll.setOnClickListener {
             if(!isExpandable){
                 reviewAdapter.updateList(reviewsList)
-                binding.tvViewAll.text = "Show less"
+                binding.tvViewAll.text = getString(R.string.show_less)
             }else{
                 reviewAdapter.updateList(reviewsList.take(4))
-                binding.tvViewAll.text = "Show ${reviewsList.size - 4} More "
+                binding.tvViewAll.text = getString(R.string.show_more_reviews_format, reviewsList.size - 4)
             }
             isExpandable = !isExpandable
         }
         val backgroundColor = when{
-            averageRatings >= 4.0 -> "#21AD60".toColorInt()
-            averageRatings >= 3.0 -> "#FBC02D".toColorInt()
-            else -> "#D32F2F".toColorInt()
+            averageRatings >= 4.0 -> ContextCompat.getColor(requireContext(), R.color.rating_high)
+            averageRatings >= 3.0 -> ContextCompat.getColor(requireContext(), R.color.rating_medium)
+            else -> ContextCompat.getColor(requireContext(), R.color.rating_low)
         }
         binding.llReview.backgroundTintList = ColorStateList.valueOf(backgroundColor)
         binding.totalRatings.backgroundTintList = ColorStateList.valueOf(backgroundColor)
