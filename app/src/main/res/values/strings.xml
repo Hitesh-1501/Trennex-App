@@ -28,5 +28,25 @@
     <string name="notification_desc">We\'ll let you know when there\'s\nsomething new.</string>
     <string name="explore_app">Explore App</string>
     <string name="empty_notifications">Empty notifications</string>
+    <string name="selected_color">Selected Color :</string>
+    <string name="variant_label">Variant:</string>
+    <string name="delivery_services">Delivery &amp; Services</string>
+    <string name="change">Change</string>
+    <string name="specifications">Specifications</string>
+    <string name="product_highlights">Product Highlights</string>
+    <string name="show_more">Show More</string>
+    <string name="show_less">Show Less</string>
+    <string name="reviews">Reviews</string>
+    <string name="buy_now">Buy Now</string>
+    <string name="show_more_reviews_format">Show %1$d More</string>
+    <string name="desc_share">Share product</string>
+    <string name="desc_location">Location icon</string>
+    <string name="desc_delivery">Delivery icon</string>
+    <string name="desc_warranty">Warranty icon</string>
+    <string name="desc_return_policy">Return policy icon</string>
+    <string name="desc_expand_specs">Expand specifications</string>
+    <string name="desc_expand_reviews">Expand reviews</string>
+    <string name="desc_wishlist">Wishlist button</string>
+    <string name="desc_add_to_cart">Add to cart button</string>
     <string name="MAP_API_KEY">AIzaSyAWNHyX4STaV97ymG_WnRgivaWwwciXf78</string>
 </resources>
