@@ -51,6 +51,7 @@
                         android:layout_height="24dp"
                         android:src="@drawable/share"
                         android:layout_gravity="center"
+                        android:contentDescription="@string/desc_share"
                     />
 
 
@@ -195,7 +196,7 @@
                     <TextView
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
-                        android:text ="Selected Color :"
+                        android:text ="@string/selected_color"
                         android:textSize="14sp"
                         android:textColor="@color/textPrimary"
                         android:textStyle="bold"/>
@@ -230,7 +231,7 @@
                     <TextView
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
-                        android:text ="Variant:"
+                        android:text ="@string/variant_label"
                         android:textColor="@color/textPrimary"
                         android:textSize="14sp"
                         android:textStyle="bold"/>
@@ -271,7 +272,7 @@
                 <TextView
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:text="Delivery &amp; Services"
+                    android:text="@string/delivery_services"
                     android:textSize="14sp"
                     android:textStyle="bold"
                     android:textColor="@color/textPrimary"/>
@@ -289,7 +290,8 @@
                     <ImageView
                         android:layout_width="18dp"
                         android:layout_height="18dp"
-                        android:src="@drawable/product_detail_location"/>
+                        android:src="@drawable/product_detail_location"
+                        android:contentDescription="@string/desc_location"/>
 
                     <TextView
                         android:id="@+id/tvAddress"
@@ -307,7 +309,7 @@
                         android:id="@+id/tvChange"
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
-                        android:text="Change"
+                        android:text="@string/change"
                         android:textSize="13sp"
                         android:gravity="end"
                         android:layout_marginEnd="10dp"
@@ -328,7 +330,8 @@
                     <ImageView
                         android:layout_width="18dp"
                         android:layout_height="18dp"
-                        android:src="@drawable/delivery_icon"/>
+                        android:src="@drawable/delivery_icon"
+                        android:contentDescription="@string/desc_delivery"/>
 
                     <TextView
                         android:id="@+id/tvDelivery"
@@ -367,7 +370,8 @@
                     <ImageView
                         android:layout_width="18dp"
                         android:layout_height="18dp"
-                        android:src="@drawable/warranty"/>
+                        android:src="@drawable/warranty"
+                        android:contentDescription="@string/desc_warranty"/>
 
                     <TextView
                         android:id="@+id/tvManufacture"
@@ -395,7 +399,8 @@
                     <ImageView
                         android:layout_width="18dp"
                         android:layout_height="18dp"
-                        android:src="@drawable/return_policy"/>
+                        android:src="@drawable/return_policy"
+                        android:contentDescription="@string/desc_return_policy"/>
 
                     <TextView
                         android:id="@+id/tv_return_policy"
@@ -441,7 +446,7 @@
                         android:layout_width="0dp"
                         android:layout_height="wrap_content"
                         android:layout_weight="1"
-                        android:text="Specifications"
+                        android:text="@string/specifications"
                         android:textStyle="bold"
                         android:textSize="14sp"
                         android:textColor="@color/textPrimary"/>
@@ -453,7 +458,8 @@
                         android:layout_height="24dp"
                         android:padding="5dp"
                         android:background="@drawable/arrow_bg"
-                        android:src="@drawable/arrow_down"/>
+                        android:src="@drawable/arrow_down"
+                        android:contentDescription="@string/desc_expand_specs"/>
 
                 </LinearLayout>
 
@@ -470,7 +476,7 @@
                     <TextView
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
-                        android:text="Product Highlights"
+                        android:text="@string/product_highlights"
                         android:layout_marginTop="4dp"
                         android:textSize="13sp"
                         android:textColor="@color/textPrimary"/>
@@ -488,7 +494,7 @@
                         android:id="@+id/btnShowMoreSpecs"
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
-                        android:text="Show More"
+                        android:text="@string/show_more"
                         android:textAllCaps="false"
                         android:layout_gravity="end"
                         android:layout_marginTop="12dp"
@@ -528,7 +534,7 @@
                         android:layout_width="0dp"
                         android:layout_height="wrap_content"
                         android:layout_weight="1"
-                        android:text="Reviews"
+                        android:text="@string/reviews"
                         android:textStyle="bold"
                         android:textSize="14sp"
                         android:textColor="@color/textPrimary"/>
@@ -540,7 +546,8 @@
                         android:layout_height="24dp"
                         android:padding="5dp"
                         android:background="@drawable/arrow_bg"
-                        android:src="@drawable/arrow_down"/>
+                        android:src="@drawable/arrow_down"
+                        android:contentDescription="@string/desc_expand_reviews"/>
 
                 </LinearLayout>
 
@@ -656,21 +663,23 @@
             android:layout_width="32dp"
             android:layout_height="32dp"
             android:padding="2dp"
-            android:src="@drawable/wishlist_product"/>
+            android:src="@drawable/wishlist_product"
+            android:contentDescription="@string/desc_wishlist"/>
 
 
-        <androidx.appcompat.widget.AppCompatButton
+        <com.google.android.material.button.MaterialButton
             android:id="@+id/buy_now"
             android:layout_width="0dp"
             android:layout_height="48dp"
-            android:text="Buy Now"
+            android:text="@string/buy_now"
             android:textSize="14sp"
             android:textColor="@color/white"
             android:textStyle="bold"
             android:textAllCaps="false"
             android:layout_marginStart="24dp"
             android:layout_marginEnd="24dp"
-            android:background="@drawable/btn_selector"
+            app:backgroundTint="@color/colorPrimary"
+            app:cornerRadius="8dp"
             android:layout_weight="1"/>
 
         <ImageView
@@ -678,7 +687,8 @@
             android:layout_width="32dp"
             android:layout_height="32dp"
             android:padding="2dp"
-            android:src="@drawable/shopping_cart_icon"/>
+            android:src="@drawable/shopping_cart_icon"
+            android:contentDescription="@string/desc_add_to_cart"/>
 
 
 
