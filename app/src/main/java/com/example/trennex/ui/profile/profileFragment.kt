@@ -6,23 +6,26 @@ import android.view.View
 import android.view.ViewGroup
 import android.widget.Toast
 import androidx.fragment.app.Fragment
+import androidx.fragment.app.viewModels
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.lifecycleScope
+import androidx.lifecycle.repeatOnLifecycle
 import androidx.navigation.fragment.findNavController
 import androidx.recyclerview.widget.GridLayoutManager
 import com.example.trennex.R
 import com.example.trennex.databinding.FragmentProfileBinding
 import com.example.trennex.ui.profile.adapter.ProfileGridAdapter
 import com.example.trennex.ui.profile.model.ProfileGridItem
-import com.google.firebase.auth.FirebaseAuth
-import com.google.firebase.firestore.FirebaseFirestore
+import com.example.trennex.viewmodel.profile.ProfileUiState
+import com.example.trennex.viewmodel.profile.ProfileViewModel
+import kotlinx.coroutines.launch
 
 class ProfileFragment : Fragment(R.layout.fragment_profile) {
 
     private var _binding: FragmentProfileBinding? = null
     private val binding get() = _binding!!
 
-    private val auth: FirebaseAuth by lazy { FirebaseAuth.getInstance() }
-    private val firestore: FirebaseFirestore by lazy { FirebaseFirestore.getInstance() }
-
+    private val viewModel: ProfileViewModel by viewModels()
 
     override fun onCreateView(
         inflater: LayoutInflater, container: ViewGroup?,
@@ -30,16 +33,15 @@ class ProfileFragment : Fragment(R.layout.fragment_profile) {
     ): View? {
         _binding = FragmentProfileBinding.inflate(inflater, container, false)
         return binding.root
-
     }
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
         setupUi()
-        updateUi()
+        observeViewModel()
+
         binding.btnLogout.setOnClickListener {
-            auth.signOut()
-            updateUi()
+            viewModel.signOut()
             Toast.makeText(requireContext(), "Logged out successfully", Toast.LENGTH_SHORT).show()
         }
         binding.btnLogInSignUp.setOnClickListener {
@@ -58,46 +60,38 @@ class ProfileFragment : Fragment(R.layout.fragment_profile) {
         )
 
         val adapter = ProfileGridAdapter(gridItems)
-
-        binding.profileGridRecycler.layoutManager =
-            GridLayoutManager(requireContext(), 2)
-
+        binding.profileGridRecycler.layoutManager = GridLayoutManager(requireContext(), 2)
         binding.profileGridRecycler.adapter = adapter
-
     }
 
+    private fun observeViewModel() {
+        viewLifecycleOwner.lifecycleScope.launch {
+            viewLifecycleOwner.repeatOnLifecycle(Lifecycle.State.STARTED) {
+                viewModel.uiState.collect { state ->
+                    updateUi(state)
+                }
+            }
+        }
+    }
 
-    private fun updateUi(){
-        if(auth.currentUser != null){
+    private fun updateUi(state: ProfileUiState) {
+        if (state.isLoggedIn) {
             binding.profileCard.visibility = View.VISIBLE
             binding.nologincard.visibility = View.GONE
             binding.btnLogout.visibility = View.VISIBLE
-            loadUserDetails()
-        }else{
+            binding.tvUserName.text = state.userName ?: state.phoneNumber ?: "User"
+        } else {
             binding.profileCard.visibility = View.GONE
             binding.nologincard.visibility = View.VISIBLE
             binding.btnLogout.visibility = View.GONE
         }
+        
+        state.error?.let {
+            Toast.makeText(requireContext(), it, Toast.LENGTH_SHORT).show()
+        }
     }
 
-    private fun loadUserDetails(){
-        val user = auth.currentUser ?: return
-        binding.tvUserName.text = user.phoneNumber ?: "User"
-        firestore.collection(USERS_COLLECTION)
-            .document(user.uid)
-            .get()
-            .addOnSuccessListener {snapshot ->
-                val name = snapshot.getString(NAME_FIELD).orEmpty().trim()
-                if(name.isNotEmpty()){
-                    binding.tvUserName.text = name
-                }
-            }
-            .addOnFailureListener {
-                Toast.makeText(requireContext(), "Could not load profile details", Toast.LENGTH_SHORT).show()
-            }
-    }
-
-    private fun setupUi(){
+    private fun setupUi() {
         binding.wishlistSection.apply {
             tvRowTitle.text = "Wishlist"
             tvRowSubtitle.text = "Your most loved styles"
@@ -124,11 +118,6 @@ class ProfileFragment : Fragment(R.layout.fragment_profile) {
             ivRowIcon.setImageResource(R.drawable.ic_terms)
         }
     }
-    private companion object {
-        const val USERS_COLLECTION = "users"
-        const val NAME_FIELD = "name"
-    }
-
 
     override fun onDestroyView() {
         super.onDestroyView()
