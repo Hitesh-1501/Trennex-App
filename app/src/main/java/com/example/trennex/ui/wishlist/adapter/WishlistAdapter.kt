@@ -17,11 +17,13 @@ class WishlistAdapter(
     private val onItemClicked: (WishlistItemsModel) -> Unit,
     private val onAddToCartClicked: (WishlistItemsModel) -> Unit,
     private val onRemoveClicked: (WishlistItemsModel) -> Unit,
-    private val onSelectionChanged: (Int) -> Unit
+    private val onSelectionChanged: (Int) -> Unit,
+    private val onItemSelectionToggled: (Int) -> Unit
 ): RecyclerView.Adapter<WishlistAdapter.WishlistVH>(){
 
     private var isSelectionMode = false
-    private val selectedIds = mutableSetOf<Int>()
+    private var selectedIds = emptySet<Int>()
+    
     inner class WishlistVH(val binding: ItemWishlistProductBinding) : RecyclerView.ViewHolder(binding.root)
 
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): WishlistVH {
@@ -40,13 +42,14 @@ class WishlistAdapter(
             .placeholder(R.drawable.placeholder)
             .error(R.drawable.placeholder)
             .into(holder.binding.ivProduct)
-        holder.binding.root.alpha = 1f
+        
         holder.binding.root.setCardBackgroundColor(
             if(isSelectionMode && isSelected) "#E8F0FF".toColorInt() else Color.WHITE
         )
+        
         holder.binding.root.setOnClickListener {
             if(isSelectionMode){
-                toggleItemSelection(item.id)
+                onItemSelectionToggled(item.id)
             }else{
                 onItemClicked(item)
             }
@@ -55,12 +58,12 @@ class WishlistAdapter(
             if (!isSelectionMode) {
                 onAddToCartClicked(item)
             } else {
-                toggleItemSelection(item.id)
+                onItemSelectionToggled(item.id)
             }
         }
         holder.binding.ivRemove.setOnClickListener {
             if (isSelectionMode) {
-                toggleItemSelection(item.id)
+                onItemSelectionToggled(item.id)
             } else {
                 onRemoveClicked(item)
             }
@@ -75,52 +78,37 @@ class WishlistAdapter(
         )
         holder.binding.ivRemove.background = if(isSelectionMode) null else holder.binding.root.context.getDrawable(R.drawable.bg_circle_grey)
         holder.binding.ivRemove.imageTintList = if (isSelectionMode) null else holder.binding.ivRemove.context.getColorStateList(R.color.textPrimary)
-        holder.binding.ivRemove.setPadding(
-            if (isSelectionMode) 0 else 6,
-            if (isSelectionMode) 0 else 6,
-            if (isSelectionMode) 0 else 6,
-            if (isSelectionMode) 0 else 6
-        )
+        
+        val padding = if (isSelectionMode) 0 else 6
+        holder.binding.ivRemove.setPadding(padding, padding, padding, padding)
     }
 
-    override fun getItemCount(): Int {
-       return items.size
-    }
+    override fun getItemCount(): Int = items.size
+
     @SuppressLint("NotifyDataSetChanged")
     fun submitList(updateItems: List<WishlistItemsModel>){
         items = updateItems
-        selectedIds.retainAll ( items.map { it.id }.toSet())
-        onSelectionChanged(selectedIds.size)
         notifyDataSetChanged()
     }
 
     @SuppressLint("NotifyDataSetChanged")
     fun setSelectionMode(enabled: Boolean){
-        isSelectionMode = enabled
-        if(!enabled){
-            selectedIds.clear()
-            onSelectionChanged(0)
+        if (isSelectionMode != enabled) {
+            isSelectionMode = enabled
+            notifyDataSetChanged()
         }
-        notifyDataSetChanged()
+    }
+
+    @SuppressLint("NotifyDataSetChanged")
+    fun setSelectedIds(ids: Set<Int>) {
+        if (selectedIds != ids) {
+            selectedIds = ids
+            onSelectionChanged(selectedIds.size)
+            notifyDataSetChanged()
+        }
     }
 
     fun isSelectionMode(): Boolean = isSelectionMode
 
-    fun getSelectedItems(): List<WishlistItemsModel> = items.filter { selectedIds.contains(it.id) }
-
-    @SuppressLint("NotifyDataSetChanged")
-    fun clearSelection(){
-        selectedIds.clear()
-        onSelectionChanged(0)
-        notifyDataSetChanged()
-    }
-    private fun toggleItemSelection(itemId: Int){
-        if(selectedIds.contains(itemId)){
-            selectedIds.remove(itemId)
-        }else{
-            selectedIds.add(itemId)
-        }
-        onSelectionChanged(selectedIds.size)
-        notifyItemChanged(items.indexOfFirst { it.id == itemId })
-    }
+    fun getSelectedIds(): Set<Int> = selectedIds
 }
