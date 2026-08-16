@@ -16,7 +16,7 @@ import com.example.trennex.viewmodel.category.CategoryViewModel
 class ElectronicsFragment : Fragment(R.layout.fragment_electronics) {
     private var _binding: FragmentElectronicsBinding? = null
     private val binding get() = _binding!!
-    
+
     private val viewModel: CategoryViewModel by viewModels({ requireParentFragment() })
 
     override fun onCreateView(
