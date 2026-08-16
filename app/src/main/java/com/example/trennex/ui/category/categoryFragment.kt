@@ -21,7 +21,7 @@ import kotlinx.coroutines.launch
 class CategoryFragment : Fragment(R.layout.fragment_category) {
     private var _binding: FragmentCategoryBinding? = null
     private val binding get() = _binding!!
-    
+
     private val viewModel: CategoryViewModel by viewModels()
 
     override fun onCreateView(
@@ -57,7 +57,7 @@ class CategoryFragment : Fragment(R.layout.fragment_category) {
                 layoutManager = LinearLayoutManager(requireContext())
             }
         }
-        
+
         state.selectedCategory?.let {
             if (childFragmentManager.findFragmentById(R.id.categoryContentContainer) == null) {
                 updateSubCategoryFragment(it)
