@@ -3,6 +3,7 @@ package com.example.trennex.ui.wishlist
 import android.app.AlertDialog
 import android.content.Intent
 import android.os.Bundle
+import androidx.fragment.app.Fragment
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
@@ -11,8 +12,6 @@ import android.widget.TextView
 import android.widget.Toast
 import androidx.activity.addCallback
 import androidx.core.content.ContextCompat
-import androidx.fragment.app.Fragment
-import androidx.fragment.app.viewModels
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.lifecycleScope
 import androidx.lifecycle.repeatOnLifecycle
@@ -21,21 +20,23 @@ import androidx.navigation.fragment.navArgs
 import androidx.recyclerview.widget.GridLayoutManager
 import com.example.trennex.R
 import com.example.trennex.databinding.FragmentCollectionItemsBinding
+import com.example.trennex.ui.cart.model.CartItemModel
 import com.example.trennex.ui.main.MainActivity
 import com.example.trennex.ui.wishlist.adapter.WishlistAdapter
-import com.example.trennex.viewmodel.wishlist.WishlistViewModel
+import com.example.trennex.utils.cart.CartStore
+import com.example.trennex.utils.wishlist.CollectionStore
 import kotlinx.coroutines.launch
+
 
 class CollectionItemsFragment : Fragment() {
 
     private var _binding: FragmentCollectionItemsBinding? = null
     private val binding get() = _binding!!
 
-    private val args: CollectionItemsFragmentArgs by navArgs()
-    private val viewModel: WishlistViewModel by viewModels()
+    private val args : CollectionItemsFragmentArgs by navArgs()
 
     private var collectionName: String = ""
-    private var collectionCount: Int = 0
+    private var collectionCount : Int = 0
     private var didPopAfterDelete = false
 
     private val itemsAdapter by lazy {
@@ -46,14 +47,29 @@ class CollectionItemsFragment : Fragment() {
                 findNavController().navigate(direction)
             },
             onAddToCartClicked = {
-                viewModel.addItemToCart(it)
-                viewModel.removeItemsFromCollection(args.collectionId, listOf(it.id))
+                CartStore.addItem(
+                    CartItemModel(
+                        id = it.id,
+                        title = it.title,
+                        description = it.description,
+                        mrp = it.mrp,
+                        price = it.price,
+                        rating = it.rating,
+                        ratingCount = it.ratingCount,
+                        returnPolicy = it.returnPolicy,
+                        deliveryDetails = it.deliveryDetails,
+                        imageUrl = it.imageUrl,
+                        quantity = 1,
+                        isSelected = true
+                    )
+                )
+                CollectionStore.removeItemsFromCollection(args.collectionId,listOf(it.id))
                 Toast.makeText(requireContext(), "Added to cart", Toast.LENGTH_SHORT).show()
             },
             onRemoveClicked = {
-                viewModel.removeItemsFromCollection(args.collectionId, listOf(it.id))
+                CollectionStore.removeItemsFromCollection(args.collectionId,listOf(it.id))
             },
-            onSelectionChanged = { selectedCount ->
+            onSelectionChanged = {selectedCount ->
                 updateSelectionToolbarState(selectedCount)
             }
         )
@@ -62,7 +78,7 @@ class CollectionItemsFragment : Fragment() {
     override fun onCreateView(
         inflater: LayoutInflater, container: ViewGroup?,
         savedInstanceState: Bundle?
-    ): View {
+    ): View? {
         _binding = FragmentCollectionItemsBinding.inflate(inflater, container, false)
         return binding.root
     }
@@ -77,7 +93,7 @@ class CollectionItemsFragment : Fragment() {
         observeCollectionItems()
     }
 
-    private fun setupToolbar() {
+    private fun setupToolbar(){
         val toolbarRoot = (requireActivity() as? MainActivity)?.findViewById<View>(R.id.toolbarContainer) ?: return
         val backArrow = toolbarRoot.findViewById<ImageView>(R.id.back_arrow) ?: return
         val titleText = toolbarRoot.findViewById<TextView>(R.id.page_title) ?: return
@@ -91,14 +107,14 @@ class CollectionItemsFragment : Fragment() {
         subtitleText.text = "0 items"
 
         editDeleteIcon.setOnClickListener {
-            if (!itemsAdapter.isSelectionMode()) {
+            if(!itemsAdapter.isSelectionMode()){
                 itemsAdapter.setSelectionMode(true)
                 titleText.text = "Items Selected"
                 subtitleText.visibility = View.GONE
                 editDeleteIcon.setImageResource(R.drawable.wishlist_delete)
                 cartShareIcon.setImageResource(R.drawable.wishlist_share)
                 updateSelectionToolbarState(0)
-            } else {
+            }else{
                 showDeleteConfirmationDialog()
             }
         }
@@ -119,14 +135,13 @@ class CollectionItemsFragment : Fragment() {
         }
     }
 
-    private fun observeCollectionItems() {
+    private fun observeCollectionItems(){
         viewLifecycleOwner.lifecycleScope.launch {
-            viewLifecycleOwner.repeatOnLifecycle(Lifecycle.State.STARTED) {
-                viewModel.uiState.collect { state ->
-                    val collections = state.collections
-                    val target = collections.firstOrNull { it.id == args.collectionId }
-                    if (target == null) {
-                        if (!didPopAfterDelete && findNavController().currentDestination?.id == R.id.collectionItemsFragment) {
+            viewLifecycleOwner.repeatOnLifecycle(Lifecycle.State.STARTED){
+                CollectionStore.collections.collect {collections ->
+                    val target = collections.firstOrNull { it.id == args.collectionId}
+                    if(target == null){
+                        if(!didPopAfterDelete && findNavController().currentDestination?.id == R.id.collectionItemsFragment){
                             didPopAfterDelete = true
                             findNavController().popBackStack()
                         }
@@ -135,7 +150,7 @@ class CollectionItemsFragment : Fragment() {
                     collectionName = target.name
                     collectionCount = target.items.size
                     itemsAdapter.submitList(target.items)
-                    binding.emptyStateContainer.visibility = if (collectionCount == 0) View.VISIBLE else View.GONE
+                    binding.emptyStateContainer.visibility = if(collectionCount == 0)View.VISIBLE else View.GONE
                     binding.rvCollectionItems.visibility = if (collectionCount == 0) View.GONE else View.VISIBLE
                     updateDefaultToolbarState(collectionCount)
                 }
@@ -211,7 +226,7 @@ class CollectionItemsFragment : Fragment() {
             .setMessage("Are you sure want to remove $count $itemLabel from this collection.")
             .setNegativeButton("Cancel", null)
             .setPositiveButton("Remove") { _, _ ->
-                viewModel.removeItemsFromCollection(args.collectionId, selectedItems.map { it.id })
+                CollectionStore.removeItemsFromCollection(args.collectionId, selectedItems.map { it.id })
                 exitSelectionMode()
             }
             .create()
