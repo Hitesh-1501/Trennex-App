@@ -103,13 +103,18 @@ class WishlistFragment : Fragment(R.layout.fragment_wishlist) {
         val editDeleteIcon = toolbarRoot.findViewById<ImageView>(R.id.ivedit) ?: return
         val cartShareIcon = toolbarRoot.findViewById<ImageView>(R.id.ivcart) ?: return
 
-        titleText.text = "Wishlist"
-        editDeleteIcon.setImageResource(R.drawable.ic_edit)
-        cartShareIcon.setImageResource(R.drawable.cart)
-        editDeleteIcon.isEnabled = wishlistCount > 0
-        cartShareIcon.isEnabled = wishlistCount > 0
-        editDeleteIcon.alpha = if (wishlistCount > 0) 1f else 0.4f
-        cartShareIcon.alpha = if (wishlistCount > 0) 1f else 0.4f
+        if (wishlistAdapter.isSelectionMode()) {
+            val selectedCount = wishlistAdapter.getSelectedItems().size
+            titleText.text = if (selectedCount > 0) "$selectedCount Items Selected" else "Items Selected"
+            editDeleteIcon.setImageResource(R.drawable.wishlist_delete)
+            cartShareIcon.setImageResource(R.drawable.wishlist_share)
+            updateSelectionToolbarState(selectedCount)
+        } else {
+            titleText.text = "Wishlist"
+            editDeleteIcon.setImageResource(R.drawable.ic_edit)
+            cartShareIcon.setImageResource(R.drawable.cart)
+            updateDefaultToolbarState(wishlistCount)
+        }
 
         editDeleteIcon.setOnClickListener {
             if (!wishlistAdapter.isSelectionMode()) {
@@ -122,6 +127,7 @@ class WishlistFragment : Fragment(R.layout.fragment_wishlist) {
                 showDeleteConfirmationDialog()
             }
         }
+        
         cartShareIcon.setOnClickListener {
             if (wishlistAdapter.isSelectionMode()) {
                 shareSelectedWishlistItems()
@@ -129,6 +135,7 @@ class WishlistFragment : Fragment(R.layout.fragment_wishlist) {
                 findNavController().navigate(R.id.action_wishlistFragment_to_cartFragment)
             }
         }
+        
         backArrow.setOnClickListener {
             if (wishlistAdapter.isSelectionMode()) {
                 existSelectionMode()
