@@ -132,23 +132,13 @@ class CollectionFragment : Fragment(R.layout.fragment_collection) {
     }
 
     private fun showRenameCollectionDialog(collection: CollectionModel) {
-        val editText = EditText(requireContext()).apply {
-            setText(collection.name)
-            setPadding(40, 30, 40, 20)
-            setTextColor(ContextCompat.getColor(requireContext(), R.color.textPrimary))
-            setHintTextColor(ContextCompat.getColor(requireContext(), R.color.textSecondary))
-            setBackgroundResource(R.drawable.edit_text_bg)
-        }
-        val container = FrameLayout(requireContext()).apply {
-            val padding = 20.dpToPx()
-            setPadding(padding, 0, padding, 0)
-            addView(editText)
-        }
+        val dialogView = LayoutInflater.from(requireContext()).inflate(R.layout.dialog_edit_collection, null)
+        val editText = dialogView.findViewById<EditText>(R.id.etCollectionName)
+        editText.setText(collection.name)
+        editText.setSelection(collection.name.length)
 
         val dialog = AlertDialog.Builder(requireContext())
-            .setTitle("Edit Collection")
-            .setMessage("Enter a new name for the collection")
-            .setView(container)
+            .setView(dialogView)
             .setNegativeButton("Cancel", null)
             .setPositiveButton("Save") { _, _ ->
                 val newName = editText.text.toString().trim()
@@ -160,10 +150,9 @@ class CollectionFragment : Fragment(R.layout.fragment_collection) {
             .create()
         dialog.show()
         dialog.window?.setBackgroundDrawableResource(R.drawable.bg_drawable_white)
-    }
-
-    private fun Int.dpToPx(): Int {
-        return (this * resources.displayMetrics.density).toInt()
+        
+        dialog.getButton(AlertDialog.BUTTON_POSITIVE).setTextColor(ContextCompat.getColor(requireContext(), R.color.colorPrimary))
+        dialog.getButton(AlertDialog.BUTTON_NEGATIVE).setTextColor(ContextCompat.getColor(requireContext(), R.color.textSecondary))
     }
 
     private fun shareCollection(collection: CollectionModel) {
