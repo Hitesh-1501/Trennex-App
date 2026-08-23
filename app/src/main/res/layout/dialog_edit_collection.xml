@@ -4,25 +4,18 @@
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
     android:orientation="vertical"
-    android:padding="24dp">
-
-    <TextView
-        android:id="@+id/tvDialogTitle"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:text="Edit Collection"
-        android:textColor="@color/black"
-        android:textSize="20sp"
-        android:textStyle="bold"
-        android:layout_marginBottom="20dp"/>
+    android:paddingHorizontal="24dp"
+    android:paddingTop="8dp"
+    android:paddingBottom="8dp">
 
     <com.google.android.material.textfield.TextInputLayout
         android:id="@+id/etCollectionNameLayout"
         style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        app:boxStrokeColor="@color/borderColor"
-        app:hintEnabled="false">
+        app:boxStrokeColor="@color/colorPrimary"
+        app:hintEnabled="true"
+        android:hint="Collection Name">
 
         <com.google.android.material.textfield.TextInputEditText
             android:id="@+id/etCollectionName"
