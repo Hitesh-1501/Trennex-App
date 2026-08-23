@@ -158,11 +158,16 @@ class WishlistFragment : Fragment(R.layout.fragment_wishlist) {
 
     private fun updateSelectionToolbarState(selectedCount: Int) {
         val toolbarRoot = (requireActivity() as? MainActivity)?.findViewById<View>(R.id.toolbarContainer) ?: return
+        val titleText = toolbarRoot.findViewById<TextView>(R.id.page_title) ?: return
         val editDeleteIcon = toolbarRoot.findViewById<ImageView>(R.id.ivedit) ?: return
         val cartShareIcon = toolbarRoot.findViewById<ImageView>(R.id.ivcart) ?: return
+        
         if (!wishlistAdapter.isSelectionMode()) {
             return
         }
+        
+        titleText.text = if (selectedCount > 0) "$selectedCount Items Selected" else "Items Selected"
+        
         val enableActions = selectedCount > 0
         editDeleteIcon.isEnabled = enableActions
         cartShareIcon.isEnabled = enableActions
