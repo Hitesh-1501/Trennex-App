@@ -66,5 +66,3 @@ class CartViewModel: ViewModel() {
         }
     }
 }
-
-
