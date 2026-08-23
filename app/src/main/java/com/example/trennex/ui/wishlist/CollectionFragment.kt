@@ -97,7 +97,6 @@ class CollectionFragment : Fragment(R.layout.fragment_collection) {
         val popup = PopupMenu(ContextThemeWrapper(requireContext(), R.style.ThemeOverlay_TrenNex_PopupMenu), anchor)
         popup.menuInflater.inflate(R.menu.menu_collection_icon, popup.menu)
         popup.setForceShowIcon(true)
-        
         for (index in 0 until popup.menu.size()) {
             val item = popup.menu.getItem(index)
             val title = SpannableString(item.title)
@@ -109,7 +108,6 @@ class CollectionFragment : Fragment(R.layout.fragment_collection) {
             )
             item.title = title
         }
-        
         popup.setOnMenuItemClickListener { menuItem ->
             when (menuItem.itemId) {
                 R.id.action_edit_collection -> {
@@ -125,6 +123,7 @@ class CollectionFragment : Fragment(R.layout.fragment_collection) {
                     shareCollection(collection)
                     true
                 }
+
                 else -> false
             }
         }
@@ -138,6 +137,7 @@ class CollectionFragment : Fragment(R.layout.fragment_collection) {
         editText.setSelection(collection.name.length)
 
         val dialog = AlertDialog.Builder(requireContext())
+            .setTitle("Edit Collection")
             .setView(dialogView)
             .setNegativeButton("Cancel", null)
             .setPositiveButton("Save") { _, _ ->
