@@ -29,7 +29,7 @@ class WishlistFragment : Fragment(R.layout.fragment_wishlist) {
     private var _binding: FragmentWishlistBinding? = null
     private val binding get() = _binding!!
     private var wishlistCount: Int = 0
-    
+
     private val viewModel: WishlistViewModel by viewModels()
 
     private val wishlistAdapter by lazy { WishlistAdapter(
@@ -75,7 +75,7 @@ class WishlistFragment : Fragment(R.layout.fragment_wishlist) {
             viewLifecycleOwner.repeatOnLifecycle(Lifecycle.State.STARTED) {
                 viewModel.uiState.collect { state ->
                     if (state.isLoading) return@collect
-                    
+
                     val items = state.items
                     wishlistAdapter.submitList(items)
                     val itemCount = items.size
@@ -127,7 +127,7 @@ class WishlistFragment : Fragment(R.layout.fragment_wishlist) {
                 showDeleteConfirmationDialog()
             }
         }
-        
+
         cartShareIcon.setOnClickListener {
             if (wishlistAdapter.isSelectionMode()) {
                 shareSelectedWishlistItems()
@@ -135,7 +135,7 @@ class WishlistFragment : Fragment(R.layout.fragment_wishlist) {
                 findNavController().navigate(R.id.action_wishlistFragment_to_cartFragment)
             }
         }
-        
+
         backArrow.setOnClickListener {
             if (wishlistAdapter.isSelectionMode()) {
                 existSelectionMode()
@@ -161,13 +161,13 @@ class WishlistFragment : Fragment(R.layout.fragment_wishlist) {
         val titleText = toolbarRoot.findViewById<TextView>(R.id.page_title) ?: return
         val editDeleteIcon = toolbarRoot.findViewById<ImageView>(R.id.ivedit) ?: return
         val cartShareIcon = toolbarRoot.findViewById<ImageView>(R.id.ivcart) ?: return
-        
+
         if (!wishlistAdapter.isSelectionMode()) {
             return
         }
-        
+
         titleText.text = if (selectedCount > 0) "$selectedCount Items Selected" else "Items Selected"
-        
+
         val enableActions = selectedCount > 0
         editDeleteIcon.isEnabled = enableActions
         cartShareIcon.isEnabled = enableActions
