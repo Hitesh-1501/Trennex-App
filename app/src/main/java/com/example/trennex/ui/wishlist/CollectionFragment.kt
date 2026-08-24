@@ -33,7 +33,7 @@ import kotlinx.coroutines.launch
 class CollectionFragment : Fragment(R.layout.fragment_collection) {
     private var _binding: FragmentCollectionBinding? = null
     private val binding get() = _binding!!
-    
+
     private val viewModel: WishlistViewModel by viewModels()
 
     private val collectionAdapter by lazy {
@@ -66,13 +66,13 @@ class CollectionFragment : Fragment(R.layout.fragment_collection) {
             viewLifecycleOwner.repeatOnLifecycle(Lifecycle.State.STARTED) {
                 viewModel.uiState.collect { state ->
                     if (state.isLoading) return@collect
-                    
+
                     val collections = state.collections
                     collectionAdapter.submitList(collections)
-                    
+
                     // Always show RV to keep the "Add Collection" item visible
                     binding.rvCollections.visibility = View.VISIBLE
-                    
+
                     val isEmpty = collections.isEmpty()
                     binding.btnCreateCollection.visibility = if (isEmpty) View.VISIBLE else View.GONE
                     binding.ivEmptyCollection.visibility = if (isEmpty) View.VISIBLE else View.GONE
@@ -131,14 +131,23 @@ class CollectionFragment : Fragment(R.layout.fragment_collection) {
     }
 
     private fun showRenameCollectionDialog(collection: CollectionModel) {
-        val dialogView = LayoutInflater.from(requireContext()).inflate(R.layout.dialog_edit_collection, null)
-        val editText = dialogView.findViewById<EditText>(R.id.etCollectionName)
-        editText.setText(collection.name)
-        editText.setSelection(collection.name.length)
+        val editText = EditText(requireContext()).apply {
+            setText(collection.name)
+            setPadding(40, 30, 40, 20)
+            setTextColor(ContextCompat.getColor(requireContext(), R.color.textPrimary))
+            setHintTextColor(ContextCompat.getColor(requireContext(), R.color.textSecondary))
+            setBackgroundResource(R.drawable.edit_text_bg)
+        }
+        val container = FrameLayout(requireContext()).apply {
+            val padding = 20.dpToPx()
+            setPadding(padding, 0, padding, 0)
+            addView(editText)
+        }
 
-        val dialog = AlertDialog.Builder(requireContext())
+        val dialog = androidx.appcompat.app.AlertDialog.Builder(requireContext())
             .setTitle("Edit Collection")
-            .setView(dialogView)
+            .setMessage("Enter a new name for the collection")
+            .setView(container)
             .setNegativeButton("Cancel", null)
             .setPositiveButton("Save") { _, _ ->
                 val newName = editText.text.toString().trim()
@@ -150,9 +159,23 @@ class CollectionFragment : Fragment(R.layout.fragment_collection) {
             .create()
         dialog.show()
         dialog.window?.setBackgroundDrawableResource(R.drawable.bg_drawable_white)
-        
-        dialog.getButton(AlertDialog.BUTTON_POSITIVE).setTextColor(ContextCompat.getColor(requireContext(), R.color.colorPrimary))
-        dialog.getButton(AlertDialog.BUTTON_NEGATIVE).setTextColor(ContextCompat.getColor(requireContext(), R.color.textSecondary))
+
+        dialog.findViewById<TextView>(android.R.id.message)?.setTextColor(
+            ContextCompat.getColor(requireContext(), R.color.textPrimary)
+        )
+        dialog.findViewById<TextView>(com.google.android.material.R.id.alertTitle)?.setTextColor(
+            ContextCompat.getColor(requireContext(), R.color.textPrimary)
+        )
+        dialog.getButton(androidx.appcompat.app.AlertDialog.BUTTON_POSITIVE)?.setTextColor(
+            ContextCompat.getColor(requireContext(), R.color.colorPrimary)
+        )
+        dialog.getButton(androidx.appcompat.app.AlertDialog.BUTTON_NEGATIVE)?.setTextColor(
+            ContextCompat.getColor(requireContext(), R.color.textPrimary)
+        )
+    }
+
+    private fun Int.dpToPx(): Int {
+        return (this * resources.displayMetrics.density).toInt()
     }
 
     private fun shareCollection(collection: CollectionModel) {
