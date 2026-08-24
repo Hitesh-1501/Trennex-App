@@ -54,7 +54,7 @@ import com.google.android.material.bottomsheet.BottomSheetDialog
 import kotlinx.coroutines.launch
 import java.util.Locale
 
-class CartFragment : Fragment(R.layout.fragment_cart) {
+class CartFragment : Fragment() {
     private var _binding: FragmentCartBinding? = null
     private val binding get() = _binding!!
 
@@ -168,6 +168,15 @@ class CartFragment : Fragment(R.layout.fragment_cart) {
         }
         binding.tvDiscount.text = "-${CurrencyFormator.formatInr(state.totalDiscount)}"
         binding.tvTotalAmount.text = CurrencyFormator.formatInr(state.totalPrice)
+        
+        binding.btnPlaceOrder.setOnClickListener {
+            if (state.selectedItems > 0) {
+                val action = CartFragmentDirections.actionCartFragmentToCheckoutAddressFragment()
+                findNavController().navigate(action)
+            } else {
+                Toast.makeText(requireContext(), "Please select items to proceed", Toast.LENGTH_SHORT).show()
+            }
+        }
         
         state.selectedAddress?.let {
             binding.tvDeliverTo.text = "Deliver to : ${it.userName}"
