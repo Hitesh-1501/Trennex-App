@@ -4,7 +4,7 @@
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     xmlns:app="http://schemas.android.com/apk/res-auto"
-    tools:context=".ui.cart.cartFragment">
+    tools:context=".ui.cart.CartFragment">
 
 
     <include
@@ -271,13 +271,15 @@
             android:text="No item selected"
             android:textSize="12sp"/>
 
-        <androidx.appcompat.widget.AppCompatButton
+        <com.google.android.material.button.MaterialButton
             android:id="@+id/btnPlaceOrder"
             android:layout_width="150dp"
             android:layout_height="44dp"
             android:text="Place Order"
             android:textAllCaps="false"
             android:textColor="@android:color/white"
-            android:background="@drawable/btn_selector"/>
+            app:backgroundTint="@color/btnPrimary"
+            app:cornerRadius="8dp"
+            android:elevation="8dp"/>
     </LinearLayout>
 </androidx.constraintlayout.widget.ConstraintLayout>
