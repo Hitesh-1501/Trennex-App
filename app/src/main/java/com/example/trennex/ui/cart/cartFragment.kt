@@ -54,7 +54,7 @@ import com.google.android.material.bottomsheet.BottomSheetDialog
 import kotlinx.coroutines.launch
 import java.util.Locale
 
-class CartFragment : Fragment() {
+class CartFragment : Fragment(R.layout.fragment_cart) {
     private var _binding: FragmentCartBinding? = null
     private val binding get() = _binding!!
 
@@ -133,6 +133,10 @@ class CartFragment : Fragment() {
             showLocationBottomSheet()
         }
 
+        binding.btnPlaceOrder.setOnClickListener {
+            Toast.makeText(requireContext(), "Checking items...", Toast.LENGTH_SHORT).show()
+        }
+
         viewLifecycleOwner.lifecycleScope.launch {
             viewLifecycleOwner.repeatOnLifecycle(Lifecycle.State.STARTED){
                 viewModel.uiState.collect(::render)
@@ -168,16 +172,7 @@ class CartFragment : Fragment() {
         }
         binding.tvDiscount.text = "-${CurrencyFormator.formatInr(state.totalDiscount)}"
         binding.tvTotalAmount.text = CurrencyFormator.formatInr(state.totalPrice)
-        
-        binding.btnPlaceOrder.setOnClickListener {
-            if (state.selectedItems > 0) {
-                val action = CartFragmentDirections.actionCartFragmentToCheckoutAddressFragment()
-                findNavController().navigate(action)
-            } else {
-                Toast.makeText(requireContext(), "Please select items to proceed", Toast.LENGTH_SHORT).show()
-            }
-        }
-        
+
         state.selectedAddress?.let {
             binding.tvDeliverTo.text = "Deliver to : ${it.userName}"
             binding.tvAddress.text = it.displayAddress
