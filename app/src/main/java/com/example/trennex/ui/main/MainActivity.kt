@@ -130,11 +130,6 @@ class MainActivity : AppCompatActivity() {
                     setLightStatusBar(true)
                     binding.curveBottomNav.visibility = View.GONE
                 }
-                R.id.checkoutAddressFragment -> {
-                    showToolBar(ToolBarType.CHECKOUT, "Address")
-                    setLightStatusBar(true)
-                    binding.curveBottomNav.visibility = View.GONE
-                }
                 R.id.notificationFragment -> {
                     showToolBar(ToolBarType.NOTIFICATIONS, "Notifications")
                     setLightStatusBar(true)
@@ -274,15 +269,6 @@ class MainActivity : AppCompatActivity() {
                 val toolbarBinding = ToolbarCartBinding.inflate(layoutInflater)
                 binding.toolbarContainer.addView(toolbarBinding.root)
                 binding.appBarLayout.setBackgroundColor(Color.WHITE)
-                toolbarBinding.tvToolbarTitle.text = title ?: "My Cart"
-                toolbarBinding.backArrow.setOnClickListener { navController.popBackStack() }
-            }
-            ToolBarType.CHECKOUT -> {
-                val toolbarBinding = ToolbarCartBinding.inflate(layoutInflater)
-                binding.toolbarContainer.addView(toolbarBinding.root)
-                binding.appBarLayout.setBackgroundColor(Color.WHITE)
-                toolbarBinding.tvToolbarTitle.text = title ?: "Address"
-                toolbarBinding.progressContainer.visibility = View.VISIBLE
                 toolbarBinding.backArrow.setOnClickListener { navController.popBackStack() }
             }
             ToolBarType.WISHLIST -> {
