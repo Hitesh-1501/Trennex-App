@@ -138,7 +138,15 @@
         <action
             android:id="@+id/action_cartFragment_to_addNewAddressFragment"
             app:destination="@id/addNewAddressFragment" />
+        <action
+            android:id="@+id/action_cartFragment_to_checkoutAddressFragment"
+            app:destination="@id/checkoutAddressFragment" />
     </fragment>
+    <fragment
+        android:id="@+id/checkoutAddressFragment"
+        android:name="com.example.trennex.ui.checkout.CheckoutAddressFragment"
+        android:label="fragment_checkout_address"
+        tools:layout="@layout/fragment_checkout_address" />
     <fragment
         android:id="@+id/productDetailFragment"
         android:name="com.example.trennex.ui.product.ProductDetailFragment"
