@@ -6,15 +6,14 @@ import com.example.trennex.repository.user.AddressEntity
 import com.example.trennex.repository.user.UserRepository
 import com.example.trennex.utils.cart.CartStore
 import com.example.trennex.ui.cart.CartUiState
-import kotlinx.coroutines.flow.SharingStarted
-import kotlinx.coroutines.flow.StateFlow
-import kotlinx.coroutines.flow.combine
-import kotlinx.coroutines.flow.flow
-import kotlinx.coroutines.flow.stateIn
+import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
 
 class CartViewModel: ViewModel() {
     private val userRepository = UserRepository()
+
+    private val _events = MutableSharedFlow<CartEvent>()
+    val events = _events.asSharedFlow()
 
     val uiState: StateFlow<CartUiState> = combine(
         CartStore.items,
@@ -30,22 +29,50 @@ class CartViewModel: ViewModel() {
         initialValue = CartUiState()
     )
 
+    fun onPlaceOrderClicked() {
+        if (uiState.value.selectedItems > 0) {
+            viewModelScope.launch {
+                _events.emit(CartEvent.NavigateToCheckout)
+            }
+        } else {
+            viewModelScope.launch {
+                _events.emit(CartEvent.ShowMessage("Please select at least one item to proceed"))
+            }
+        }
+    }
+
+    fun onDeleteClicked() {
+        val selectedCount = uiState.value.selectedItems
+        viewModelScope.launch {
+            if (selectedCount > 0) {
+                _events.emit(CartEvent.ShowDeleteConfirmation(selectedCount))
+            } else {
+                _events.emit(CartEvent.ShowMessage("Please select at least one item"))
+            }
+        }
+    }
+
+    fun onChangeAddressClicked() {
+        viewModelScope.launch {
+            _events.emit(CartEvent.ShowAddressSelection)
+        }
+    }
+
     fun toggleAll(selected: Boolean) = CartStore.toggleSelectAll(selected)
     fun toggleItem(itemId: Int, selected: Boolean) = CartStore.toggleSelection(itemId, selected)
     fun updateQuantity(itemId: Int, quantity: Int) = CartStore.updateQuantity(itemId, quantity)
     fun removeItem(itemId: Int) = CartStore.removeItem(itemId)
-
     fun deleteSelectedItems() = CartStore.deleteSelectedItems()
 
-    fun selectAddress(address: AddressEntity) {
+    fun selectAddress(addressId: String) {
         viewModelScope.launch {
-            userRepository.updateSelectedAddressId(address.id)
+            userRepository.updateSelectedAddressId(addressId)
         }
     }
 
-    fun deleteAddress(address: AddressEntity) {
+    fun deleteAddress(addressId: String) {
         viewModelScope.launch {
-            userRepository.deleteAddress(address.id)
+            userRepository.deleteAddress(addressId)
         }
     }
 
@@ -65,4 +92,11 @@ class CartViewModel: ViewModel() {
             }
         }
     }
+}
+
+sealed class CartEvent {
+    object NavigateToCheckout : CartEvent()
+    object ShowAddressSelection : CartEvent()
+    data class ShowDeleteConfirmation(val count: Int) : CartEvent()
+    data class ShowMessage(val message: String) : CartEvent()
 }
