@@ -85,6 +85,11 @@ class MainActivity : AppCompatActivity() {
                     setLightStatusBar(true)
                     binding.curveBottomNav.visibility = View.VISIBLE
                 }
+                R.id.checkoutFragment -> {
+                    showToolBar(ToolBarType.CART)
+                    setLightStatusBar(true)
+                    binding.curveBottomNav.visibility = View.GONE
+                }
                 R.id.profileFragment ->{
                     showToolBar(ToolBarType.TITLE,"Profile")
                     setLightStatusBar(true)
