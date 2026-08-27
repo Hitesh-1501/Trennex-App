@@ -39,7 +39,6 @@ import com.example.trennex.ui.home.adapters.SaveAddressAdapter
 import com.example.trennex.ui.main.MainActivity
 import com.example.trennex.ui.main.ToolBarType
 import com.example.trennex.utils.CurrencyFormator
-import com.example.trennex.viewmodel.cart.CartEvent
 import com.example.trennex.viewmodel.cart.CartViewModel
 import com.google.android.gms.common.api.ResolvableApiException
 import com.google.android.gms.location.FusedLocationProviderClient
@@ -55,7 +54,7 @@ import com.google.android.material.bottomsheet.BottomSheetDialog
 import kotlinx.coroutines.launch
 import java.util.Locale
 
-class CartFragment : Fragment() {
+class CartFragment : Fragment(R.layout.fragment_cart) {
     private var _binding: FragmentCartBinding? = null
     private val binding get() = _binding!!
 
@@ -112,63 +111,40 @@ class CartFragment : Fragment() {
         fusedLocationClient = LocationServices.getFusedLocationProviderClient(requireContext())
         (activity as? MainActivity)?.showToolBar(ToolBarType.CART)
 
-        setupRecyclerView()
-        setupListeners()
-        observeViewModel()
-    }
-
-    private fun setupRecyclerView() {
         binding.CartRv.apply {
             layoutManager = LinearLayoutManager(requireContext())
             adapter = cartAdapter
         }
-    }
 
-    private fun setupListeners() {
-        binding.checkAll.setOnCheckedChangeListener { _, isChecked ->
+        binding.checkAll.setOnCheckedChangeListener {_,isChecked ->
             viewModel.toggleAll(isChecked)
         }
 
         binding.ivDelete.setOnClickListener {
-            viewModel.onDeleteClicked()
+            val selectedCount = viewModel.uiState.value.selectedItems
+            if(selectedCount == 0){
+                Toast.makeText(requireContext(), "Please select at least one item", Toast.LENGTH_SHORT).show()
+            }else{
+                showDeleteSelectedDialog(selectedCount)
+            }
         }
         
         binding.tvchange.setOnClickListener {
-            viewModel.onChangeAddressClicked()
+            showLocationBottomSheet()
         }
 
         binding.btnPlaceOrder.setOnClickListener {
-            viewModel.onPlaceOrderClicked()
+            Toast.makeText(requireContext(), "Checking items...", Toast.LENGTH_SHORT).show()
         }
-    }
 
-    private fun observeViewModel() {
         viewLifecycleOwner.lifecycleScope.launch {
-            viewLifecycleOwner.repeatOnLifecycle(Lifecycle.State.STARTED) {
-                launch {
-                    viewModel.uiState.collect(::render)
-                }
-                launch {
-                    viewModel.events.collect { event ->
-                        when (event) {
-                            is CartEvent.NavigateToCheckout -> {
-                                findNavController().navigate(R.id.action_cartFragment_to_checkoutAddressFragment)
-                            }
-                            is CartEvent.ShowMessage -> {
-                                Toast.makeText(requireContext(), event.message, Toast.LENGTH_SHORT).show()
-                            }
-                            is CartEvent.ShowDeleteConfirmation -> {
-                                showDeleteSelectedDialog(event.count)
-                            }
-                            is CartEvent.ShowAddressSelection -> {
-                                showLocationBottomSheet()
-                            }
-                        }
-                    }
-                }
+            viewLifecycleOwner.repeatOnLifecycle(Lifecycle.State.STARTED){
+                viewModel.uiState.collect(::render)
             }
         }
+
     }
+
 
     private fun render(state: CartUiState){
         val hasItems = state.totalItems > 0
@@ -180,15 +156,12 @@ class CartFragment : Fragment() {
         if(hasItems){
             (activity as? MainActivity)?.updateCartStep(1)
         }
-        
         cartAdapter.submitList(state.items)
-        
         binding.checkAll.setOnCheckedChangeListener(null)
         binding.checkAll.isChecked = state.allSelected
         binding.checkAll.setOnCheckedChangeListener { _, isChecked ->
             viewModel.toggleAll(isChecked)
         }
-        
         binding.tvSelectedItems.text = "${state.selectedItems}/${state.totalItems} Items Selected"
         binding.tvPriceSelected.text = "Price Detail (${state.selectedItems} Items)"
         binding.tvTotalMrp.text = CurrencyFormator.formatInr(state.totalMrp)
@@ -199,7 +172,7 @@ class CartFragment : Fragment() {
         }
         binding.tvDiscount.text = "-${CurrencyFormator.formatInr(state.totalDiscount)}"
         binding.tvTotalAmount.text = CurrencyFormator.formatInr(state.totalPrice)
-        
+
         state.selectedAddress?.let {
             binding.tvDeliverTo.text = "Deliver to : ${it.userName}"
             binding.tvAddress.text = it.displayAddress
@@ -209,6 +182,7 @@ class CartFragment : Fragment() {
         }
         
         renderSaveAddresses(state.savedAddresses, state.selectedAddress)
+
     }
 
     private fun showDeleteSelectedDialog(selectedCount: Int){
@@ -256,10 +230,7 @@ class CartFragment : Fragment() {
             findNavController().navigate(R.id.action_cartFragment_to_addNewAddressFragment)
         }
         saveAddressAdapter = SaveAddressAdapter(
-           onItemClick = { item -> 
-               viewModel.selectAddress(item.id)
-               locationBottomSheet?.dismiss()
-           },
+           onItemClick = { item -> selectSaveAddress(item) },
            onMoreClick = { anchor, item -> showAddressMenu(anchor, item) }
         )
         sheetBinding.savedAddressRv.adapter =  saveAddressAdapter
@@ -298,10 +269,12 @@ class CartFragment : Fragment() {
     }
 
     private fun renderSaveAddresses(addresses: List<AddressEntity>, selected: AddressEntity?){
-        val sheetBinding = bottomSheetBinding ?: return
-        val hasSavedAddress = addresses.isNotEmpty()
-        sheetBinding.savedAddressRv.isVisible = hasSavedAddress
-        sheetBinding.emptyAddressView.root.isVisible = !hasSavedAddress
+        val sheetBinding = bottomSheetBinding
+        if(sheetBinding != null){
+            val hasSavedAddress = addresses.isNotEmpty()
+            sheetBinding.savedAddressRv.isVisible = hasSavedAddress
+            sheetBinding.emptyAddressView.root.isVisible = !hasSavedAddress
+        }
 
         if (this::saveAddressAdapter.isInitialized) {
             val items = addresses.map { 
@@ -344,7 +317,8 @@ class CartFragment : Fragment() {
         }
 
         popupView.findViewById<View>(R.id.actionDelete).setOnClickListener {
-            viewModel.deleteAddress(item.id)
+            val entity = viewModel.uiState.value.savedAddresses.find { it.id == item.id }
+            if (entity != null) viewModel.deleteAddress(entity)
             popupWindow.dismiss()
         }
         popupWindow.setBackgroundDrawable(ColorDrawable(Color.TRANSPARENT))
@@ -418,8 +392,16 @@ class CartFragment : Fragment() {
         }
     }
 
-    override fun onDestroyView() {
-        super.onDestroyView()
+    private fun selectSaveAddress(item: SaveAddressAdapter.SavedAddressItem){
+        val entity = viewModel.uiState.value.savedAddresses.find { it.id == item.id }
+        if (entity != null) {
+            viewModel.selectAddress(entity)
+            locationBottomSheet?.dismiss()
+        }
+    }
+
+    override fun onDestroy() {
+        super.onDestroy()
         _binding = null
     }
 }
