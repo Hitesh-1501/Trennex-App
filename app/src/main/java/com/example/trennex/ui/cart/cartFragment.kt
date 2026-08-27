@@ -134,7 +134,7 @@ class CartFragment : Fragment(R.layout.fragment_cart) {
         }
 
         binding.btnPlaceOrder.setOnClickListener {
-            Toast.makeText(requireContext(), "Checking items...", Toast.LENGTH_SHORT).show()
+            findNavController().navigate(R.id.action_cartFragment_to_checkoutFragment)
         }
 
         viewLifecycleOwner.lifecycleScope.launch {
