@@ -279,6 +279,9 @@ class MainActivity : AppCompatActivity() {
                 val toolbarBinding = ToolbarCartBinding.inflate(layoutInflater)
                 binding.toolbarContainer.addView(toolbarBinding.root)
                 binding.appBarLayout.setBackgroundColor(Color.WHITE)
+                if (title != null) {
+                    toolbarBinding.tvPageTitle.text = title
+                }
                 toolbarBinding.backArrow.setOnClickListener { navController.popBackStack() }
             }
             ToolBarType.WISHLIST -> {
