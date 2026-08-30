@@ -111,7 +111,7 @@ class CheckoutFragment : Fragment(R.layout.fragment_checkout) {
             showLocationBottomSheet()
         }
         binding.btnContinue.setOnClickListener {
-            Toast.makeText(requireContext(), "Proceeding to Payment...", Toast.LENGTH_SHORT).show()
+            findNavController().navigate(R.id.action_checkoutFragment_to_paymentFragment)
         }
     }
 
