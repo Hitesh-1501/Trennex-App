@@ -20,10 +20,16 @@ class CartViewModel: ViewModel() {
         CartStore.items,
         userRepository.observeSavedAddresses(),
         userRepository.observeSelectedAddressId(),
-        flow { emit(userRepository.getUserName()) }
-    ) { items, addresses, selectedId, name ->
+        flow { emit(userRepository.getUserDetails()) }
+    ) { items, addresses, selectedId, userDetails ->
         val selected = addresses.find { it.id == selectedId }
-        CartUiState.from(items, selected, addresses, name)
+        CartUiState.from(
+            items = items,
+            selectedAddress = selected,
+            savedAddresses = addresses,
+            userName = userDetails?.get("name").orEmpty().ifBlank { "Guest User" },
+            userPhone = userDetails?.get("phone").orEmpty()
+        )
     }.stateIn(
         scope = viewModelScope,
         started = SharingStarted.WhileSubscribed(5000),
@@ -54,6 +60,7 @@ class CartViewModel: ViewModel() {
             val data = mapOf(
                 "address" to address,
                 "userName" to uiState.value.userName,
+                "mobile" to uiState.value.userPhone,
                 "addressType" to "Home",
                 "latitude" to latitude,
                 "longitude" to longitude,
