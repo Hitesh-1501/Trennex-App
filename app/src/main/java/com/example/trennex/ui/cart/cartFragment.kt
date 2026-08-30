@@ -129,6 +129,10 @@ class CartFragment : Fragment(R.layout.fragment_cart) {
             }
         }
         
+        binding.layoutEmptyCart.btnShopNow.setOnClickListener {
+            findNavController().navigate(R.id.action_cartFragment_to_homeFragment)
+        }
+        
         binding.tvchange.setOnClickListener {
             showLocationBottomSheet()
         }
