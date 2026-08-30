@@ -96,11 +96,17 @@ class ProfileFragment : Fragment(R.layout.fragment_profile) {
             tvRowTitle.text = "Wishlist"
             tvRowSubtitle.text = "Your most loved styles"
             ivRowIcon.setImageResource(R.drawable.wishlist_items)
+            root.setOnClickListener {
+                findNavController().navigate(R.id.action_profileFragment_to_wishlistFragment)
+            }
         }
         binding.notificationSection.apply {
             tvRowTitle.text = "Notifications"
             tvRowSubtitle.text = "Stay Updated, Instantly"
             ivRowIcon.setImageResource(R.drawable.ic_notification)
+            root.setOnClickListener {
+                findNavController().navigate(R.id.action_profileFragment_to_notificationFragment)
+            }
         }
         binding.saveCreditSection.apply {
             tvRowTitle.text = "Saved Credit / Debit & Gift Cards"
