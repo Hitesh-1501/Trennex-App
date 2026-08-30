@@ -18,7 +18,7 @@ class PaymentFragment : Fragment(R.layout.fragment_payment) {
         super.onViewCreated(view, savedInstanceState)
         _binding = FragmentPaymentBinding.bind(view)
 
-        (activity as? MainActivity)?.showToolBar(ToolBarType.CART)
+        (activity as? MainActivity)?.showToolBar(ToolBarType.CART, "Payment")
         (activity as? MainActivity)?.toggleCartProgress(true)
         (activity as? MainActivity)?.updateCartStep(3)
 

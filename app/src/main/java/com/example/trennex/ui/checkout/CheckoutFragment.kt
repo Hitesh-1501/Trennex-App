@@ -90,7 +90,7 @@ class CheckoutFragment : Fragment(R.layout.fragment_checkout) {
         _binding = FragmentCheckoutBinding.bind(view)
         fusedLocationClient = LocationServices.getFusedLocationProviderClient(requireContext())
 
-        (activity as? MainActivity)?.showToolBar(ToolBarType.CART)
+        (activity as? MainActivity)?.showToolBar(ToolBarType.CART, "Address")
         (activity as? MainActivity)?.toggleCartProgress(true)
         (activity as? MainActivity)?.updateCartStep(2)
 
