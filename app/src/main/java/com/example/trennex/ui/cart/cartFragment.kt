@@ -138,7 +138,11 @@ class CartFragment : Fragment(R.layout.fragment_cart) {
         }
 
         binding.btnPlaceOrder.setOnClickListener {
-            findNavController().navigate(R.id.action_cartFragment_to_checkoutFragment)
+            if (viewModel.uiState.value.selectedItems > 0) {
+                findNavController().navigate(R.id.action_cartFragment_to_checkoutFragment)
+            } else {
+                Toast.makeText(requireContext(), "Please select at least one item to checkout", Toast.LENGTH_SHORT).show()
+            }
         }
 
         viewLifecycleOwner.lifecycleScope.launch {
