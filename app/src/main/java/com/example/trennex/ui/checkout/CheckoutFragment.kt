@@ -132,11 +132,12 @@ class CheckoutFragment : Fragment(R.layout.fragment_checkout) {
         state.selectedAddress?.let {
             binding.tvUserName.text = it.userName
             binding.tvFullAddress.text = it.displayAddress
-            binding.tvMobile.text = "Mobile : ${it.mobile}"
+            val phone = state.userPhone.ifBlank { it.mobile }
+            binding.tvMobile.text = "Mobile : $phone"
         } ?: run {
             binding.tvUserName.text = "Select Delivery Address"
             binding.tvFullAddress.text = "Please select where to deliver your items"
-            binding.tvMobile.text = ""
+            binding.tvMobile.text = if (state.userPhone.isNotBlank()) "Mobile : ${state.userPhone}" else ""
         }
 
         renderSaveAddresses(state.savedAddresses, state.selectedAddress)
