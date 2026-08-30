@@ -13,10 +13,17 @@ data class CartUiState(
     val allSelected: Boolean = false,
     val selectedAddress: AddressEntity? = null,
     val savedAddresses: List<AddressEntity> = emptyList(),
-    val userName: String = ""
+    val userName: String = "",
+    val userPhone: String = ""
 ){
     companion object{
-        fun from(items: List<CartItemModel>, selectedAddress: AddressEntity? = null, savedAddresses: List<AddressEntity> = emptyList(), userName: String = ""): CartUiState{
+        fun from(
+            items: List<CartItemModel>,
+            selectedAddress: AddressEntity? = null,
+            savedAddresses: List<AddressEntity> = emptyList(),
+            userName: String = "",
+            userPhone: String = ""
+        ): CartUiState{
             val selected = items.filter { it.isSelected }
             val totalMrp = selected.sumOf { it.mrp * it.quantity}
             val totalPrice = selected.sumOf { it.price * it.quantity}
@@ -30,7 +37,8 @@ data class CartUiState(
                 allSelected = items.isNotEmpty() && selected.size == items.size,
                 selectedAddress = selectedAddress,
                 savedAddresses = savedAddresses,
-                userName = userName
+                userName = userName,
+                userPhone = userPhone
             )
         }
     }
