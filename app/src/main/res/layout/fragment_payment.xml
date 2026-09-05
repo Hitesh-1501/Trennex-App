@@ -210,11 +210,13 @@
                     android:textStyle="bold" />
 
                 <ImageView
+                    android:id="@+id/ivChevronSaved"
                     android:layout_width="20dp"
                     android:layout_height="20dp"
                     android:src="@drawable/ic_chevron_down"
                     app:tint="@color/textPrimary" />
             </LinearLayout>
+            <include layout="@layout/layout_payment_saved_details"/>
 
             <View
                 android:layout_width="match_parent"
@@ -250,11 +252,13 @@
                     android:textStyle="bold" />
 
                 <ImageView
+                    android:id="@+id/ivChevronUpi"
                     android:layout_width="20dp"
                     android:layout_height="20dp"
                     android:src="@drawable/ic_chevron_down"
                     app:tint="@color/textPrimary" />
             </LinearLayout>
+            <include layout="@layout/layout_payment_upi_details"/>
 
             <View
                 android:layout_width="match_parent"
@@ -290,11 +294,13 @@
                     android:textStyle="bold" />
 
                 <ImageView
+                    android:id="@+id/ivChevronCard"
                     android:layout_width="20dp"
                     android:layout_height="20dp"
                     android:src="@drawable/ic_chevron_down"
                     app:tint="@color/textPrimary" />
             </LinearLayout>
+            <include layout="@layout/layout_payment_card_details"/>
 
             <View
                 android:layout_width="match_parent"
@@ -330,11 +336,13 @@
                     android:textStyle="bold" />
 
                 <ImageView
+                    android:id="@+id/ivChevronEmi"
                     android:layout_width="20dp"
                     android:layout_height="20dp"
                     android:src="@drawable/ic_chevron_down"
                     app:tint="@color/textPrimary" />
             </LinearLayout>
+            <include layout="@layout/layout_payment_emi_details"/>
 
             <View
                 android:layout_width="match_parent"
@@ -370,11 +378,13 @@
                     android:textStyle="bold" />
 
                 <ImageView
+                    android:id="@+id/ivChevronNetBanking"
                     android:layout_width="20dp"
                     android:layout_height="20dp"
                     android:src="@drawable/ic_chevron_down"
                     app:tint="@color/textPrimary" />
             </LinearLayout>
+            <include layout="@layout/layout_payment_netbanking_details"/>
 
             <View
                 android:layout_width="match_parent"
@@ -410,11 +420,13 @@
                     android:textStyle="bold" />
 
                 <ImageView
+                    android:id="@+id/ivChevronCod"
                     android:layout_width="20dp"
                     android:layout_height="20dp"
                     android:src="@drawable/ic_chevron_down"
                     app:tint="@color/textPrimary" />
             </LinearLayout>
+            <include layout="@layout/layout_payment_cod_details"/>
 
             <View
                 android:layout_width="match_parent"
