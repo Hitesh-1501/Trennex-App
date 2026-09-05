@@ -7,7 +7,8 @@ import com.example.trennex.databinding.ItemProfileGridBinding
 import com.example.trennex.ui.profile.model.ProfileGridItem
 
 class ProfileGridAdapter(
-    private val items: List<ProfileGridItem>
+    private val items: List<ProfileGridItem>,
+    private val onItemClick: (ProfileGridItem) -> Unit
 ): RecyclerView.Adapter<ProfileGridAdapter.GridViewHolder>() {
 
     class GridViewHolder(val binding: ItemProfileGridBinding)
@@ -30,6 +31,7 @@ class ProfileGridAdapter(
 
         holder.binding.ivGridIcon.setImageResource(item.icon)
         holder.binding.tvGridTitle.text = item.title
+        holder.itemView.setOnClickListener { onItemClick(item) }
     }
 
     override fun getItemCount() = items.size
