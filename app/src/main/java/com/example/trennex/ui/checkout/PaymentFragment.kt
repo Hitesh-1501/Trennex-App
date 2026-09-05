@@ -50,6 +50,86 @@ class PaymentFragment : Fragment(R.layout.fragment_payment) {
         binding.optionEmi.setOnClickListener { toggleAccordion(3) }
         binding.optionNetBanking.setOnClickListener { toggleAccordion(4) }
         binding.optionCod.setOnClickListener { toggleAccordion(5) }
+        
+        setupRadioGroupListeners()
+    }
+
+    private fun setupRadioGroupListeners() {
+        // UPI Radio Logic
+        val rbPhonePe = binding.root.findViewById<android.widget.RadioButton>(R.id.rbPhonePe)
+        val rbNewUpi = binding.root.findViewById<android.widget.RadioButton>(R.id.rbNewUpi)
+        val btnPayUpi = binding.root.findViewById<View>(R.id.btnPayUpi)
+        val layoutNewUpiInput = binding.root.findViewById<View>(R.id.layoutNewUpiInput)
+
+        rbPhonePe?.setOnCheckedChangeListener { _, isChecked ->
+            if (isChecked) {
+                rbNewUpi?.isChecked = false
+                btnPayUpi?.visibility = View.VISIBLE
+                layoutNewUpiInput?.visibility = View.GONE
+            }
+        }
+
+        rbNewUpi?.setOnCheckedChangeListener { _, isChecked ->
+            if (isChecked) {
+                rbPhonePe?.isChecked = false
+                btnPayUpi?.visibility = View.GONE
+                layoutNewUpiInput?.visibility = View.VISIBLE
+            }
+        }
+
+        // EMI Radio Logic
+        val rbCreditCardEmi = binding.root.findViewById<android.widget.RadioButton>(R.id.rbCreditCardEmi)
+        val rbBajajEmi = binding.root.findViewById<android.widget.RadioButton>(R.id.rbBajajEmi)
+        val tvNoCostEmi = binding.root.findViewById<View>(R.id.tvNoCostEmi)
+        val tvEmiAmount = binding.root.findViewById<View>(R.id.tvEmiAmount)
+        val layoutEmiLogos = binding.root.findViewById<View>(R.id.layoutEmiLogos)
+        val ivBajajLogo = binding.root.findViewById<View>(R.id.ivBajajLogo)
+        val btnViewPlansBajaj = binding.root.findViewById<View>(R.id.btnViewPlansBajaj)
+
+        rbCreditCardEmi?.setOnCheckedChangeListener { _, isChecked ->
+            if (isChecked) {
+                rbBajajEmi?.isChecked = false
+                tvNoCostEmi?.visibility = View.VISIBLE
+                tvEmiAmount?.visibility = View.VISIBLE
+                layoutEmiLogos?.visibility = View.VISIBLE
+                ivBajajLogo?.visibility = View.GONE
+                btnViewPlansBajaj?.visibility = View.GONE
+            }
+        }
+
+        rbBajajEmi?.setOnCheckedChangeListener { _, isChecked ->
+            if (isChecked) {
+                rbCreditCardEmi?.isChecked = false
+                tvNoCostEmi?.visibility = View.GONE
+                tvEmiAmount?.visibility = View.GONE
+                layoutEmiLogos?.visibility = View.GONE
+                ivBajajLogo?.visibility = View.VISIBLE
+                btnViewPlansBajaj?.visibility = View.VISIBLE
+            }
+        }
+        
+        // Net Banking Radio Group Logic
+        val rbSbi = binding.root.findViewById<android.widget.RadioButton>(R.id.rbSbi)
+        val rbHdfc = binding.root.findViewById<android.widget.RadioButton>(R.id.rbHdfc)
+        val rbIcici = binding.root.findViewById<android.widget.RadioButton>(R.id.rbIcici)
+        val rbKotak = binding.root.findViewById<android.widget.RadioButton>(R.id.rbKotak)
+        val rbAxis = binding.root.findViewById<android.widget.RadioButton>(R.id.rbAxis)
+        val rbFederal = binding.root.findViewById<android.widget.RadioButton>(R.id.rbFederal)
+        val rbIndianBank = binding.root.findViewById<android.widget.RadioButton>(R.id.rbIndianBank)
+        
+        val netBankingRbs = listOf(rbSbi, rbHdfc, rbIcici, rbKotak, rbAxis, rbFederal, rbIndianBank)
+        val btnPayNetBanking = binding.root.findViewById<View>(R.id.btnPayNetBanking)
+        
+        netBankingRbs.forEach { rb ->
+            rb?.setOnCheckedChangeListener { buttonView, isChecked ->
+                if (isChecked) {
+                    netBankingRbs.forEach { otherRb ->
+                        if (otherRb != buttonView) otherRb?.isChecked = false
+                    }
+                    btnPayNetBanking?.visibility = View.VISIBLE
+                }
+            }
+        }
     }
 
     private var currentlyExpandedIndex = -1
