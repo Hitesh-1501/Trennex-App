@@ -59,7 +59,12 @@ class ProfileFragment : Fragment(R.layout.fragment_profile) {
             ProfileGridItem(R.drawable.ic_coupn, "Coupons")
         )
 
-        val adapter = ProfileGridAdapter(gridItems)
+        val adapter = ProfileGridAdapter(gridItems) { item ->
+            when (item.title) {
+                "Orders" -> findNavController().navigate(R.id.action_profileFragment_to_ordersFragment)
+                else -> Toast.makeText(requireContext(), "${item.title} clicked", Toast.LENGTH_SHORT).show()
+            }
+        }
         binding.profileGridRecycler.layoutManager = GridLayoutManager(requireContext(), 2)
         binding.profileGridRecycler.adapter = adapter
     }
