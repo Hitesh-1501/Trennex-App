@@ -11,6 +11,7 @@ import androidx.fragment.app.viewModels
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.lifecycleScope
 import androidx.lifecycle.repeatOnLifecycle
+import androidx.navigation.fragment.findNavController
 import com.example.trennex.R
 import com.example.trennex.databinding.FragmentPaymentBinding
 import com.example.trennex.ui.cart.CartUiState
@@ -55,11 +56,21 @@ class PaymentFragment : Fragment(R.layout.fragment_payment) {
     }
 
     private fun setupRadioGroupListeners() {
+        // Common Pay Click Listener
+        val payClickListener = View.OnClickListener {
+            findNavController().navigate(R.id.action_paymentFragment_to_paymentSuccessFragment)
+        }
+
+        // Saved Card Pay Button
+        binding.root.findViewById<View>(R.id.btnPaySaved)?.setOnClickListener(payClickListener)
+
         // UPI Radio Logic
         val rbPhonePe = binding.root.findViewById<android.widget.RadioButton>(R.id.rbPhonePe)
         val rbNewUpi = binding.root.findViewById<android.widget.RadioButton>(R.id.rbNewUpi)
         val btnPayUpi = binding.root.findViewById<View>(R.id.btnPayUpi)
         val layoutNewUpiInput = binding.root.findViewById<View>(R.id.layoutNewUpiInput)
+
+        btnPayUpi?.setOnClickListener(payClickListener)
 
         rbPhonePe?.setOnCheckedChangeListener { _, isChecked ->
             if (isChecked) {
@@ -76,6 +87,9 @@ class PaymentFragment : Fragment(R.layout.fragment_payment) {
                 layoutNewUpiInput?.visibility = View.VISIBLE
             }
         }
+
+        // Card Pay Button
+        binding.root.findViewById<View>(R.id.btnPayCard)?.setOnClickListener(payClickListener)
 
         // EMI Radio Logic
         val rbCreditCardEmi = binding.root.findViewById<android.widget.RadioButton>(R.id.rbCreditCardEmi)
@@ -119,6 +133,7 @@ class PaymentFragment : Fragment(R.layout.fragment_payment) {
         
         val netBankingRbs = listOf(rbSbi, rbHdfc, rbIcici, rbKotak, rbAxis, rbFederal, rbIndianBank)
         val btnPayNetBanking = binding.root.findViewById<View>(R.id.btnPayNetBanking)
+        btnPayNetBanking?.setOnClickListener(payClickListener)
         
         netBankingRbs.forEach { rb ->
             rb?.setOnCheckedChangeListener { buttonView, isChecked ->
@@ -130,6 +145,9 @@ class PaymentFragment : Fragment(R.layout.fragment_payment) {
                 }
             }
         }
+
+        // COD
+        binding.root.findViewById<View>(R.id.btnPlaceOrderCod)?.setOnClickListener(payClickListener)
     }
 
     private var currentlyExpandedIndex = -1
