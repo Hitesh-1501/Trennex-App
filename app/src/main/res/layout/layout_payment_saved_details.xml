@@ -24,11 +24,12 @@
                 android:id="@+id/rbAxisCard"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
+                android:buttonTint="@color/radio_tint"
                 android:checked="true"
-                android:buttonTint="@color/colorPrimary"
                 android:text="Axis Bank Credit Card • 1234"
                 android:textColor="@color/black"
                 android:textSize="14sp"
+                app:buttonTint="@color/radio_tint"
                 app:layout_constraintStart_toStartOf="parent"
                 app:layout_constraintTop_toTopOf="parent" />
 

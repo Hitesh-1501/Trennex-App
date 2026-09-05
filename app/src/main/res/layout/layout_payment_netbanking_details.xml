@@ -17,83 +17,138 @@
         android:paddingTop="8dp"
         android:paddingBottom="8dp">
 
-        <androidx.constraintlayout.widget.ConstraintLayout
+        <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:paddingHorizontal="16dp"
-            android:paddingVertical="8dp">
+            android:paddingVertical="8dp"
+            android:orientation="vertical">
 
-            <RadioButton
-                android:id="@+id/rbSbi"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:checked="true"
-                android:buttonTint="@color/colorPrimary"
-                android:text="State Bank of India"
-                android:textColor="@color/black"
-                android:textSize="14sp"
-                app:layout_constraintStart_toStartOf="parent"
-                app:layout_constraintTop_toTopOf="parent" />
-
-            <ImageView
-                android:layout_width="24dp"
-                android:layout_height="24dp"
-                android:src="@drawable/placeholder"
-                app:layout_constraintBottom_toBottomOf="@+id/rbSbi"
-                app:layout_constraintEnd_toEndOf="parent"
-                app:layout_constraintTop_toTopOf="@+id/rbSbi" />
+            <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="horizontal" android:gravity="center_vertical" android:layout_marginBottom="12dp">
+                <RadioButton
+                    android:id="@+id/rbSbi"
+                    android:layout_width="0dp"
+                    android:layout_weight="1"
+                    android:layout_height="wrap_content"
+                    android:buttonTint="@color/radio_tint"
+                    android:text="State Bank of India"
+                    android:textColor="@color/black"
+                    android:textSize="14sp"
+                    app:buttonTint="@color/radio_tint" />
+                <ImageView android:layout_width="24dp" android:layout_height="24dp" android:src="@drawable/placeholder" />
+            </LinearLayout>
 
             <com.google.android.material.button.MaterialButton
                 android:id="@+id/btnPayNetBanking"
                 android:layout_width="match_parent"
                 android:layout_height="48dp"
                 android:layout_marginStart="32dp"
-                android:layout_marginTop="16dp"
+                android:layout_marginBottom="16dp"
                 android:backgroundTint="#FF6D00"
                 android:text="Pay ₹40,999"
                 android:textAllCaps="false"
                 android:textColor="@color/white"
                 android:textSize="14sp"
                 android:textStyle="bold"
-                app:cornerRadius="4dp"
-                app:layout_constraintTop_toBottomOf="@+id/rbSbi" />
-        </androidx.constraintlayout.widget.ConstraintLayout>
+                android:visibility="gone"
+                app:cornerRadius="4dp" />
 
-        <View android:layout_width="match_parent" android:layout_height="1dp" android:background="#E0E0E0" android:layout_marginTop="8dp"/>
+            <View android:layout_width="match_parent" android:layout_height="1dp" android:background="#E0E0E0" android:layout_marginBottom="12dp"/>
 
-        <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="horizontal" android:paddingHorizontal="16dp" android:paddingVertical="12dp" android:gravity="center_vertical">
-            <RadioButton android:layout_width="0dp" android:layout_weight="1" android:layout_height="wrap_content" android:text="HDFC Bank" android:textSize="14sp" android:textColor="@color/black" />
-            <ImageView android:layout_width="24dp" android:layout_height="24dp" android:src="@drawable/placeholder" />
-        </LinearLayout>
-        <View android:layout_width="match_parent" android:layout_height="1dp" android:background="#E0E0E0" />
+            <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="horizontal" android:gravity="center_vertical" android:layout_marginBottom="12dp">
+                <RadioButton
+                    android:id="@+id/rbHdfc"
+                    android:layout_width="0dp"
+                    android:layout_weight="1"
+                    android:layout_height="wrap_content"
+                    android:buttonTint="@color/radio_tint"
+                    android:text="HDFC Bank"
+                    android:textColor="@color/black"
+                    android:textSize="14sp"
+                    app:buttonTint="@color/radio_tint" />
+                <ImageView android:layout_width="24dp" android:layout_height="24dp" android:src="@drawable/placeholder" />
+            </LinearLayout>
 
-        <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="horizontal" android:paddingHorizontal="16dp" android:paddingVertical="12dp" android:gravity="center_vertical">
-            <RadioButton android:layout_width="0dp" android:layout_weight="1" android:layout_height="wrap_content" android:text="ICICI Bank" android:textSize="14sp" android:textColor="@color/black" />
-            <ImageView android:layout_width="24dp" android:layout_height="24dp" android:src="@drawable/placeholder" />
-        </LinearLayout>
-        <View android:layout_width="match_parent" android:layout_height="1dp" android:background="#E0E0E0" />
+            <View android:layout_width="match_parent" android:layout_height="1dp" android:background="#E0E0E0" android:layout_marginBottom="12dp"/>
 
-        <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="horizontal" android:paddingHorizontal="16dp" android:paddingVertical="12dp" android:gravity="center_vertical">
-            <RadioButton android:layout_width="0dp" android:layout_weight="1" android:layout_height="wrap_content" android:text="Kotak Mahindra Bank" android:textSize="14sp" android:textColor="@color/black" />
-            <ImageView android:layout_width="24dp" android:layout_height="24dp" android:src="@drawable/placeholder" />
-        </LinearLayout>
-        <View android:layout_width="match_parent" android:layout_height="1dp" android:background="#E0E0E0" />
+            <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="horizontal" android:gravity="center_vertical" android:layout_marginBottom="12dp">
+                <RadioButton
+                    android:id="@+id/rbIcici"
+                    android:layout_width="0dp"
+                    android:layout_weight="1"
+                    android:layout_height="wrap_content"
+                    android:buttonTint="@color/radio_tint"
+                    android:text="ICICI Bank"
+                    android:textColor="@color/black"
+                    android:textSize="14sp"
+                    app:buttonTint="@color/radio_tint" />
+                <ImageView android:layout_width="24dp" android:layout_height="24dp" android:src="@drawable/placeholder" />
+            </LinearLayout>
 
-        <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="horizontal" android:paddingHorizontal="16dp" android:paddingVertical="12dp" android:gravity="center_vertical">
-            <RadioButton android:layout_width="0dp" android:layout_weight="1" android:layout_height="wrap_content" android:text="Axis Bank" android:textSize="14sp" android:textColor="@color/black" />
-            <ImageView android:layout_width="24dp" android:layout_height="24dp" android:src="@drawable/placeholder" />
-        </LinearLayout>
-        <View android:layout_width="match_parent" android:layout_height="1dp" android:background="#E0E0E0" />
+            <View android:layout_width="match_parent" android:layout_height="1dp" android:background="#E0E0E0" android:layout_marginBottom="12dp"/>
 
-        <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="horizontal" android:paddingHorizontal="16dp" android:paddingVertical="12dp" android:gravity="center_vertical">
-            <RadioButton android:layout_width="0dp" android:layout_weight="1" android:layout_height="wrap_content" android:text="Federal Bank" android:textSize="14sp" android:textColor="@color/black" />
-            <ImageView android:layout_width="24dp" android:layout_height="24dp" android:src="@drawable/placeholder" />
-        </LinearLayout>
-        <View android:layout_width="match_parent" android:layout_height="1dp" android:background="#E0E0E0" />
+            <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="horizontal" android:gravity="center_vertical" android:layout_marginBottom="12dp">
+                <RadioButton
+                    android:id="@+id/rbKotak"
+                    android:layout_width="0dp"
+                    android:layout_weight="1"
+                    android:layout_height="wrap_content"
+                    android:buttonTint="@color/radio_tint"
+                    android:text="Kotak Mahindra Bank"
+                    android:textColor="@color/black"
+                    android:textSize="14sp"
+                    app:buttonTint="@color/radio_tint" />
+                <ImageView android:layout_width="24dp" android:layout_height="24dp" android:src="@drawable/placeholder" />
+            </LinearLayout>
 
-        <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="horizontal" android:paddingHorizontal="16dp" android:paddingVertical="12dp" android:gravity="center_vertical">
-            <RadioButton android:layout_width="0dp" android:layout_weight="1" android:layout_height="wrap_content" android:text="Indian Bank" android:textSize="14sp" android:textColor="@color/black" />
-            <ImageView android:layout_width="24dp" android:layout_height="24dp" android:src="@drawable/placeholder" />
+            <View android:layout_width="match_parent" android:layout_height="1dp" android:background="#E0E0E0" android:layout_marginBottom="12dp"/>
+
+            <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="horizontal" android:gravity="center_vertical" android:layout_marginBottom="12dp">
+                <RadioButton
+                    android:id="@+id/rbAxis"
+                    android:layout_width="0dp"
+                    android:layout_weight="1"
+                    android:layout_height="wrap_content"
+                    android:buttonTint="@color/radio_tint"
+                    android:text="Axis Bank"
+                    android:textColor="@color/black"
+                    android:textSize="14sp"
+                    app:buttonTint="@color/radio_tint" />
+                <ImageView android:layout_width="24dp" android:layout_height="24dp" android:src="@drawable/placeholder" />
+            </LinearLayout>
+
+            <View android:layout_width="match_parent" android:layout_height="1dp" android:background="#E0E0E0" android:layout_marginBottom="12dp"/>
+
+            <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="horizontal" android:gravity="center_vertical" android:layout_marginBottom="12dp">
+                <RadioButton
+                    android:id="@+id/rbFederal"
+                    android:layout_width="0dp"
+                    android:layout_weight="1"
+                    android:layout_height="wrap_content"
+                    android:buttonTint="@color/radio_tint"
+                    android:text="Federal Bank"
+                    android:textColor="@color/black"
+                    android:textSize="14sp"
+                    app:buttonTint="@color/radio_tint" />
+                <ImageView android:layout_width="24dp" android:layout_height="24dp" android:src="@drawable/placeholder" />
+            </LinearLayout>
+
+            <View android:layout_width="match_parent" android:layout_height="1dp" android:background="#E0E0E0" android:layout_marginBottom="12dp"/>
+
+            <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="horizontal" android:gravity="center_vertical">
+                <RadioButton
+                    android:id="@+id/rbIndianBank"
+                    android:layout_width="0dp"
+                    android:layout_weight="1"
+                    android:layout_height="wrap_content"
+                    android:buttonTint="@color/radio_tint"
+                    android:text="Indian Bank"
+                    android:textColor="@color/black"
+                    android:textSize="14sp"
+                    app:buttonTint="@color/radio_tint" />
+                <ImageView android:layout_width="24dp" android:layout_height="24dp" android:src="@drawable/placeholder" />
+            </LinearLayout>
+
         </LinearLayout>
 
     </LinearLayout>
