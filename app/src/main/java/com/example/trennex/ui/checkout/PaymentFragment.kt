@@ -44,25 +44,55 @@ class PaymentFragment : Fragment(R.layout.fragment_payment) {
             toggleAmountDetailsCard()
         }
 
-        val optionClickListener = View.OnClickListener { v ->
-            val optionName = when (v.id) {
-                R.id.optionSaved -> "Saved Payment Options"
-                R.id.optionUpi -> "UPI"
-                R.id.optionCard -> "Credit / Debit / ATM Card"
-                R.id.optionEmi -> "EMI"
-                R.id.optionNetBanking -> "Net Banking"
-                R.id.optionCod -> "Cash on Delivery"
-                else -> "Payment Option"
-            }
-            Toast.makeText(requireContext(), "$optionName selected", Toast.LENGTH_SHORT).show()
-        }
+        binding.optionSaved.setOnClickListener { toggleAccordion(0) }
+        binding.optionUpi.setOnClickListener { toggleAccordion(1) }
+        binding.optionCard.setOnClickListener { toggleAccordion(2) }
+        binding.optionEmi.setOnClickListener { toggleAccordion(3) }
+        binding.optionNetBanking.setOnClickListener { toggleAccordion(4) }
+        binding.optionCod.setOnClickListener { toggleAccordion(5) }
+    }
 
-        binding.optionSaved.setOnClickListener(optionClickListener)
-        binding.optionUpi.setOnClickListener(optionClickListener)
-        binding.optionCard.setOnClickListener(optionClickListener)
-        binding.optionEmi.setOnClickListener(optionClickListener)
-        binding.optionNetBanking.setOnClickListener(optionClickListener)
-        binding.optionCod.setOnClickListener(optionClickListener)
+    private var currentlyExpandedIndex = -1
+
+    private fun toggleAccordion(index: Int) {
+        val detailsLayouts = listOf(
+            binding.root.findViewById<View>(R.id.layoutSavedDetails),
+            binding.root.findViewById<View>(R.id.layoutUpiDetails),
+            binding.root.findViewById<View>(R.id.layoutCardDetails),
+            binding.root.findViewById<View>(R.id.layoutEmiDetails),
+            binding.root.findViewById<View>(R.id.layoutNetBankingDetails),
+            binding.root.findViewById<View>(R.id.layoutCodDetails)
+        )
+        val chevrons = listOf(
+            binding.ivChevronSaved,
+            binding.ivChevronUpi,
+            binding.ivChevronCard,
+            binding.ivChevronEmi,
+            binding.ivChevronNetBanking,
+            binding.ivChevronCod
+        )
+
+        TransitionManager.beginDelayedTransition(
+            binding.rootContainer,
+            AutoTransition().apply { duration = 250 }
+        )
+
+        // If clicking the currently open one, collapse it
+        if (currentlyExpandedIndex == index) {
+            detailsLayouts[index].visibility = View.GONE
+            chevrons[index].setImageResource(R.drawable.ic_chevron_down)
+            currentlyExpandedIndex = -1
+        } else {
+            // Collapse previous if any
+            if (currentlyExpandedIndex != -1) {
+                detailsLayouts[currentlyExpandedIndex].visibility = View.GONE
+                chevrons[currentlyExpandedIndex].setImageResource(R.drawable.ic_chevron_down)
+            }
+            // Expand new one
+            detailsLayouts[index].visibility = View.VISIBLE
+            chevrons[index].setImageResource(R.drawable.ic_chevron_up)
+            currentlyExpandedIndex = index
+        }
     }
 
     private fun toggleAmountDetailsCard() {
@@ -99,6 +129,12 @@ class PaymentFragment : Fragment(R.layout.fragment_payment) {
         binding.tvPlatformFee.text = "₹0"
         binding.tvDiscount.text = "-${CurrencyFormator.formatInr(state.totalDiscount)}"
         binding.tvTotalAmount.text = CurrencyFormator.formatInr(state.totalPrice)
+        
+        val totalFormatted = CurrencyFormator.formatInr(state.totalPrice)
+        binding.root.findViewById<com.google.android.material.button.MaterialButton>(R.id.btnPaySaved)?.text = "Pay $totalFormatted"
+        binding.root.findViewById<com.google.android.material.button.MaterialButton>(R.id.btnPayUpi)?.text = "Pay $totalFormatted"
+        binding.root.findViewById<com.google.android.material.button.MaterialButton>(R.id.btnPayCard)?.text = "Pay $totalFormatted"
+        binding.root.findViewById<com.google.android.material.button.MaterialButton>(R.id.btnPayNetBanking)?.text = "Pay $totalFormatted"
     }
 
     override fun onDestroyView() {
