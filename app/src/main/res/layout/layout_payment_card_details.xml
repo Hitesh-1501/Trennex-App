@@ -31,6 +31,8 @@
             android:drawableEnd="@drawable/ic_payment_card"
             android:drawablePadding="8dp"
             android:hint="xxxx xxxx xxxx xxxx"
+            android:textColor="@color/textPrimary"
+            android:textColorHint="@color/textPlaceholder"
             android:paddingHorizontal="12dp"
             android:textSize="14sp" />
 
@@ -60,6 +62,8 @@
                     android:layout_marginTop="8dp"
                     android:background="@drawable/edit_text_border"
                     android:hint="MM / YY"
+                    android:textColor="@color/textPrimary"
+                    android:textColorHint="@color/textPlaceholder"
                     android:paddingHorizontal="12dp"
                     android:textSize="14sp" />
             </LinearLayout>
@@ -84,6 +88,8 @@
                     android:layout_marginTop="8dp"
                     android:background="@drawable/edit_text_border"
                     android:hint="CVV"
+                    android:textColor="@color/textPrimary"
+                    android:textColorHint="@color/textPlaceholder"
                     android:paddingHorizontal="12dp"
                     android:inputType="numberPassword"
                     android:textSize="14sp" />
