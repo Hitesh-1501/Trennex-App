@@ -70,7 +70,7 @@ class CartViewModel: ViewModel() {
                 }
                 CartStore.deleteSelectedItems()
             } catch (e: Exception) {
-                // Handle error if needed
+                e.printStackTrace()
             }
         }
     }
