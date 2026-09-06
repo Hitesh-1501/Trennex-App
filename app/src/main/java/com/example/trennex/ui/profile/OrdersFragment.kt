@@ -4,6 +4,7 @@ import android.os.Bundle
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
+import android.widget.Toast
 import androidx.core.widget.addTextChangedListener
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.viewModels
@@ -69,6 +70,16 @@ class OrdersFragment : Fragment(R.layout.fragment_orders) {
                     val isEmpty = orders.isEmpty() && !viewModel.isLoading.value
                     binding.layoutEmptyOrders.visibility = if (isEmpty) View.VISIBLE else View.GONE
                     binding.rvOrders.visibility = if (isEmpty) View.GONE else View.VISIBLE
+                }
+            }
+        }
+
+        viewLifecycleOwner.lifecycleScope.launch {
+            viewLifecycleOwner.repeatOnLifecycle(Lifecycle.State.STARTED) {
+                viewModel.error.collect { error ->
+                    error?.let {
+                        Toast.makeText(requireContext(), "Error: $it", Toast.LENGTH_LONG).show()
+                    }
                 }
             }
         }
