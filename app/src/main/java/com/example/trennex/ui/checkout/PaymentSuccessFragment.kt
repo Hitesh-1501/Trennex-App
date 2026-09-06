@@ -31,8 +31,8 @@ class PaymentSuccessFragment : Fragment(R.layout.fragment_payment_success) {
         // Start animation
         startSuccessAnimation()
         
-        // Remove only the items that were purchased (selected in cart)
-        viewModel.deleteSelectedItems()
+        // Save to Firestore and remove from Room
+        viewModel.placeOrder()
 
         // Navigate away after delay
         viewLifecycleOwner.lifecycleScope.launch {
