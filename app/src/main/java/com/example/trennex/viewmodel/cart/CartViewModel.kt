@@ -4,8 +4,10 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.trennex.repository.user.AddressEntity
 import com.example.trennex.repository.user.UserRepository
-import com.example.trennex.utils.cart.CartStore
 import com.example.trennex.ui.cart.CartUiState
+import com.example.trennex.ui.profile.model.OrderModel
+import com.example.trennex.utils.cart.CartStore
+import com.google.firebase.Timestamp
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.combine
@@ -42,6 +44,36 @@ class CartViewModel: ViewModel() {
     fun removeItem(itemId: Int) = CartStore.removeItem(itemId)
 
     fun deleteSelectedItems() = CartStore.deleteSelectedItems()
+
+    fun placeOrder() {
+        val selectedItems = uiState.value.items.filter { it.isSelected }
+        if (selectedItems.isEmpty()) return
+
+        viewModelScope.launch {
+            try {
+                selectedItems.forEach { item ->
+                    val order = OrderModel(
+                        title = item.title,
+                        description = item.description,
+                        imageUrl = item.imageUrl,
+                        imageRes = item.imageRes,
+                        price = item.price,
+                        quantity = item.quantity,
+                        status = "PENDING",
+                        orderDate = Timestamp.now(),
+                        expectedDeliveryDate = Timestamp(
+                            (System.currentTimeMillis() / 1000) + (7 * 24 * 60 * 60), 
+                            0
+                        )
+                    )
+                    userRepository.saveOrder(order)
+                }
+                CartStore.deleteSelectedItems()
+            } catch (e: Exception) {
+                // Handle error if needed
+            }
+        }
+    }
 
     fun selectAddress(address: AddressEntity) {
         viewModelScope.launch {
