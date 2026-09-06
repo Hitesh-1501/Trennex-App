@@ -1,0 +1,112 @@
+<?xml version="1.0" encoding="utf-8"?>
+<androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:background="@color/white"
+    android:clickable="true"
+    android:focusable="true"
+    android:foreground="?attr/selectableItemBackground"
+    android:padding="16dp">
+
+    <ImageView
+        android:id="@+id/ivProduct"
+        android:layout_width="80dp"
+        android:layout_height="80dp"
+        android:scaleType="centerInside"
+        android:src="@drawable/placeholder"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent" />
+
+    <LinearLayout
+        android:id="@+id/layoutInfo"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_marginStart="16dp"
+        android:layout_marginEnd="8dp"
+        android:orientation="vertical"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toStartOf="@+id/ivChevron"
+        app:layout_constraintStart_toEndOf="@id/ivProduct"
+        app:layout_constraintTop_toTopOf="parent">
+
+        <TextView
+            android:id="@+id/tvStatus"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Your order is expected to be delivered by"
+            android:textColor="@color/black"
+            android:textSize="13sp" />
+
+        <TextView
+            android:id="@+id/tvDate"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Thursday, 11 January"
+            android:textColor="@color/black"
+            android:textSize="13sp"
+            android:textStyle="bold" />
+
+        <TextView
+            android:id="@+id/tvTitle"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="4dp"
+            android:ellipsize="end"
+            android:maxLines="1"
+            android:text="Samsung Galaxy S24 5G Snapdragon..."
+            android:textColor="@color/textSecondary"
+            android:textSize="12sp" />
+
+        <!-- Rating Section (Visible only if status is Delivered) -->
+        <LinearLayout
+            android:id="@+id/layoutRating"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="8dp"
+            android:gravity="center_vertical"
+            android:orientation="vertical"
+            android:visibility="gone"
+            tools:visibility="visible">
+
+            <LinearLayout
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal">
+                <ImageView android:layout_width="16dp" android:layout_height="16dp" android:src="@drawable/baseline_check_24" app:tint="@color/borderColor" android:layout_marginEnd="4dp" />
+                <ImageView android:layout_width="16dp" android:layout_height="16dp" android:src="@drawable/baseline_check_24" app:tint="@color/borderColor" android:layout_marginEnd="4dp" />
+                <ImageView android:layout_width="16dp" android:layout_height="16dp" android:src="@drawable/baseline_check_24" app:tint="@color/borderColor" android:layout_marginEnd="4dp" />
+                <ImageView android:layout_width="16dp" android:layout_height="16dp" android:src="@drawable/baseline_check_24" app:tint="@color/borderColor" android:layout_marginEnd="4dp" />
+                <ImageView android:layout_width="16dp" android:layout_height="16dp" android:src="@drawable/baseline_check_24" app:tint="@color/borderColor" />
+            </LinearLayout>
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="2dp"
+                android:text="Rate this product now"
+                android:textColor="@color/textSecondary"
+                android:textSize="11sp" />
+        </LinearLayout>
+
+    </LinearLayout>
+
+    <ImageView
+        android:id="@+id/ivChevron"
+        android:layout_width="20dp"
+        android:layout_height="20dp"
+        android:alpha="0.6"
+        android:src="@drawable/ic_chevron_right"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintTop_toTopOf="parent"
+        app:tint="@color/black" />
+
+    <View
+        android:layout_width="match_parent"
+        android:layout_height="1dp"
+        android:background="#EEEEEE"
+        app:layout_constraintBottom_toBottomOf="parent" />
+
+</androidx.constraintlayout.widget.ConstraintLayout>
