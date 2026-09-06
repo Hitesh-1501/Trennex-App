@@ -1,5 +1,6 @@
 package com.example.trennex.repository.user
 
+import com.example.trennex.ui.profile.model.OrderModel
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.firestore.FieldValue
 import com.google.firebase.firestore.FirebaseFirestore
@@ -152,6 +153,40 @@ class UserRepository {
             .document(addressId)
             .delete()
             .await()
+    }
+
+    suspend fun saveOrder(order: OrderModel) {
+        val uid = getUserId() ?: return
+        firestore.collection("users")
+            .document(uid)
+            .collection("orders")
+            .add(order)
+            .await()
+    }
+
+    fun observeOrders(): Flow<List<OrderModel>> = callbackFlow {
+        val uid = getUserId()
+        if (uid == null) {
+            trySend(emptyList())
+            close()
+            return@callbackFlow
+        }
+
+        val listener = firestore.collection("users")
+            .document(uid)
+            .collection("orders")
+            .orderBy("orderDate", Query.Direction.DESCENDING)
+            .addSnapshotListener { snapshot, error ->
+                if (error != null) {
+                    close(error)
+                    return@addSnapshotListener
+                }
+                val orders = snapshot?.documents?.mapNotNull { doc ->
+                    doc.toObject(OrderModel::class.java)?.copy(id = doc.id)
+                } ?: emptyList()
+                trySend(orders)
+            }
+        awaitClose { listener.remove() }
     }
 }
 
