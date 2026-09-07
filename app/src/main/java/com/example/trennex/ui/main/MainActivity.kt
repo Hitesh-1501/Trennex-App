@@ -150,6 +150,11 @@ class MainActivity : AppCompatActivity() {
                     setLightStatusBar(true)
                     binding.curveBottomNav.visibility = View.GONE
                 }
+                R.id.ordersFragment -> {
+                    showToolBar(ToolBarType.TITLE,"Orders")
+                    setLightStatusBar(true)
+                    binding.curveBottomNav.visibility = View.GONE
+                }
             }
             renderCartBadge(viewModel.cartCount.value)
         }
