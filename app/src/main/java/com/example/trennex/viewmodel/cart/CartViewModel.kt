@@ -6,6 +6,7 @@ import com.example.trennex.repository.user.AddressEntity
 import com.example.trennex.repository.user.UserRepository
 import com.example.trennex.ui.cart.CartUiState
 import com.example.trennex.ui.profile.model.OrderModel
+import com.example.trennex.utils.DateUtils
 import com.example.trennex.utils.cart.CartStore
 import com.google.firebase.Timestamp
 import kotlinx.coroutines.flow.SharingStarted
@@ -53,6 +54,7 @@ class CartViewModel: ViewModel() {
         viewModelScope.launch {
             try {
                 selectedItems.forEach { item ->
+                    val expectedDate = DateUtils.calculateExpectedDeliveryDate(item.deliveryDetails)
                     val order = OrderModel(
                         title = item.title,
                         description = item.description,
@@ -62,10 +64,7 @@ class CartViewModel: ViewModel() {
                         quantity = item.quantity,
                         status = "PENDING",
                         orderDate = Timestamp.now(),
-                        expectedDeliveryDate = Timestamp(
-                            (System.currentTimeMillis() / 1000) + (7 * 24 * 60 * 60), 
-                            0
-                        )
+                        expectedDeliveryDate = expectedDate
                     )
                     userRepository.saveOrder(order)
                 }
