@@ -9,6 +9,7 @@ import com.bumptech.glide.Glide
 import com.example.trennex.R
 import com.example.trennex.databinding.ItemCheckoutProductBinding
 import com.example.trennex.ui.cart.model.CartItemModel
+import com.example.trennex.utils.DateUtils
 
 class CheckoutItemsAdapter : ListAdapter<CartItemModel, CheckoutItemsAdapter.ViewHolder>(DiffCallback) {
 
@@ -20,8 +21,8 @@ class CheckoutItemsAdapter : ListAdapter<CartItemModel, CheckoutItemsAdapter.Vie
                 binding.ivProduct.setImageResource(item.imageRes)
             }
             
-            // For now, static delivery estimate as in the design
-            binding.tvDeliveryEstimate.text = "Estimate delivery date: Sunday, 11 January"
+            // Dynamic delivery estimate based on API data
+            binding.tvDeliveryEstimate.text = "Estimate delivery date: ${DateUtils.getDeliveryDateString(item.deliveryDetails)}"
         }
     }
 
