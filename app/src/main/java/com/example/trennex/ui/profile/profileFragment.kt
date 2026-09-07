@@ -52,6 +52,10 @@ class ProfileFragment : Fragment(R.layout.fragment_profile) {
             findNavController().navigate(R.id.action_profileFragment_to_accountDetailsFragment)
         }
 
+        binding.addressDetailsBox.setOnClickListener {
+            findNavController().navigate(R.id.action_profileFragment_to_savedAddressesFragment)
+        }
+
         val gridItems = listOf(
             ProfileGridItem(R.drawable.ic_explore, "Explore Trenex"),
             ProfileGridItem(R.drawable.order_icon, "Orders"),

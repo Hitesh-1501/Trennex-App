@@ -147,12 +147,31 @@ class UserRepository {
 
     suspend fun deleteAddress(addressId: String) {
         val uid = getUserId() ?: return
-        firestore.collection("users")
-            .document(uid)
-            .collection("savedAddresses")
+        val userDocRef = firestore.collection("users").document(uid)
+        
+        // Check if deleted address was selected
+        val snapshot = userDocRef.get().await()
+        val currentSelectedId = snapshot.getString("selectedAddressId")
+
+        userDocRef.collection("savedAddresses")
             .document(addressId)
             .delete()
             .await()
+
+        if (currentSelectedId == addressId) {
+            // Find next available address
+            val remainingAddresses = userDocRef.collection("savedAddresses")
+                .limit(1)
+                .get()
+                .await()
+            
+            val nextAddressId = remainingAddresses.documents.firstOrNull()?.id
+            if (nextAddressId != null) {
+                userDocRef.update("selectedAddressId", nextAddressId).await()
+            } else {
+                userDocRef.update("selectedAddressId", FieldValue.delete()).await()
+            }
+        }
     }
 
     suspend fun saveOrder(order: OrderModel) {

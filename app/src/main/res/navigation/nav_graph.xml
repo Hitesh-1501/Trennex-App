@@ -134,6 +134,18 @@
         <action
             android:id="@+id/action_profileFragment_to_ordersFragment"
             app:destination="@id/ordersFragment" />
+        <action
+            android:id="@+id/action_profileFragment_to_savedAddressesFragment"
+            app:destination="@id/savedAddressesFragment" />
+    </fragment>
+    <fragment
+        android:id="@+id/savedAddressesFragment"
+        android:name="com.example.trennex.ui.profile.SavedAddressesFragment"
+        android:label="fragment_saved_addresses"
+        tools:layout="@layout/fragment_saved_addresses">
+        <action
+            android:id="@+id/action_savedAddressesFragment_to_addNewAddressFragment"
+            app:destination="@id/addNewAddressFragment" />
     </fragment>
     <fragment
         android:id="@+id/cartFragment"
