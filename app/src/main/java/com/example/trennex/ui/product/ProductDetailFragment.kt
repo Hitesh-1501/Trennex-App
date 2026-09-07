@@ -39,6 +39,7 @@ import com.example.trennex.ui.product.model.SpecDetailItem
 import com.example.trennex.utils.wishlist.WishListStore
 import com.example.trennex.ui.wishlist.model.WishlistItemsModel
 import com.example.trennex.utils.CurrencyFormator
+import com.example.trennex.utils.DateUtils
 import com.example.trennex.viewmodel.product.ProductDetailViewModel
 import kotlinx.coroutines.launch
 import kotlin.math.abs
@@ -144,7 +145,7 @@ class ProductDetailFragment : Fragment(R.layout.fragment_product_detail), WishLi
                         currentImages = imageList
                         imageAdapter.updateImages(imageList)
                         binding.productBanners.setCurrentItem(0,false)
-                        binding.tvDelivery.text = product.shippingInformation
+                        binding.tvDelivery.text = DateUtils.getDeliveryDateString(product.shippingInformation)
                         binding.tvPriceDetails.text = CurrencyFormator.formatInr(product.price)
                         binding.tvManufacture.text = product.warrantyInformation
                         binding.tvReturnPolicy.text = product.returnPolicy
@@ -582,7 +583,7 @@ class ProductDetailFragment : Fragment(R.layout.fragment_product_detail), WishLi
             SpecDetailItem("Brand",product.brand.orEmpty()),
             SpecDetailItem("Dimensions",dimensionValue),
             SpecDetailItem("Category", product.category.orEmpty()),
-            SpecDetailItem("Shipping", product.shippingInformation),
+            SpecDetailItem("Shipping", DateUtils.getDeliveryDateString(product.shippingInformation)),
             SpecDetailItem("Warranty", product.warrantyInformation),
             SpecDetailItem("Price", CurrencyFormator.formatInr(product.price))
         ).filter {
