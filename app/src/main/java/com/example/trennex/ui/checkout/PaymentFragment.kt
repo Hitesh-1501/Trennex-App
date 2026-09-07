@@ -7,6 +7,7 @@ import android.view.View
 import android.widget.Toast
 import androidx.core.view.isVisible
 import androidx.fragment.app.Fragment
+import androidx.fragment.app.activityViewModels
 import androidx.fragment.app.viewModels
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.lifecycleScope
@@ -26,7 +27,7 @@ class PaymentFragment : Fragment(R.layout.fragment_payment) {
     private var _binding: FragmentPaymentBinding? = null
     private val binding get() = _binding!!
 
-    private val viewModel: CartViewModel by viewModels()
+    private val viewModel: CartViewModel by activityViewModels()
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
