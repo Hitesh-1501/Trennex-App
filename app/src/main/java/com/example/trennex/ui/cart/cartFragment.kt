@@ -23,7 +23,7 @@ import androidx.appcompat.app.AlertDialog
 import androidx.core.content.ContextCompat
 import androidx.core.view.isVisible
 import androidx.fragment.app.Fragment
-import androidx.fragment.app.viewModels
+import androidx.fragment.app.activityViewModels
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.lifecycleScope
 import androidx.lifecycle.repeatOnLifecycle
@@ -58,7 +58,7 @@ class CartFragment : Fragment(R.layout.fragment_cart) {
     private var _binding: FragmentCartBinding? = null
     private val binding get() = _binding!!
 
-    private val viewModel : CartViewModel by viewModels()
+    private val viewModel: CartViewModel by activityViewModels()
     
     private var bottomSheetBinding: BottomSheetSelectLocationBinding? = null
     private var locationBottomSheet: BottomSheetDialog? = null
