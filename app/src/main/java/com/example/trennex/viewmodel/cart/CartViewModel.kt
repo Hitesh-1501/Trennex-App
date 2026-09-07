@@ -47,6 +47,7 @@ class CartViewModel: ViewModel() {
 
     fun placeOrder() {
         val selectedItems = uiState.value.items.filter { it.isSelected }
+        android.util.Log.d("CartViewModel", "placeOrder: items count = ${selectedItems.size}")
         if (selectedItems.isEmpty()) return
 
         viewModelScope.launch {
@@ -68,9 +69,10 @@ class CartViewModel: ViewModel() {
                     )
                     userRepository.saveOrder(order)
                 }
+                android.util.Log.d("CartViewModel", "placeOrder: all items saved, deleting from cart")
                 CartStore.deleteSelectedItems()
             } catch (e: Exception) {
-                e.printStackTrace()
+                android.util.Log.e("CartViewModel", "placeOrder failed", e)
             }
         }
     }
