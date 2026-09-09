@@ -88,7 +88,7 @@
             <ImageView
                 android:layout_width="14dp"
                 android:layout_height="14dp"
-                android:src="@drawable/search_mini_icon"
+                android:src="@drawable/ic_phone"
                 app:tint="@color/textSecondary" />
 
             <TextView
