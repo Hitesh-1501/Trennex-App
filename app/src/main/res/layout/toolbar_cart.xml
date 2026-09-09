@@ -5,27 +5,18 @@
     android:layout_height="wrap_content"
     android:paddingBottom="8dp">
 
-    <ImageView
-        android:id="@+id/backArrow"
-        android:layout_width="40dp"
-        android:layout_height="40dp"
-        android:padding="8dp"
-        android:src="@drawable/naavigation_back_arrow"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toTopOf="parent" />
-
     <TextView
         android:id="@+id/tvPageTitle"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
+        android:layout_marginStart="16dp"
+        android:layout_marginTop="8dp"
         android:text="My Cart"
         android:textColor="@color/black"
-        android:textSize="14sp"
-        android:layout_marginStart="20dp"
+        android:textSize="16sp"
         android:textStyle="bold"
-        app:layout_constraintBottom_toBottomOf="@id/backArrow"
-        app:layout_constraintStart_toEndOf="@id/backArrow"
-        app:layout_constraintTop_toTopOf="@id/backArrow" />
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent" />
 
     <ImageView
         android:id="@+id/ivWishlist"
@@ -40,12 +31,12 @@
         android:id="@+id/progressContainer"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
+        android:layout_marginTop="8dp"
         android:gravity="center"
         android:orientation="horizontal"
         android:paddingHorizontal="16dp"
-        android:layout_marginTop="4dp"
         android:visibility="gone"
-        app:layout_constraintTop_toBottomOf="@id/backArrow">
+        app:layout_constraintTop_toBottomOf="@id/tvPageTitle">
 
         <ProgressBar
             android:id="@+id/pbCart"
@@ -54,7 +45,7 @@
             android:layout_height="3dp"
             android:layout_weight="1"
             android:indeterminate="true"
-            android:indeterminateTint="@color/colorPrimary"/>
+            android:indeterminateTint="@color/colorPrimary" />
 
 
         <ImageView
@@ -68,16 +59,16 @@
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:text="Cart"
-            android:textSize="10sp"
-            android:textColor="@color/textSecondary"/>
+            android:textColor="@color/textSecondary"
+            android:textSize="10sp" />
 
         <ProgressBar
             android:id="@+id/pbAddress"
             style="?android:attr/progressBarStyleHorizontal"
             android:layout_width="0dp"
             android:layout_height="3dp"
-            android:layout_weight="1"
             android:layout_marginStart="8dp"
+            android:layout_weight="1"
             android:progress="100"
             android:progressTint="#E0E0E0" />
 
@@ -92,16 +83,16 @@
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:text="Address"
-            android:textSize="10sp"
-            android:textColor="@color/textSecondary"/>
+            android:textColor="@color/textSecondary"
+            android:textSize="10sp" />
 
         <ProgressBar
             android:id="@+id/pbPayment"
             style="?android:attr/progressBarStyleHorizontal"
             android:layout_width="0dp"
             android:layout_height="3dp"
-            android:layout_weight="1"
             android:layout_marginStart="8dp"
+            android:layout_weight="1"
             android:progress="100"
             android:progressTint="#E0E0E0" />
 
@@ -116,7 +107,7 @@
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:text="Payment"
-            android:textSize="10sp"
-            android:textColor="@color/textSecondary"/>
+            android:textColor="@color/textSecondary"
+            android:textSize="10sp" />
     </LinearLayout>
 </androidx.constraintlayout.widget.ConstraintLayout>
