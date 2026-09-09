@@ -24,6 +24,7 @@ import com.example.trennex.databinding.ToolbarProductScreenBinding
 import np.com.susanthapa.curved_bottom_navigation.CbnMenuItem
 import com.example.trennex.databinding.CategoryToolbarBinding
 import com.example.trennex.databinding.ToolbarCartBinding
+import com.example.trennex.databinding.ToolbarCheckoutBinding
 import com.example.trennex.databinding.WishlistToolbarBinding
 import androidx.core.view.isVisible
 import androidx.lifecycle.lifecycleScope
@@ -287,6 +288,11 @@ class MainActivity : AppCompatActivity() {
             }
             ToolBarType.CART ->{
                 val toolbarBinding = ToolbarCartBinding.inflate(layoutInflater)
+                binding.toolbarContainer.addView(toolbarBinding.root)
+                binding.appBarLayout.setBackgroundColor(Color.WHITE)
+            }
+            ToolBarType.CHECKOUT -> {
+                val toolbarBinding = ToolbarCheckoutBinding.inflate(layoutInflater)
                 binding.toolbarContainer.addView(toolbarBinding.root)
                 binding.appBarLayout.setBackgroundColor(Color.WHITE)
                 if (title != null) {
