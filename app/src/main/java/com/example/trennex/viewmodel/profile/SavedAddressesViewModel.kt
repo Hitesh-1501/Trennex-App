@@ -24,8 +24,18 @@ class SavedAddressesViewModel : ViewModel() {
 
     private fun fetchAddresses() {
         viewModelScope.launch {
+            val userDetails = userRepository.getUserDetails()
+            val userPhone = userDetails?.get("phone").orEmpty()
+
             userRepository.observeSavedAddresses().collect { list ->
-                _addresses.value = list
+                val updatedList = list.map { address ->
+                    if (userPhone.isNotBlank()) {
+                        address.copy(mobile = userPhone)
+                    } else {
+                        address
+                    }
+                }
+                _addresses.value = updatedList
             }
         }
     }
