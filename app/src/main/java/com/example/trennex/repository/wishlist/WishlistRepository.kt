@@ -47,7 +47,11 @@ class WishlistRepository(
     }
 
     private suspend fun syncItemToFirestore(item: WishlistItemsModel) {
-        val uid = getUserId() ?: return
+        val uid = getUserId()
+        if (uid == null) {
+            android.util.Log.w("WishlistRepository", "Cannot sync wishlist item: User not logged in")
+            return
+        }
         try {
             firestore.collection("users")
                 .document(uid)
@@ -55,13 +59,18 @@ class WishlistRepository(
                 .document(item.id.toString())
                 .set(item)
                 .await()
+            android.util.Log.d("WishlistRepository", "Successfully synced wishlist item ${item.id} to Firestore")
         } catch (e: Exception) {
-            e.printStackTrace()
+            android.util.Log.e("WishlistRepository", "Failed to sync wishlist item to Firestore", e)
         }
     }
 
     private suspend fun removeWishlistItemFromFirestore(itemId: Int) {
-        val uid = getUserId() ?: return
+        val uid = getUserId()
+        if (uid == null) {
+            android.util.Log.w("WishlistRepository", "Cannot remove wishlist item: User not logged in")
+            return
+        }
         try {
             firestore.collection("users")
                 .document(uid)
@@ -69,8 +78,9 @@ class WishlistRepository(
                 .document(itemId.toString())
                 .delete()
                 .await()
+            android.util.Log.d("WishlistRepository", "Successfully removed wishlist item $itemId from Firestore")
         } catch (e: Exception) {
-            e.printStackTrace()
+            android.util.Log.e("WishlistRepository", "Failed to remove wishlist item from Firestore", e)
         }
     }
 
