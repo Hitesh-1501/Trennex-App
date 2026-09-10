@@ -235,6 +235,9 @@
         <action
             android:id="@+id/action_productDetailFragment_to_productSpecFragment"
             app:destination="@id/productSpecFragment" />
+        <action
+            android:id="@+id/action_productDetailFragment_to_addNewAddressFragment"
+            app:destination="@id/addNewAddressFragment" />
     </fragment>
     <fragment
         android:id="@+id/imagePreviewFragment"
