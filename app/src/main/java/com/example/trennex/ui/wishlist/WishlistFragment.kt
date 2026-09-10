@@ -85,7 +85,7 @@ class WishlistFragment : Fragment(R.layout.fragment_wishlist) {
                     binding.emptyStateContainer.visibility = if (itemCount == 0) View.VISIBLE else View.GONE
                     binding.nestedScrollView.visibility = if (itemCount == 0) View.GONE else View.VISIBLE
                     updateDefaultToolbarState(itemCount)
-                    updateCollectionButtonState(itemCount)
+                    updateCollectionButtonState(itemCount, state.collections.isNotEmpty())
                 }
             }
         }
@@ -202,8 +202,8 @@ class WishlistFragment : Fragment(R.layout.fragment_wishlist) {
         cartShareIcon.alpha = if (itemCount > 0) 1f else 0.4f
     }
 
-    private fun updateCollectionButtonState(itemCount: Int) {
-        val enabled = itemCount > 0
+    private fun updateCollectionButtonState(itemCount: Int, hasCollections: Boolean = false) {
+        val enabled = itemCount > 0 || hasCollections
         binding.btnMyCollection.isEnabled = enabled
         binding.btnMyCollection.alpha = if (enabled) 1f else 0.4f
         binding.ivCollectionIcon.alpha = if (enabled) 1f else 0.4f
