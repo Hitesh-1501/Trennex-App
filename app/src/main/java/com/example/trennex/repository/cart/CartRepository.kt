@@ -49,6 +49,8 @@ class CartRepository(
 
     private suspend fun syncItemToFirestore(item: CartItemModel) {
         val uid = getUserId()
+        val projectId = com.google.firebase.FirebaseApp.getInstance().options.projectId
+        android.util.Log.d("CartRepository", "Syncing to Project ID: $projectId, UID: $uid")
         if (uid == null) {
             android.util.Log.w("CartRepository", "Cannot sync cart item: User not logged in")
             return
@@ -60,7 +62,7 @@ class CartRepository(
                 .document(item.id.toString())
                 .set(item)
                 .await()
-            android.util.Log.d("CartRepository", "Successfully synced cart item ${item.id} to Firestore")
+            android.util.Log.d("CartRepository", "Successfully synced cart item ${item.id} to Firestore under users/$uid/cart")
         } catch (e: Exception) {
             android.util.Log.e("CartRepository", "Failed to sync cart item to Firestore", e)
         }

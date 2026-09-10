@@ -48,6 +48,8 @@ class WishlistRepository(
 
     private suspend fun syncItemToFirestore(item: WishlistItemsModel) {
         val uid = getUserId()
+        val projectId = com.google.firebase.FirebaseApp.getInstance().options.projectId
+        android.util.Log.d("WishlistRepository", "Syncing to Project ID: $projectId, UID: $uid")
         if (uid == null) {
             android.util.Log.w("WishlistRepository", "Cannot sync wishlist item: User not logged in")
             return
@@ -59,7 +61,7 @@ class WishlistRepository(
                 .document(item.id.toString())
                 .set(item)
                 .await()
-            android.util.Log.d("WishlistRepository", "Successfully synced wishlist item ${item.id} to Firestore")
+            android.util.Log.d("WishlistRepository", "Successfully synced wishlist item ${item.id} to Firestore under users/$uid/wishlist")
         } catch (e: Exception) {
             android.util.Log.e("WishlistRepository", "Failed to sync wishlist item to Firestore", e)
         }
