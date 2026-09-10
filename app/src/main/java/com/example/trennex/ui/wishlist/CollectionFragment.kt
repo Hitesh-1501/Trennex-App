@@ -70,10 +70,8 @@ class CollectionFragment : Fragment(R.layout.fragment_collection) {
                     val collections = state.collections
                     collectionAdapter.submitList(collections)
 
-                    // Always show RV to keep the "Add Collection" item visible
-                    binding.rvCollections.visibility = View.VISIBLE
-
                     val isEmpty = collections.isEmpty()
+                    binding.rvCollections.visibility = if (isEmpty) View.GONE else View.VISIBLE
                     binding.btnCreateCollection.visibility = if (isEmpty) View.VISIBLE else View.GONE
                     binding.ivEmptyCollection.visibility = if (isEmpty) View.VISIBLE else View.GONE
                 }
