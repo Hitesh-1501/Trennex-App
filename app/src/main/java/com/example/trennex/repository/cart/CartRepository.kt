@@ -48,7 +48,11 @@ class CartRepository(
     }
 
     private suspend fun syncItemToFirestore(item: CartItemModel) {
-        val uid = getUserId() ?: return
+        val uid = getUserId()
+        if (uid == null) {
+            android.util.Log.w("CartRepository", "Cannot sync cart item: User not logged in")
+            return
+        }
         try {
             firestore.collection("users")
                 .document(uid)
@@ -56,13 +60,18 @@ class CartRepository(
                 .document(item.id.toString())
                 .set(item)
                 .await()
+            android.util.Log.d("CartRepository", "Successfully synced cart item ${item.id} to Firestore")
         } catch (e: Exception) {
-            e.printStackTrace()
+            android.util.Log.e("CartRepository", "Failed to sync cart item to Firestore", e)
         }
     }
 
     private suspend fun removeCartItemFromFirestore(itemId: Int) {
-        val uid = getUserId() ?: return
+        val uid = getUserId()
+        if (uid == null) {
+            android.util.Log.w("CartRepository", "Cannot remove cart item: User not logged in")
+            return
+        }
         try {
             firestore.collection("users")
                 .document(uid)
@@ -70,8 +79,9 @@ class CartRepository(
                 .document(itemId.toString())
                 .delete()
                 .await()
+            android.util.Log.d("CartRepository", "Successfully removed cart item $itemId from Firestore")
         } catch (e: Exception) {
-            e.printStackTrace()
+            android.util.Log.e("CartRepository", "Failed to remove cart item from Firestore", e)
         }
     }
 
