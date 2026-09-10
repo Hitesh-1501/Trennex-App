@@ -29,6 +29,9 @@ object CartStore {
             if(cartRepository == null) {
                 cartRepository =
                     CartRepository(AppDatabase.Companion.getInstance(context).cartDao())
+                scope.launch {
+                    cartRepository?.fetchAndSyncRemoteCart()
+                }
             }
         }
     }
