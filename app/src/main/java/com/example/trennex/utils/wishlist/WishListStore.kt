@@ -32,6 +32,9 @@ object WishListStore {
         synchronized(this){
             if(wishlistRepository == null){
                 wishlistRepository = WishlistRepository(AppDatabase.getInstance(context).wishlistDao())
+                scope.launch {
+                    wishlistRepository?.fetchAndSyncRemoteWishlist()
+                }
             }
         }
     }
