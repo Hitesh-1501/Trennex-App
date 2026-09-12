@@ -11,6 +11,7 @@ import androidx.fragment.app.viewModels
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.lifecycleScope
 import androidx.lifecycle.repeatOnLifecycle
+import androidx.navigation.fragment.findNavController
 import androidx.recyclerview.widget.LinearLayoutManager
 import com.example.trennex.R
 import com.example.trennex.databinding.FragmentOrdersBinding
@@ -26,7 +27,12 @@ class OrdersFragment : Fragment(R.layout.fragment_orders) {
     private val binding get() = _binding!!
 
     private val viewModel: OrdersViewModel by viewModels()
-    private val orderAdapter by lazy { OrderAdapter() }
+    private val orderAdapter by lazy { 
+        OrderAdapter { order ->
+            val action = OrdersFragmentDirections.actionOrdersFragmentToOrderDetailFragment(order)
+            findNavController().navigate(action)
+        }
+    }
 
     override fun onCreateView(
         inflater: LayoutInflater, container: ViewGroup?,
