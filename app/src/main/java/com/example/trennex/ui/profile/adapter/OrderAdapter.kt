@@ -13,14 +13,16 @@ import com.example.trennex.ui.profile.model.OrderModel
 import java.text.SimpleDateFormat
 import java.util.Locale
 
-class OrderAdapter : ListAdapter<OrderModel, OrderAdapter.OrderViewHolder>(DiffCallback) {
+class OrderAdapter(
+    private val onItemClicked: (OrderModel) -> Unit
+) : ListAdapter<OrderModel, OrderAdapter.OrderViewHolder>(DiffCallback) {
 
     private val dateFormat = SimpleDateFormat("EEEE, d MMMM", Locale.getDefault())
 
     class OrderViewHolder(private val binding: ItemOrderBinding, private val dateFormat: SimpleDateFormat) : 
         RecyclerView.ViewHolder(binding.root) {
         
-        fun bind(order: OrderModel) {
+        fun bind(order: OrderModel, onItemClicked: (OrderModel) -> Unit) {
             if (order.imageUrl != null) {
                 Glide.with(binding.ivProduct).load(order.imageUrl).placeholder(R.drawable.placeholder).into(binding.ivProduct)
             } else if (order.imageRes != null) {
@@ -38,6 +40,10 @@ class OrderAdapter : ListAdapter<OrderModel, OrderAdapter.OrderViewHolder>(DiffC
                 binding.tvDate.text = dateFormat.format(order.expectedDeliveryDate.toDate())
                 binding.layoutRating.visibility = View.GONE
             }
+
+            binding.root.setOnClickListener {
+                onItemClicked(order)
+            }
         }
     }
 
@@ -49,7 +55,7 @@ class OrderAdapter : ListAdapter<OrderModel, OrderAdapter.OrderViewHolder>(DiffC
     }
 
     override fun onBindViewHolder(holder: OrderViewHolder, position: Int) {
-        holder.bind(getItem(position))
+        holder.bind(getItem(position), onItemClicked)
     }
 
     companion object DiffCallback : DiffUtil.ItemCallback<OrderModel>() {
