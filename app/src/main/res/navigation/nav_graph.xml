@@ -211,7 +211,20 @@
         android:id="@+id/ordersFragment"
         android:name="com.example.trennex.ui.profile.OrdersFragment"
         android:label="fragment_orders"
-        tools:layout="@layout/fragment_orders" />
+        tools:layout="@layout/fragment_orders" >
+        <action
+            android:id="@+id/action_ordersFragment_to_orderDetailFragment"
+            app:destination="@id/orderDetailFragment" />
+    </fragment>
+    <fragment
+        android:id="@+id/orderDetailFragment"
+        android:name="com.example.trennex.ui.profile.OrderDetailsFragment"
+        android:label="fragment_order_details"
+        tools:layout="@layout/fragment_order_details" >
+        <argument
+            android:name="order"
+            app:argType="com.example.trennex.ui.profile.model.OrderModel" />
+    </fragment>
     <fragment
         android:id="@+id/productDetailFragment"
         android:name="com.example.trennex.ui.product.ProductDetailFragment"
