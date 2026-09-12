@@ -1,6 +1,7 @@
 package com.example.trennex.ui.profile.model
 
 import com.google.firebase.Timestamp
+import java.io.Serializable
 
 data class OrderModel(
     val id: String = "",
@@ -13,4 +14,4 @@ data class OrderModel(
     val status: String = "PENDING", // PENDING, DELIVERED
     val orderDate: Timestamp = Timestamp.now(),
     val expectedDeliveryDate: Timestamp = Timestamp.now()
-)
+) : Serializable
