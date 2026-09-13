@@ -122,6 +122,15 @@ class UserRepository {
         }
     }
 
+    suspend fun updateUserDetails(name: String, phone: String) {
+        val uid = getUserId() ?: return
+        val data = mapOf(
+            "name" to name,
+            "phone" to phone
+        )
+        firestore.collection("users").document(uid).set(data, SetOptions.merge()).await()
+    }
+
     suspend fun saveAddress(addressData: Map<String, Any>): String? {
         val uid = getUserId() ?: return null
         val docRef = firestore.collection("users")
