@@ -76,6 +76,19 @@ class CartViewModel: ViewModel() {
         }
     }
 
+    fun updateUserDetails(name: String, phone: String) {
+        viewModelScope.launch {
+            try {
+                userRepository.updateUserDetails(name, phone)
+                // The `uiState` will automatically update since it observes `getUserDetails()`
+                // However, `getUserDetails` is fetched once per combine block creation in current logic.
+                // We should ensure it triggers a refresh if needed, or rely on caller to manage local UI update.
+            } catch (e: Exception) {
+                android.util.Log.e("CartViewModel", "Failed to update user details", e)
+            }
+        }
+    }
+
     fun selectAddress(address: AddressEntity) {
         viewModelScope.launch {
             userRepository.updateSelectedAddressId(address.id)
