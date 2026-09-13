@@ -222,8 +222,27 @@
         android:label="fragment_order_details"
         tools:layout="@layout/fragment_order_details" >
         <argument
-            android:name="order"
-            app:argType="com.example.trennex.ui.profile.model.OrderModel" />
+            android:name="orderId"
+            app:argType="string" />
+        <argument
+            android:name="title"
+            app:argType="string" />
+        <argument
+            android:name="description"
+            app:argType="string" />
+        <argument
+            android:name="imageUrl"
+            app:argType="string"
+            app:nullable="true" />
+        <argument
+            android:name="price"
+            app:argType="float" />
+        <argument
+            android:name="quantity"
+            app:argType="integer" />
+        <argument
+            android:name="status"
+            app:argType="string" />
     </fragment>
     <fragment
         android:id="@+id/productDetailFragment"
