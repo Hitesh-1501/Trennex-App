@@ -128,7 +128,28 @@ class UserRepository {
             "name" to name,
             "phone" to phone
         )
+        // 1. Update user profile document
         firestore.collection("users").document(uid).set(data, SetOptions.merge()).await()
+
+        // 2. Update all saved addresses for this user with new name and phone
+        try {
+            val addressesSnapshot = firestore.collection("users")
+                .document(uid)
+                .collection("savedAddresses")
+                .get()
+                .await()
+
+            for (doc in addressesSnapshot.documents) {
+                doc.reference.update(
+                    mapOf(
+                        "userName" to name,
+                        "mobile" to phone
+                    )
+                ).await()
+            }
+        } catch (e: Exception) {
+            e.printStackTrace()
+        }
     }
 
     suspend fun saveAddress(addressData: Map<String, Any>): String? {
