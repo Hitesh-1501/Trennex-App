@@ -29,7 +29,15 @@ class OrdersFragment : Fragment(R.layout.fragment_orders) {
     private val viewModel: OrdersViewModel by viewModels()
     private val orderAdapter by lazy { 
         OrderAdapter { order ->
-            val action = OrdersFragmentDirections.actionOrdersFragmentToOrderDetailFragment(order)
+            val action = OrdersFragmentDirections.actionOrdersFragmentToOrderDetailFragment(
+                orderId = order.id,
+                title = order.title,
+                description = order.description,
+                imageUrl = order.imageUrl,
+                price = order.price.toFloat(),
+                quantity = order.quantity,
+                status = order.status
+            )
             findNavController().navigate(action)
         }
     }
