@@ -158,7 +158,7 @@ class MainActivity : AppCompatActivity() {
                 }
                 R.id.savedAddressesFragment -> {
                     showToolBar(ToolBarType.TITLE,"Saved Addresses")
-                    setLightStatusBar(true)
+                        setLightStatusBar(true)
                     binding.curveBottomNav.visibility = View.GONE
                 }
                 R.id.orderDetailFragment -> {
