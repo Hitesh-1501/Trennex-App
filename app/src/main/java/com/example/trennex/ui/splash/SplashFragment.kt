@@ -41,18 +41,6 @@ class SplashFragment : Fragment(R.layout.fragment_splash) {
         controller.show(WindowInsetsCompat.Type.systemBars())
         controller.isAppearanceLightStatusBars = true
 
-        // Fix process death / background restart loop issue
-        if (savedInstanceState != null) {
-            val isLoggedIn = FirebaseApp.getApps(requireContext()).isNotEmpty() &&
-                    FirebaseAuth.getInstance().currentUser != null
-            if (isLoggedIn) {
-                findNavController().navigate(R.id.action_splashFragment_to_homeFragment)
-            } else {
-                findNavController().navigate(R.id.action_splashFragment_to_onboardingFragment)
-            }
-            return
-        }
-
         binding.trennexLogo.translationX = 1000f
 
         binding.trennexLogo.animate()
