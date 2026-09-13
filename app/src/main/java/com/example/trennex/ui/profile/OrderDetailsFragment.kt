@@ -40,50 +40,33 @@ class OrderDetailsFragment : Fragment(R.layout.fragment_order_details) {
 
         (activity as? MainActivity)?.showToolBar(ToolBarType.TITLE, "Order Details")
 
-        val order = args.order
-        bindOrderData(order)
+        bindOrderData()
         observeUserData()
-        setupListeners(order)
+        setupListeners()
     }
 
-    private fun observeUserData() {
-        viewLifecycleOwner.lifecycleScope.launch {
-            viewLifecycleOwner.repeatOnLifecycle(Lifecycle.State.STARTED) {
-                viewModel.uiState.collect { state ->
-                    // Address bindings
-                    state.selectedAddress?.let {
-                        binding.tvDeliveryAddress.text = it.displayAddress
-                        val phone = state.userPhone.ifBlank { it.mobile }
-                        binding.tvUserContact.text = "${state.userName} $phone"
-                    } ?: run {
-                        binding.tvDeliveryAddress.text = "Select Delivery Address"
-                        binding.tvUserContact.text = "${state.userName} ${state.userPhone}"
-                    }
-                }
-            }
-        }
-    }
-
-    private fun bindOrderData(order: com.example.trennex.ui.profile.model.OrderModel) {
-        if (order.imageUrl != null) {
-            Glide.with(binding.ivProduct).load(order.imageUrl).placeholder(R.drawable.placeholder).into(binding.ivProduct)
-        } else if (order.imageRes != null) {
-            binding.ivProduct.setImageResource(order.imageRes)
+    private fun bindOrderData() {
+        if (!args.imageUrl.isNullOrBlank()) {
+            Glide.with(binding.ivProduct).load(args.imageUrl).placeholder(R.drawable.placeholder).into(binding.ivProduct)
+        } else {
+            binding.ivProduct.setImageResource(R.drawable.placeholder)
         }
 
         val fullTitle = buildString {
-            append(order.title)
-            if (order.description.isNotBlank()) {
-                append(" (${order.description})")
+            append(args.title)
+            if (args.description.isNotBlank()) {
+                append(" (${args.description})")
             }
         }
         binding.tvProductTitle.text = fullTitle
 
-        val formattedId = "Order #${order.id.take(12).uppercase()}"
+        val orderIdDisplay = if (args.orderId.isNotBlank()) args.orderId.take(12).uppercase() else "12344544453"
+        val formattedId = "Order #$orderIdDisplay"
         binding.tvOrderIdCard.text = formattedId
         binding.tvOrderIdBottom.text = formattedId
 
-        val totalPrice = order.price * order.quantity
+        val unitPrice = args.price.toDouble()
+        val totalPrice = unitPrice * args.quantity
         val estimatedMrp = totalPrice * 1.4
 
         binding.tvListingPrice.text = CurrencyFormator.formatInr(estimatedMrp)
@@ -91,10 +74,27 @@ class OrderDetailsFragment : Fragment(R.layout.fragment_order_details) {
         binding.tvTotalAmount.text = CurrencyFormator.formatInr(totalPrice)
     }
 
-    private fun setupListeners(order: com.example.trennex.ui.profile.model.OrderModel) {
+    private fun observeUserData() {
+        viewLifecycleOwner.lifecycleScope.launch {
+            viewLifecycleOwner.repeatOnLifecycle(Lifecycle.State.STARTED) {
+                viewModel.uiState.collect { state ->
+                    state.selectedAddress?.let {
+                        binding.tvDeliveryAddress.text = it.displayAddress
+                        val phone = state.userPhone.ifBlank { it.mobile }
+                        binding.tvUserContact.text = "${state.userName}  $phone"
+                    } ?: run {
+                        binding.tvDeliveryAddress.text = "Select Delivery Address"
+                        binding.tvUserContact.text = "${state.userName}  ${state.userPhone}"
+                    }
+                }
+            }
+        }
+    }
+
+    private fun setupListeners() {
         val copyAction = View.OnClickListener {
             val clipboard = requireContext().getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager
-            val clip = ClipData.newPlainText("Order ID", order.id)
+            val clip = ClipData.newPlainText("Order ID", args.orderId)
             clipboard.setPrimaryClip(clip)
             Toast.makeText(requireContext(), "Order ID copied to clipboard", Toast.LENGTH_SHORT).show()
         }
@@ -120,7 +120,7 @@ class OrderDetailsFragment : Fragment(R.layout.fragment_order_details) {
 
     private fun showDeliveryAddressDialog() {
         val dialogBinding = DialogOrderDeliveryAddressBinding.inflate(layoutInflater)
-        val dialog = androidx.appcompat.app.AlertDialog.Builder(requireContext())
+        val dialog = AlertDialog.Builder(requireContext())
             .setView(dialogBinding.root)
             .create()
             
@@ -139,7 +139,7 @@ class OrderDetailsFragment : Fragment(R.layout.fragment_order_details) {
 
     private fun showUserDetailsDialog() {
         val dialogBinding = DialogOrderUserDetailsBinding.inflate(layoutInflater)
-        val dialog = androidx.appcompat.app.AlertDialog.Builder(requireContext())
+        val dialog = AlertDialog.Builder(requireContext())
             .setView(dialogBinding.root)
             .create()
             
@@ -149,27 +149,26 @@ class OrderDetailsFragment : Fragment(R.layout.fragment_order_details) {
         dialogBinding.etName.setText(state.userName)
         dialogBinding.etPhone.setText(state.userPhone)
 
-        // Enable update button only if changed
         val initialName = state.userName
         val initialPhone = state.userPhone
 
         fun validateInput() {
-            val newName = dialogBinding.etName.text.toString().trim()
-            val newPhone = dialogBinding.etPhone.text.toString().trim()
-            dialogBinding.btnUpdate.isEnabled = (newName != initialName || newPhone != initialPhone) && newName.isNotBlank() && newPhone.length == 10
+            val nameText = dialogBinding.etName.text.toString().trim()
+            val phoneText = dialogBinding.etPhone.text.toString().trim()
+            val isValid = (nameText != initialName || phoneText != initialPhone) && nameText.isNotBlank() && phoneText.length == 10
+            dialogBinding.btnUpdate.isEnabled = isValid
             
-            // Set tint to solid orange if enabled, grey if disabled
             dialogBinding.btnUpdate.backgroundTintList = android.content.res.ColorStateList.valueOf(
                 androidx.core.content.ContextCompat.getColor(
                     requireContext(),
-                    if (dialogBinding.btnUpdate.isEnabled) R.color.colorAccent else R.color.textPlaceholder
+                    if (isValid) R.color.colorAccent else R.color.textPlaceholder
                 )
             )
         }
 
         dialogBinding.etName.addTextChangedListener { validateInput() }
         dialogBinding.etPhone.addTextChangedListener { validateInput() }
-        validateInput() // Initial check
+        validateInput()
 
         dialogBinding.btnUpdate.setOnClickListener {
             val newName = dialogBinding.etName.text.toString().trim()
@@ -177,8 +176,7 @@ class OrderDetailsFragment : Fragment(R.layout.fragment_order_details) {
             
             viewModel.updateUserDetails(newName, newPhone)
             
-            // Immediately update UI locally for fast response
-            binding.tvUserContact.text = "$newName $newPhone"
+            binding.tvUserContact.text = "$newName  $newPhone"
             Toast.makeText(requireContext(), "User details updated", Toast.LENGTH_SHORT).show()
             dialog.dismiss()
         }
