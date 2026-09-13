@@ -40,8 +40,8 @@
         android:layout_height="wrap_content"
         android:layout_marginTop="20dp"
         android:hint="Receiver's name*"
-        app:boxStrokeColor="@color/textSecondary"
-        app:hintTextColor="@color/textSecondary"
+        app:boxStrokeColor="@color/input_stroke_selector"
+        app:hintTextColor="@color/input_hint_selector"
         app:layout_constraintTop_toBottomOf="@id/tvDialogTitle">
 
         <com.google.android.material.textfield.TextInputEditText
@@ -60,8 +60,8 @@
         android:layout_height="wrap_content"
         android:layout_marginTop="12dp"
         android:hint="Receiver's phone number*"
-        app:boxStrokeColor="@color/textSecondary"
-        app:hintTextColor="@color/textSecondary"
+        app:boxStrokeColor="@color/input_stroke_selector"
+        app:hintTextColor="@color/input_hint_selector"
         app:layout_constraintTop_toBottomOf="@id/tilName">
 
         <com.google.android.material.textfield.TextInputEditText
