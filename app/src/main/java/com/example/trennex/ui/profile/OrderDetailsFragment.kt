@@ -147,10 +147,11 @@ class OrderDetailsFragment : Fragment(R.layout.fragment_order_details) {
         
         val state = viewModel.uiState.value
         dialogBinding.etName.setText(state.userName)
-        dialogBinding.etPhone.setText(state.userPhone)
+        val cleanPhone = state.userPhone.removePrefix("+91").filter(Char::isDigit).takeLast(10)
+        dialogBinding.etPhone.setText(cleanPhone)
 
         val initialName = state.userName
-        val initialPhone = state.userPhone
+        val initialPhone = cleanPhone
 
         fun validateInput() {
             val nameText = dialogBinding.etName.text.toString().trim()
