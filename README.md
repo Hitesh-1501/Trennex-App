@@ -1,15 +1,6 @@
 # TrenNex Android App
 
-## Features
 
-- Phone-number login and OTP verification with Firebase Authentication
-- Product, category, search, detail, cart, and wishlist experiences
-- Local persistence with Room
-- Account profile management backed by Firestore
-- Google Maps and Places address search
-- Current-location selection and reverse geocoding
-- Saved Home/Office delivery addresses with edit and delete support
-- Persistent selected delivery address
 
 ## Technology stack
 
