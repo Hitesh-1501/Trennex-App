@@ -3,3 +3,14 @@ sdk.dir=C\:\\Users\\your-user\\AppData\\Local\\Android\\Sdk
 
 # Restrict this key to the Android application ID and signing certificate.
 MAPS_API_KEY=your_google_maps_platform_api_key
+
+# Android Emulator uses 10.0.2.2 to reach localhost on the development computer.
+# Use the computer's LAN address when testing on a physical Android device.
+FIREBASE_EMULATOR_HOST=10.0.2.2
+
+# Keep false to use your configured Firebase project in the normal debug app.
+# Set true only when testing the full local Firebase emulator workflow.
+USE_FIREBASE_EMULATORS=false
+
+# Keep false to preserve real phone OTP authentication during catalog development.
+USE_FIREBASE_AUTH_EMULATOR=false
