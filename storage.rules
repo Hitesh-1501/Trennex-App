@@ -1,0 +1,46 @@
+rules_version = '2';
+
+service firebase.storage {
+  match /b/{bucket}/o {
+    function signedIn() {
+      return request.auth != null;
+    }
+
+    function owns(userId) {
+      return signedIn() && request.auth.uid == userId;
+    }
+
+    function isAdmin() {
+      return signedIn()
+        && 'admin' in request.auth.token
+        && request.auth.token.admin == true;
+    }
+
+    function isImageUnder(maxBytes) {
+      return request.resource.size < maxBytes
+        && request.resource.contentType.matches('image/.*');
+    }
+
+    match /catalog/{allPaths=**} {
+      allow read: if true;
+      allow create, update: if isAdmin() && isImageUnder(10 * 1024 * 1024);
+      allow delete: if isAdmin();
+    }
+
+    match /users/{userId}/{allPaths=**} {
+      allow read: if owns(userId) || isAdmin();
+      allow create, update: if (owns(userId) || isAdmin())
+        && isImageUnder(5 * 1024 * 1024);
+      allow delete: if owns(userId) || isAdmin();
+    }
+
+    match /orders/{userId}/{allPaths=**} {
+      allow read: if owns(userId) || isAdmin();
+      allow write: if isAdmin();
+    }
+
+    match /{allPaths=**} {
+      allow read, write: if false;
+    }
+  }
+}
