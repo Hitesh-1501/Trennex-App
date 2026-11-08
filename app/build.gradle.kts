@@ -19,6 +19,18 @@ val mapsApiKey = localProperties.getProperty("MAPS_API_KEY")
     ?: System.getenv("MAPS_API_KEY")
     ?: ""
 
+val firebaseEmulatorHost = localProperties.getProperty("FIREBASE_EMULATOR_HOST")
+    ?: System.getenv("FIREBASE_EMULATOR_HOST_ANDROID")
+    ?: "10.0.2.2"
+
+val useFirebaseAuthEmulator = localProperties.getProperty("USE_FIREBASE_AUTH_EMULATOR")
+    ?.toBooleanStrictOrNull()
+    ?: false
+
+val useFirebaseEmulators = localProperties.getProperty("USE_FIREBASE_EMULATORS")
+    ?.toBooleanStrictOrNull()
+    ?: false
+
 android {
     namespace = "com.example.trennex"
     compileSdk = 36
@@ -36,8 +48,16 @@ android {
     }
 
     buildTypes {
+        debug {
+            buildConfigField("boolean", "USE_FIREBASE_EMULATORS", useFirebaseEmulators.toString())
+            buildConfigField("boolean", "USE_FIREBASE_AUTH_EMULATOR", useFirebaseAuthEmulator.toString())
+            buildConfigField("String", "FIREBASE_EMULATOR_HOST", "\"$firebaseEmulatorHost\"")
+        }
         release {
             isMinifyEnabled = false
+            buildConfigField("boolean", "USE_FIREBASE_EMULATORS", "false")
+            buildConfigField("boolean", "USE_FIREBASE_AUTH_EMULATOR", "false")
+            buildConfigField("String", "FIREBASE_EMULATOR_HOST", "\"\"")
             @Suppress("UnstableApiUsage")
             proguardFiles(
                 getDefaultProguardFile("proguard-android-optimize.txt"),
@@ -55,6 +75,7 @@ android {
     @Suppress("UnstableApiUsage")
     buildFeatures {
         viewBinding = true
+        buildConfig = true
     }
 }
 
@@ -68,6 +89,7 @@ dependencies {
     implementation(libs.firebase.auth)
     implementation(platform(libs.firebase.bom))
     implementation(libs.firebase.firestore)
+    implementation(libs.firebase.storage)
     testImplementation(libs.junit)
     androidTestImplementation(libs.androidx.junit)
     androidTestImplementation(libs.androidx.espresso.core)

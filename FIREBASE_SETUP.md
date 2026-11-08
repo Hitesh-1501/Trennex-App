@@ -59,7 +59,8 @@ Verify that the exported snapshot imports correctly:
 npm run verify:seed
 ```
 
-Start the normal development emulators with the saved catalog already loaded:
+Start the normal development emulators with the saved catalog already loaded. On Windows, the
+project command automatically finds Android Studio's bundled Java runtime:
 
 ```powershell
 npm run emulators
@@ -78,6 +79,22 @@ npx firebase emulators:start --config ../firebase.json --project demo-trennex
 An Android emulator reaches host services at `10.0.2.2`, so the future debug-only app setup will
 use `10.0.2.2:9099`, `10.0.2.2:8080`, and `10.0.2.2:9199`. A physical device needs the development
 computer's LAN address instead.
+
+## Android debug connection
+
+Debug builds can connect Firestore and Storage to the local emulators when
+`USE_FIREBASE_EMULATORS=true` is set in `local.properties`. The normal default is `false`, so the
+existing Firebase authentication and user profile flows continue to use your configured project.
+The host is configured by `FIREBASE_EMULATOR_HOST` (default `10.0.2.2`). Release builds never use
+the emulators. The debug manifest permits cleartext traffic only so local Storage images can load.
+
+Firebase Authentication deliberately remains connected to the real service to preserve the current
+phone OTP flow. Set `USE_FIREBASE_AUTH_EMULATOR=true` in `local.properties` only when local test
+users and test phone numbers are configured.
+
+Set `USE_FIREBASE_EMULATORS=true` only when you also intend to use emulator authentication and test
+accounts. Start `npm run emulators` from `firebase-tests` before launching that Android debug app.
+If the emulator is unavailable, catalog reads fall back to the existing DummyJSON service.
 
 ## Security model
 
