@@ -1,0 +1,251 @@
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+    function signedIn() {
+      return request.auth != null;
+    }
+
+    function owns(userId) {
+      return signedIn() && request.auth.uid == userId;
+    }
+
+    function isAdmin() {
+      return signedIn()
+        && 'admin' in request.auth.token
+        && request.auth.token.admin == true;
+    }
+
+    function onlyFields(fields) {
+      return request.resource.data.keys().hasOnly(fields);
+    }
+
+    function activeDocument() {
+      return ('status' in resource.data && resource.data.status == 'ACTIVE')
+        || ('active' in resource.data && resource.data.active == true);
+    }
+
+    function legacyProductDocument(data) {
+      return !('schemaVersion' in data)
+        && 'id' in data
+        && data.id is int
+        && 'title' in data
+        && data.title is string
+        && 'price' in data;
+    }
+
+    function legacyCategoryDocument(data) {
+      return !('schemaVersion' in data)
+        && 'slug' in data
+        && data.slug is string
+        && 'name' in data
+        && data.name is string;
+    }
+
+    function parentProductIsReadable(productId) {
+      let product = get(/databases/$(database)/documents/products/$(productId)).data;
+      return legacyProductDocument(product)
+        || ('status' in product && product.status == 'ACTIVE');
+    }
+
+    function parentHomeSectionIsActive(sectionId) {
+      return get(/databases/$(database)/documents/homeSections/$(sectionId)).data.active == true;
+    }
+
+    function ownsOrder(orderId) {
+      return signedIn()
+        && get(/databases/$(database)/documents/orders/$(orderId)).data.userId == request.auth.uid;
+    }
+
+    match /products/{productId} {
+      allow read: if isAdmin() || legacyProductDocument(resource.data) || activeDocument();
+      allow write: if isAdmin();
+
+      match /variants/{variantId} {
+        allow read: if isAdmin() || parentProductIsReadable(productId);
+        allow write: if isAdmin();
+      }
+
+      match /reviews/{reviewId} {
+        allow read: if isAdmin()
+          || resource.data.status == 'PUBLISHED'
+          || (signedIn() && resource.data.userId == request.auth.uid);
+        allow write: if isAdmin();
+      }
+    }
+
+    match /categories/{categoryId} {
+      allow read: if isAdmin() || legacyCategoryDocument(resource.data) || activeDocument();
+      allow write: if isAdmin();
+    }
+
+    match /brands/{brandId} {
+      allow read: if isAdmin() || activeDocument();
+      allow write: if isAdmin();
+    }
+
+    match /banners/{bannerId} {
+      allow read: if isAdmin() || resource.data.active == true;
+      allow write: if isAdmin();
+    }
+
+    match /homeSections/{sectionId} {
+      allow read: if isAdmin() || resource.data.active == true;
+      allow write: if isAdmin();
+
+      match /items/{itemId} {
+        allow read: if isAdmin() || parentHomeSectionIsActive(sectionId);
+        allow write: if isAdmin();
+      }
+    }
+
+    match /inventory/{inventoryId} {
+      allow read, write: if isAdmin();
+    }
+
+    match /coupons/{couponId} {
+      allow read, write: if isAdmin();
+
+      match /redemptions/{redemptionId} {
+        allow read, write: if isAdmin();
+      }
+    }
+
+    match /users/{userId} {
+      allow read: if owns(userId) || isAdmin();
+      allow create, update: if (owns(userId) || isAdmin())
+        && onlyFields([
+          'schemaVersion', 'displayName', 'name', 'email', 'phoneE164', 'phone',
+          'photoUrl', 'selectedAddressId', 'preferences', 'createdAt', 'updatedAt',
+          'lastLoginAt'
+        ]);
+      allow delete: if isAdmin();
+
+      match /savedAddresses/{addressId} {
+        allow read, delete: if owns(userId) || isAdmin();
+        allow create, update: if (owns(userId) || isAdmin())
+          && onlyFields([
+            'schemaVersion', 'label', 'fullName', 'phoneE164', 'line1', 'line2',
+            'landmark', 'city', 'state', 'postalCode', 'countryCode', 'location',
+            'isDefault', 'createdAt', 'updatedAt',
+            'flatNo', 'address', 'userName', 'mobile', 'latitude', 'longitude',
+            'placeName', 'addressType'
+          ]);
+      }
+
+      match /cartItems/{cartItemId} {
+        allow read, delete: if owns(userId) || isAdmin();
+        allow create, update: if (owns(userId) || isAdmin())
+          && onlyFields([
+            'schemaVersion', 'productId', 'variantId', 'quantity', 'selected',
+            'createdAt', 'updatedAt'
+          ])
+          && request.resource.data.productId is string
+          && request.resource.data.variantId is string
+          && request.resource.data.quantity is int
+          && request.resource.data.quantity >= 1
+          && request.resource.data.quantity <= 10;
+      }
+
+      // Temporary compatibility for the current Android model. Remove after migration.
+      match /cart/{cartItemId} {
+        allow read, delete: if owns(userId) || isAdmin();
+        allow create, update: if (owns(userId) || isAdmin())
+          && onlyFields([
+            'id', 'title', 'description', 'mrp', 'price', 'rating', 'ratingCount',
+            'returnPolicy', 'deliveryDetails', 'imageUrl', 'imageRes', 'quantity',
+            'isSelected'
+          ])
+          && request.resource.data.id is int
+          && request.resource.data.quantity is int
+          && request.resource.data.quantity >= 1
+          && request.resource.data.quantity <= 10;
+      }
+
+      match /wishlistItems/{wishlistItemId} {
+        allow read, delete: if owns(userId) || isAdmin();
+        allow create, update: if (owns(userId) || isAdmin())
+          && onlyFields([
+            'schemaVersion', 'productId', 'variantId', 'createdAt', 'updatedAt'
+          ])
+          && request.resource.data.productId is string;
+      }
+
+      // Temporary compatibility for the current Android model. Remove after migration.
+      match /wishlist/{wishlistItemId} {
+        allow read, delete: if owns(userId) || isAdmin();
+        allow create, update: if (owns(userId) || isAdmin())
+          && onlyFields([
+            'id', 'imageUrl', 'title', 'description', 'mrp', 'price', 'rating',
+            'ratingCount', 'returnPolicy', 'deliveryDetails'
+          ])
+          && request.resource.data.id is int;
+      }
+
+      match /collections/{collectionId} {
+        allow read, delete: if owns(userId) || isAdmin();
+        allow create, update: if (owns(userId) || isAdmin())
+          && onlyFields(['name', 'createdAt', 'updatedAt']);
+
+        match /items/{itemId} {
+          allow read, delete: if owns(userId) || isAdmin();
+          allow create, update: if (owns(userId) || isAdmin())
+            && onlyFields(['productId', 'variantId', 'createdAt']);
+        }
+      }
+
+      match /notifications/{notificationId} {
+        allow read: if owns(userId) || isAdmin();
+        allow create, delete: if isAdmin();
+        allow update: if isAdmin()
+          || (owns(userId)
+            && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['readAt']));
+      }
+
+      // Temporary client-created legacy orders. New checkout writes top-level orders server-side.
+      match /orders/{orderId} {
+        allow read: if owns(userId) || isAdmin();
+        allow create: if isAdmin()
+          || (owns(userId)
+            && onlyFields([
+              'id', 'title', 'description', 'imageUrl', 'imageRes', 'price',
+              'quantity', 'status', 'orderDate', 'expectedDeliveryDate'
+            ])
+            && request.resource.data.id is int
+            && request.resource.data.quantity is int
+            && request.resource.data.quantity >= 1
+            && request.resource.data.status == 'Pending');
+        allow update, delete: if isAdmin();
+      }
+    }
+
+    match /orders/{orderId} {
+      allow read: if isAdmin()
+        || (signedIn() && resource.data.userId == request.auth.uid);
+      allow write: if isAdmin();
+
+      match /items/{itemId} {
+        allow read: if isAdmin() || ownsOrder(orderId);
+        allow write: if isAdmin();
+      }
+
+      match /events/{eventId} {
+        allow read: if isAdmin() || ownsOrder(orderId);
+        allow write: if isAdmin();
+      }
+    }
+
+    match /appConfig/{configId} {
+      allow read: if true;
+      allow write: if isAdmin();
+    }
+
+    match /adminAuditLogs/{logId} {
+      allow read, write: if isAdmin();
+    }
+
+    match /{document=**} {
+      allow read, write: if false;
+    }
+  }
+}
