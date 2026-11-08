@@ -1,0 +1,19 @@
+{
+  "name": "catalog/categories/appliances.png",
+  "bucket": "demo-trennex.appspot.com",
+  "metageneration": 1,
+  "generation": 1794124977096,
+  "contentType": "image/png",
+  "storageClass": "STANDARD",
+  "cacheControl": "public,max-age=3600",
+  "downloadTokens": [],
+  "etag": "DWPvcn1g1TmGgifBGvmmRUJdPDc",
+  "customMetadata": {
+    "seededBy": "trennex-local-catalog-v1"
+  },
+  "timeCreated": "2026-11-08T08:02:57.096Z",
+  "updated": "2026-11-08T08:02:57.096Z",
+  "size": 9118,
+  "md5Hash": "TAimnJzihVzTTsXA/YXHyA==",
+  "crc32c": "2894124270"
+}

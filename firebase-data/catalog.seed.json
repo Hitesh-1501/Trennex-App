@@ -1,0 +1,174 @@
+{
+  "schemaVersion": 1,
+  "currency": "INR",
+  "categories": [
+    { "id": "top-picks", "name": "Top Picks", "slug": "top-picks", "sortOrder": 1, "iconAsset": "iv_top_picks.png" },
+    { "id": "fashion", "name": "Fashion", "slug": "fashion", "sortOrder": 2, "iconAsset": "categories_fashion.png" },
+    { "id": "appliances", "name": "Appliances", "slug": "appliances", "sortOrder": 3, "iconAsset": "categories_appliance.png" },
+    { "id": "mobiles", "name": "Mobiles", "slug": "mobiles", "sortOrder": 4, "iconAsset": "categories_mobile.png" },
+    { "id": "electronics", "name": "Electronics", "slug": "electronics", "sortOrder": 5, "iconAsset": "categories_electronics.png" },
+    { "id": "home", "name": "Home", "slug": "home", "sortOrder": 6, "iconAsset": "categories_home.png" },
+    { "id": "beauty", "name": "Beauty", "slug": "beauty", "sortOrder": 7, "iconAsset": "categories_beauty.png" },
+    { "id": "furniture", "name": "Furniture", "slug": "furniture", "sortOrder": 8, "iconAsset": "categories_furniture.png" },
+    { "id": "toys-books", "name": "Toys & Books", "slug": "toys-books", "sortOrder": 9, "iconAsset": "iv_toys.png" },
+    { "id": "sports", "name": "Sports", "slug": "sports", "sortOrder": 10, "iconAsset": "iv_sports.png" }
+  ],
+  "brands": [
+    { "id": "samsung", "name": "Samsung", "slug": "samsung", "sortOrder": 1 },
+    { "id": "lenovo", "name": "Lenovo", "slug": "lenovo", "sortOrder": 2 },
+    { "id": "trennex", "name": "TrenNex", "slug": "trennex", "sortOrder": 3 },
+    { "id": "urbannest", "name": "UrbanNest", "slug": "urbannest", "sortOrder": 4 },
+    { "id": "hometech", "name": "HomeTech", "slug": "hometech", "sortOrder": 5 },
+    { "id": "aura", "name": "Aura", "slug": "aura", "sortOrder": 6 },
+    { "id": "movex", "name": "MoveX", "slug": "movex", "sortOrder": 7 },
+    { "id": "playforge", "name": "PlayForge", "slug": "playforge", "sortOrder": 8 }
+  ],
+  "products": [
+    {
+      "id": "prd_q7m2a9kx", "legacyId": 101, "name": "Samsung Galaxy A56 5G", "slug": "samsung-galaxy-a56-5g",
+      "categoryId": "mobiles", "brandId": "samsung", "imageAsset": "samsung_mobile.png",
+      "shortDescription": "Premium 5G phone with a vivid AMOLED display and all-day battery.",
+      "description": "A balanced everyday smartphone with a bright display, dependable cameras, smooth performance and long battery life.",
+      "tags": ["5g", "smartphone", "amoled"], "ratingAverage": 4.5, "ratingCount": 1842, "featured": true, "newArrival": true, "sortOrder": 1,
+      "shippingInformation": "Free delivery in 2–5 days", "warrantyInformation": "1 year manufacturer warranty", "returnPolicy": "7-day replacement",
+      "specifications": { "Display": "6.7-inch AMOLED", "Camera": "50 MP triple camera", "Battery": "5000 mAh", "Network": "5G" },
+      "variants": [
+        { "id": "var_4s8n1blk", "sku": "SAM-A56-128-BLK", "name": "128 GB · Awesome Graphite", "attributes": { "color": "Awesome Graphite", "storage": "128 GB" }, "priceMinor": 4199900, "mrpMinor": 4599900, "stock": 36 },
+        { "id": "var_9p3c6blu", "sku": "SAM-A56-256-BLU", "name": "256 GB · Awesome Blue", "attributes": { "color": "Awesome Blue", "storage": "256 GB" }, "priceMinor": 4799900, "mrpMinor": 5199900, "stock": 18 }
+      ]
+    },
+    {
+      "id": "prd_b4v8n2rt", "legacyId": 102, "name": "Lenovo IdeaPad Slim Laptop", "slug": "lenovo-ideapad-slim-laptop",
+      "categoryId": "electronics", "brandId": "lenovo", "imageAsset": "lenovo_laptop.png",
+      "shortDescription": "Slim productivity laptop with fast SSD storage and a full-HD display.",
+      "description": "Designed for study, office work and entertainment with a portable chassis, responsive keyboard and dependable performance.",
+      "tags": ["laptop", "ssd", "work"], "ratingAverage": 4.3, "ratingCount": 726, "featured": true, "newArrival": false, "sortOrder": 2,
+      "shippingInformation": "Free secured delivery", "warrantyInformation": "1 year onsite warranty", "returnPolicy": "7-day replacement",
+      "specifications": { "Display": "15.6-inch Full HD", "Memory": "16 GB RAM", "Storage": "512 GB SSD", "Operating System": "Windows 11" },
+      "variants": [
+        { "id": "var_2k7d5gry", "sku": "LEN-IPS-16-512-GRY", "name": "16 GB · 512 GB · Arctic Grey", "attributes": { "color": "Arctic Grey", "memory": "16 GB", "storage": "512 GB" }, "priceMinor": 5799900, "mrpMinor": 6899000, "stock": 14 }
+      ]
+    },
+    {
+      "id": "prd_h6t1w9fp", "legacyId": 103, "name": "TrenNex Essential Cotton T-Shirt", "slug": "trennex-essential-cotton-tshirt",
+      "categoryId": "fashion", "brandId": "trennex", "imageAsset": "trennex_tshirt.png",
+      "shortDescription": "Soft everyday cotton T-shirt with a clean regular fit.",
+      "description": "A breathable wardrobe staple made for daily wear, finished with reinforced seams and a comfortable crew neck.",
+      "tags": ["tshirt", "cotton", "men"], "ratingAverage": 4.4, "ratingCount": 315, "featured": true, "newArrival": true, "sortOrder": 3,
+      "shippingInformation": "Delivery in 2–4 days", "warrantyInformation": "Quality checked", "returnPolicy": "10-day return",
+      "specifications": { "Material": "100% cotton", "Fit": "Regular", "Pattern": "Solid", "Care": "Machine wash" },
+      "variants": [
+        { "id": "var_8x2m4sm", "sku": "TRX-TEE-NVY-S", "name": "Navy · S", "attributes": { "color": "Navy", "size": "S" }, "priceMinor": 69900, "mrpMinor": 129900, "stock": 45 },
+        { "id": "var_5j9q1md", "sku": "TRX-TEE-NVY-M", "name": "Navy · M", "attributes": { "color": "Navy", "size": "M" }, "priceMinor": 69900, "mrpMinor": 129900, "stock": 62 },
+        { "id": "var_3r7c6lg", "sku": "TRX-TEE-NVY-L", "name": "Navy · L", "attributes": { "color": "Navy", "size": "L" }, "priceMinor": 69900, "mrpMinor": 129900, "stock": 39 }
+      ]
+    },
+    {
+      "id": "prd_m3e7s5ua", "legacyId": 104, "name": "Handwoven Festive Saree", "slug": "handwoven-festive-saree",
+      "categoryId": "fashion", "brandId": "trennex", "imageAsset": "women_sarees.png",
+      "shortDescription": "Elegant festive saree with a woven border and lightweight drape.",
+      "description": "A celebration-ready saree featuring traditional woven detailing, a comfortable lightweight finish and an included blouse piece.",
+      "tags": ["saree", "women", "festive"], "ratingAverage": 4.6, "ratingCount": 268, "featured": false, "newArrival": true, "sortOrder": 4,
+      "shippingInformation": "Delivery in 3–6 days", "warrantyInformation": "Authenticity checked", "returnPolicy": "10-day return",
+      "specifications": { "Fabric": "Art silk", "Length": "6.3 m", "Blouse Piece": "Included", "Care": "Dry clean" },
+      "variants": [
+        { "id": "var_6u2f8mrn", "sku": "TRX-SAR-MRN-FS", "name": "Maroon · Free Size", "attributes": { "color": "Maroon", "size": "Free Size" }, "priceMinor": 189900, "mrpMinor": 349900, "stock": 24 }
+      ]
+    },
+    {
+      "id": "prd_c9y4l2dh", "legacyId": 105, "name": "UrbanNest Modern 3-Seater Sofa", "slug": "urbannest-modern-three-seater-sofa",
+      "categoryId": "furniture", "brandId": "urbannest", "imageAsset": "home_sofa.png",
+      "shortDescription": "Comfortable modern sofa with durable upholstery and deep seating.",
+      "description": "A clean-lined three-seater built with supportive cushioning, solid framing and easy-care fabric for modern living rooms.",
+      "tags": ["sofa", "living-room", "furniture"], "ratingAverage": 4.2, "ratingCount": 119, "featured": true, "newArrival": false, "sortOrder": 5,
+      "shippingInformation": "Scheduled furniture delivery", "warrantyInformation": "3 year frame warranty", "returnPolicy": "7-day replacement for defects",
+      "specifications": { "Seating": "3 seater", "Frame": "Engineered wood", "Upholstery": "Polyester fabric", "Assembly": "Legs require assembly" },
+      "variants": [
+        { "id": "var_1a5g9gry", "sku": "URN-SOFA-3-GRY", "name": "Stone Grey", "attributes": { "color": "Stone Grey" }, "priceMinor": 2499900, "mrpMinor": 3899900, "stock": 7 }
+      ]
+    },
+    {
+      "id": "prd_f2k8z6nw", "legacyId": 106, "name": "HomeTech Smart Inverter Washing Machine", "slug": "hometech-smart-inverter-washing-machine",
+      "categoryId": "appliances", "brandId": "hometech", "imageAsset": "appliance_washing_machine.png",
+      "shortDescription": "Energy-efficient front-load washer with quiet inverter operation.",
+      "description": "A family-sized automatic washing machine with multiple fabric programs, hygienic wash modes and low-noise inverter technology.",
+      "tags": ["washing-machine", "inverter", "appliance"], "ratingAverage": 4.4, "ratingCount": 497, "featured": true, "newArrival": false, "sortOrder": 6,
+      "shippingInformation": "Free delivery and installation", "warrantyInformation": "2 years product, 10 years motor", "returnPolicy": "7-day replacement",
+      "specifications": { "Capacity": "8 kg", "Type": "Front load", "Motor": "Digital inverter", "Energy Rating": "5 star" },
+      "variants": [
+        { "id": "var_7n3h5sil", "sku": "HMT-WM8-SIL", "name": "8 kg · Silver", "attributes": { "color": "Silver", "capacity": "8 kg" }, "priceMinor": 3299900, "mrpMinor": 4499000, "stock": 11 }
+      ]
+    },
+    {
+      "id": "prd_p5d1j7vc", "legacyId": 107, "name": "Aura Velvet Matte Lipstick", "slug": "aura-velvet-matte-lipstick",
+      "categoryId": "beauty", "brandId": "aura", "imageAsset": "lipstick.png",
+      "shortDescription": "Comfortable long-wear matte colour with a smooth velvet finish.",
+      "description": "A richly pigmented lipstick formulated for even application, comfortable wear and a soft matte finish that lasts through the day.",
+      "tags": ["lipstick", "makeup", "matte"], "ratingAverage": 4.5, "ratingCount": 903, "featured": false, "newArrival": true, "sortOrder": 7,
+      "shippingInformation": "Delivery in 2–4 days", "warrantyInformation": "Authenticity guaranteed", "returnPolicy": "Non-returnable personal-care item",
+      "specifications": { "Finish": "Velvet matte", "Net Weight": "4.2 g", "Wear": "Up to 8 hours", "Formulation": "Cream" },
+      "variants": [
+        { "id": "var_9w4b2ros", "sku": "AUR-LIP-ROSE", "name": "Rosewood", "attributes": { "shade": "Rosewood" }, "priceMinor": 59900, "mrpMinor": 89900, "stock": 76 },
+        { "id": "var_2v6m8ber", "sku": "AUR-LIP-BERRY", "name": "Deep Berry", "attributes": { "shade": "Deep Berry" }, "priceMinor": 59900, "mrpMinor": 89900, "stock": 54 }
+      ]
+    },
+    {
+      "id": "prd_r8u3x1qb", "legacyId": 108, "name": "MoveX All-Terrain Bicycle", "slug": "movex-all-terrain-bicycle",
+      "categoryId": "sports", "brandId": "movex", "imageAsset": "sports_cycle.png",
+      "shortDescription": "Geared mountain bicycle designed for city roads and weekend trails.",
+      "description": "A versatile bicycle with responsive disc brakes, front suspension and a durable geared drivetrain for confident everyday riding.",
+      "tags": ["cycle", "fitness", "outdoor"], "ratingAverage": 4.3, "ratingCount": 211, "featured": true, "newArrival": false, "sortOrder": 8,
+      "shippingInformation": "Delivered semi-assembled", "warrantyInformation": "1 year frame warranty", "returnPolicy": "7-day replacement",
+      "specifications": { "Wheel Size": "27.5 inch", "Gears": "21 speed", "Brakes": "Dual disc", "Suspension": "Front" },
+      "variants": [
+        { "id": "var_4c9t7blk", "sku": "MVX-ATB-BLK", "name": "27.5 inch · Midnight Black", "attributes": { "color": "Midnight Black", "wheelSize": "27.5 inch" }, "priceMinor": 1499900, "mrpMinor": 2199900, "stock": 9 }
+      ]
+    },
+    {
+      "id": "prd_t1g6o4me", "legacyId": 109, "name": "PlayForge Creative Building Set", "slug": "playforge-creative-building-set",
+      "categoryId": "toys-books", "brandId": "playforge", "imageAsset": "toys_games.png",
+      "shortDescription": "Colourful 350-piece construction set for open-ended creative play.",
+      "description": "A reusable building kit that encourages imagination, fine motor skills and collaborative play with child-friendly pieces and idea cards.",
+      "tags": ["toys", "building", "creative"], "ratingAverage": 4.7, "ratingCount": 642, "featured": false, "newArrival": true, "sortOrder": 9,
+      "shippingInformation": "Delivery in 2–5 days", "warrantyInformation": "Safety tested", "returnPolicy": "7-day replacement",
+      "specifications": { "Pieces": "350", "Age Group": "6+ years", "Material": "BPA-free ABS", "Includes": "Idea cards and storage box" },
+      "variants": [
+        { "id": "var_5e2y8mix", "sku": "PLF-BLD-350", "name": "350 Pieces", "attributes": { "pieceCount": "350" }, "priceMinor": 129900, "mrpMinor": 199900, "stock": 31 }
+      ]
+    },
+    {
+      "id": "prd_z4s9i2la", "legacyId": 110, "name": "CloudRest Memory Foam Pillow", "slug": "cloudrest-memory-foam-pillow",
+      "categoryId": "home", "brandId": "urbannest", "imageAsset": "home_pillow.png",
+      "shortDescription": "Supportive memory foam pillow with a breathable washable cover.",
+      "description": "A contouring sleep pillow that supports the neck and shoulders while its ventilated foam and removable cover improve everyday comfort.",
+      "tags": ["pillow", "bedding", "home"], "ratingAverage": 4.4, "ratingCount": 388, "featured": false, "newArrival": false, "sortOrder": 10,
+      "shippingInformation": "Delivery in 2–5 days", "warrantyInformation": "1 year foam warranty", "returnPolicy": "7-day replacement",
+      "specifications": { "Fill": "Memory foam", "Cover": "Washable knitted fabric", "Firmness": "Medium", "Size": "Standard" },
+      "variants": [
+        { "id": "var_7l1p3std", "sku": "CRP-MEM-STD", "name": "Standard · White", "attributes": { "color": "White", "size": "Standard" }, "priceMinor": 119900, "mrpMinor": 199900, "stock": 43 }
+      ]
+    },
+    {
+      "id": "prd_n2b7k5cw", "legacyId": 111, "name": "TrenNex Classic Analog Watch", "slug": "trennex-classic-analog-watch",
+      "categoryId": "fashion", "brandId": "trennex", "imageAsset": "watch.png",
+      "shortDescription": "Minimal everyday analog watch with a comfortable leather strap.",
+      "description": "A versatile timepiece with a clean dial, reliable quartz movement and a soft leather strap suitable for work and casual wear.",
+      "tags": ["watch", "accessories", "unisex"], "ratingAverage": 4.2, "ratingCount": 174, "featured": false, "newArrival": true, "sortOrder": 11,
+      "shippingInformation": "Delivery in 2–4 days", "warrantyInformation": "1 year movement warranty", "returnPolicy": "7-day return",
+      "specifications": { "Movement": "Quartz", "Dial": "Analog", "Strap": "Leather", "Water Resistance": "3 ATM" },
+      "variants": [
+        { "id": "var_3d8r6tan", "sku": "TRX-WAT-TAN", "name": "Ivory Dial · Tan Strap", "attributes": { "dial": "Ivory", "strap": "Tan" }, "priceMinor": 159900, "mrpMinor": 249900, "stock": 27 }
+      ]
+    }
+  ],
+  "banners": [
+    { "id": "bnr_home_welcome", "title": "Welcome to TrenNex", "subtitle": "Everything you love, in one place", "imageAsset": "home_banner.png", "actionType": "CATEGORY", "actionValue": "top-picks", "placement": "HOME_HERO", "sortOrder": 1 },
+    { "id": "bnr_mobile_launch", "title": "Upgrade to Galaxy 5G", "subtitle": "Powerful performance and brilliant photos", "imageAsset": "samsung_banner.png", "actionType": "PRODUCT", "actionValue": "prd_q7m2a9kx", "placement": "HOME_HERO", "sortOrder": 2 },
+    { "id": "bnr_beauty_edit", "title": "The Beauty Edit", "subtitle": "Fresh shades for every mood", "imageAsset": "beauty_banner.png", "actionType": "CATEGORY", "actionValue": "beauty", "placement": "HOME_HERO", "sortOrder": 3 }
+  ],
+  "homeSections": [
+    { "id": "featured", "title": "Featured for you", "type": "FEATURED_PRODUCTS", "sortOrder": 1, "maxItems": 8 },
+    { "id": "new-arrivals", "title": "New arrivals", "type": "NEW_ARRIVALS", "sortOrder": 2, "maxItems": 8 },
+    { "id": "top-picks", "title": "Top picks", "type": "CURATED_PRODUCTS", "sortOrder": 3, "maxItems": 6, "productIds": ["prd_q7m2a9kx", "prd_h6t1w9fp", "prd_c9y4l2dh", "prd_p5d1j7vc", "prd_r8u3x1qb", "prd_t1g6o4me"] }
+  ]
+}

@@ -37,6 +37,37 @@ npm test
 The test command starts isolated Firestore and Storage emulators, runs the rules tests, then stops
 the emulators. It never connects to the production project.
 
+## Seed the local TrenNex catalog
+
+The source catalog lives in `firebase-data/catalog.seed.json`. It contains editable TrenNex-owned
+categories, brands, products, variants, banners, and home sections. Product images are copied from
+the Android project's existing drawable assets into the local Storage emulator.
+
+From `firebase-tests`:
+
+```powershell
+npm run seed
+```
+
+This command refuses to run unless both local emulators are available and the project ID is exactly
+`demo-trennex`. It resets only the local catalog collections and `catalog/` Storage path, seeds the
+data, then saves a reusable emulator snapshot under `firebase-data/emulator-snapshot`.
+
+Verify that the exported snapshot imports correctly:
+
+```powershell
+npm run verify:seed
+```
+
+Start the normal development emulators with the saved catalog already loaded:
+
+```powershell
+npm run emulators
+```
+
+The current catalog contains 10 root categories, 8 brands, 11 products, their purchasable variants
+and inventory, 3 banners, 3 home sections, and public application configuration.
+
 To run the emulators for manual Android development:
 
 ```powershell

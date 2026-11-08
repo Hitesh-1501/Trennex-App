@@ -1,0 +1,19 @@
+{
+  "name": "catalog/categories/sports.png",
+  "bucket": "demo-trennex.appspot.com",
+  "metageneration": 1,
+  "generation": 1794124977186,
+  "contentType": "image/png",
+  "storageClass": "STANDARD",
+  "cacheControl": "public,max-age=3600",
+  "downloadTokens": [],
+  "etag": "TbjbL6C4Z5oUW4VK4GiZGDYYJpE",
+  "customMetadata": {
+    "seededBy": "trennex-local-catalog-v1"
+  },
+  "timeCreated": "2026-11-08T08:02:57.186Z",
+  "updated": "2026-11-08T08:02:57.186Z",
+  "size": 393,
+  "md5Hash": "h+NLfF4KI9nDnuP0ySfgzQ==",
+  "crc32c": "1605507664"
+}

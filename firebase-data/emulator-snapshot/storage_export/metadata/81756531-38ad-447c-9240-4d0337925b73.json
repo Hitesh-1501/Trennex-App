@@ -1,0 +1,19 @@
+{
+  "name": "catalog/categories/home.png",
+  "bucket": "demo-trennex.appspot.com",
+  "metageneration": 1,
+  "generation": 1794124977133,
+  "contentType": "image/png",
+  "storageClass": "STANDARD",
+  "cacheControl": "public,max-age=3600",
+  "downloadTokens": [],
+  "etag": "0lUq8d0+vTDwah+RjTgQQOguGJg",
+  "customMetadata": {
+    "seededBy": "trennex-local-catalog-v1"
+  },
+  "timeCreated": "2026-11-08T08:02:57.134Z",
+  "updated": "2026-11-08T08:02:57.134Z",
+  "size": 5234,
+  "md5Hash": "15HRfTawvTUvYma00Ews/w==",
+  "crc32c": "983762954"
+}

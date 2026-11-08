@@ -1,0 +1,19 @@
+{
+  "name": "catalog/banners/bnr_beauty_edit.png",
+  "bucket": "demo-trennex.appspot.com",
+  "metageneration": 1,
+  "generation": 1794124977368,
+  "contentType": "image/png",
+  "storageClass": "STANDARD",
+  "cacheControl": "public,max-age=3600",
+  "downloadTokens": [],
+  "etag": "dvcktv/B7MPQOPBPWKnaB3aIygs",
+  "customMetadata": {
+    "seededBy": "trennex-local-catalog-v1"
+  },
+  "timeCreated": "2026-11-08T08:02:57.368Z",
+  "updated": "2026-11-08T08:02:57.368Z",
+  "size": 28369,
+  "md5Hash": "tpbInVS2GHdp/CaAFc/0mg==",
+  "crc32c": "3599295462"
+}

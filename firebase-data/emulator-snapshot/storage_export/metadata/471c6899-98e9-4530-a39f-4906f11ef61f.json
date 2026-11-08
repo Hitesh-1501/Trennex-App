@@ -1,0 +1,19 @@
+{
+  "name": "catalog/categories/electronics.png",
+  "bucket": "demo-trennex.appspot.com",
+  "metageneration": 1,
+  "generation": 1794124977122,
+  "contentType": "image/png",
+  "storageClass": "STANDARD",
+  "cacheControl": "public,max-age=3600",
+  "downloadTokens": [],
+  "etag": "UzpkP5UNzI1Wlv01bNrPqckNB8g",
+  "customMetadata": {
+    "seededBy": "trennex-local-catalog-v1"
+  },
+  "timeCreated": "2026-11-08T08:02:57.122Z",
+  "updated": "2026-11-08T08:02:57.122Z",
+  "size": 9129,
+  "md5Hash": "xvlbkyut5bFf+mwadtWSXw==",
+  "crc32c": "2306522679"
+}

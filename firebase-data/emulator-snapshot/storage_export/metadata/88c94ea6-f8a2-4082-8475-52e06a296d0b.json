@@ -1,0 +1,19 @@
+{
+  "name": "catalog/categories/fashion.png",
+  "bucket": "demo-trennex.appspot.com",
+  "metageneration": 1,
+  "generation": 1794124977082,
+  "contentType": "image/png",
+  "storageClass": "STANDARD",
+  "cacheControl": "public,max-age=3600",
+  "downloadTokens": [],
+  "etag": "RwcrzapOpaghMafCkDJ6x3mTV1s",
+  "customMetadata": {
+    "seededBy": "trennex-local-catalog-v1"
+  },
+  "timeCreated": "2026-11-08T08:02:57.082Z",
+  "updated": "2026-11-08T08:02:57.082Z",
+  "size": 11304,
+  "md5Hash": "hb2dpfQUEb1cb+PO+/zatw==",
+  "crc32c": "2053886867"
+}

@@ -1,0 +1,19 @@
+{
+  "name": "catalog/banners/bnr_home_welcome.png",
+  "bucket": "demo-trennex.appspot.com",
+  "metageneration": 1,
+  "generation": 1794124977346,
+  "contentType": "image/png",
+  "storageClass": "STANDARD",
+  "cacheControl": "public,max-age=3600",
+  "downloadTokens": [],
+  "etag": "9iKAZGOqkXXHHEeg/x+h5ytS+tU",
+  "customMetadata": {
+    "seededBy": "trennex-local-catalog-v1"
+  },
+  "timeCreated": "2026-11-08T08:02:57.346Z",
+  "updated": "2026-11-08T08:02:57.346Z",
+  "size": 24296,
+  "md5Hash": "hDqbkhRLsz4CzetDszdROw==",
+  "crc32c": "2396208054"
+}
