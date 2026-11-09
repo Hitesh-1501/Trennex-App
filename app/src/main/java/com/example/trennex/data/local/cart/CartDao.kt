@@ -15,6 +15,9 @@ interface CartDao {
     @Query("SELECT * FROM cart_items WHERE id = :id LIMIT 1")
     suspend fun getItemById(id: Int): CartItemEntity?
 
+    @Query("SELECT * FROM cart_items ORDER BY id DESC")
+    suspend fun getAllCartItems(): List<CartItemEntity>
+
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun upsert(item: CartItemEntity)
 
