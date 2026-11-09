@@ -1,96 +1,70 @@
 package com.example.trennex.repository.cart
 
+import android.util.Log
 import com.example.trennex.data.local.cart.CartDao
 import com.example.trennex.data.local.cart.CartItemEntity
+import com.example.trennex.repository.product.CatalogItemResolver
 import com.example.trennex.ui.cart.model.CartItemModel
 import com.google.firebase.auth.FirebaseAuth
+import com.google.firebase.firestore.FieldValue
 import com.google.firebase.firestore.FirebaseFirestore
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.tasks.await
 
 class CartRepository(
-    private val dao: CartDao
-){
-    private val firestore = FirebaseFirestore.getInstance()
-    private val auth = FirebaseAuth.getInstance()
+    private val dao: CartDao,
+    private val firestore: FirebaseFirestore = FirebaseFirestore.getInstance(),
+    private val auth: FirebaseAuth = FirebaseAuth.getInstance(),
+) {
+    private val catalogResolver = CatalogItemResolver(firestore)
 
     private fun getUserId(): String? = auth.currentUser?.uid
 
-    fun observeItems(): Flow<List<CartItemModel>>{
-        return dao.observeCartItems().map { entities ->
-            entities.map{
-                it.toModel()
-            }
-        }
+    fun observeItems(): Flow<List<CartItemModel>> = dao.observeCartItems().map { entities ->
+        entities.map { it.toModel() }
     }
 
     suspend fun fetchAndSyncRemoteCart() {
         val uid = getUserId() ?: return
         try {
-            val snapshot = firestore.collection("users")
-                .document(uid)
-                .collection("cart")
-                .get()
-                .await()
+            val newItems = runCatching {
+                firestore.userCollection(uid, NEW_CART_COLLECTION)
+                    .get()
+                    .await()
+                    .documents
+                    .mapNotNull { document -> remoteCartItem(document) }
+            }.getOrDefault(emptyList())
 
-            val remoteItems = snapshot.documents.mapNotNull { doc ->
-                doc.toObject(CartItemModel::class.java)
+            if (newItems.isNotEmpty()) {
+                newItems.forEach { dao.upsert(it.toEntity()) }
+                return
             }
 
-            // Sync remote items into local Room DB
-            for (item in remoteItems) {
-                dao.upsert(item.toEntity())
+            val legacyItems = runCatching {
+                firestore.userCollection(uid, LEGACY_CART_COLLECTION)
+                    .get()
+                    .await()
+                    .documents
+                    .mapNotNull { document ->
+                        runCatching { document.toObject(CartItemModel::class.java) }.getOrNull()
+                    }
+            }.getOrDefault(emptyList())
+
+            for (item in legacyItems) {
+                val migrated = item.copy(quantity = item.quantity.coerceIn(1, MAX_QUANTITY))
+                dao.upsert(migrated.toEntity())
+                syncItemToFirestore(migrated)
             }
-        } catch (e: Exception) {
-            e.printStackTrace()
+        } catch (exception: Exception) {
+            Log.e(TAG, "Failed to sync remote cart", exception)
         }
     }
 
-    private suspend fun syncItemToFirestore(item: CartItemModel) {
-        val uid = getUserId()
-        val projectId = com.google.firebase.FirebaseApp.getInstance().options.projectId
-        android.util.Log.d("CartRepository", "Syncing to Project ID: $projectId, UID: $uid")
-        if (uid == null) {
-            android.util.Log.w("CartRepository", "Cannot sync cart item: User not logged in")
-            return
-        }
-        try {
-            firestore.collection("users")
-                .document(uid)
-                .collection("cart")
-                .document(item.id.toString())
-                .set(item)
-                .await()
-            android.util.Log.d("CartRepository", "Successfully synced cart item ${item.id} to Firestore under users/$uid/cart")
-        } catch (e: Exception) {
-            android.util.Log.e("CartRepository", "Failed to sync cart item to Firestore", e)
-        }
-    }
-
-    private suspend fun removeCartItemFromFirestore(itemId: Int) {
-        val uid = getUserId()
-        if (uid == null) {
-            android.util.Log.w("CartRepository", "Cannot remove cart item: User not logged in")
-            return
-        }
-        try {
-            firestore.collection("users")
-                .document(uid)
-                .collection("cart")
-                .document(itemId.toString())
-                .delete()
-                .await()
-            android.util.Log.d("CartRepository", "Successfully removed cart item $itemId from Firestore")
-        } catch (e: Exception) {
-            android.util.Log.e("CartRepository", "Failed to remove cart item from Firestore", e)
-        }
-    }
-
-    suspend fun addItem(item: CartItemModel){
-        val safeQuantity =  item.quantity.coerceAtLeast(1)
+    suspend fun addItem(item: CartItemModel) {
+        val safeQuantity = item.quantity.coerceIn(1, MAX_QUANTITY)
         val existing = dao.getItemById(item.id)
-        val updatedItem = if(existing == null){
+        val updatedItem = if (existing == null) {
             item.copy(quantity = safeQuantity, isSelected = true)
         } else {
             existing.toModel().copy(
@@ -104,102 +78,186 @@ class CartRepository(
                 deliveryDetails = item.deliveryDetails,
                 imageUrl = item.imageUrl,
                 imageRes = item.imageRes,
-                quantity = existing.quantity + safeQuantity,
-                isSelected = true
+                quantity = (existing.quantity + safeQuantity).coerceAtMost(MAX_QUANTITY),
+                isSelected = true,
             )
         }
-        
-        if (existing == null) {
-            dao.upsert(updatedItem.toEntity())
-        } else {
-            dao.update(updatedItem.toEntity())
-        }
+
+        dao.upsert(updatedItem.toEntity())
         syncItemToFirestore(updatedItem)
     }
 
-    suspend fun toggleSelection(itemId: Int, selected: Boolean){
+    suspend fun toggleSelection(itemId: Int, selected: Boolean) {
         dao.updateSelection(itemId, selected)
-        // Find item and update in firestore
-        dao.getItemById(itemId)?.let {
-            syncItemToFirestore(it.toModel())
-        }
+        dao.getItemById(itemId)?.let { syncItemToFirestore(it.toModel()) }
     }
 
-    suspend fun toggleAllSelection(selected: Boolean){
+    suspend fun toggleAllSelection(selected: Boolean) {
         dao.updateAllSelection(selected)
-        // Sync all local items to firestore with new selection state
-        dao.observeCartItems() // note: observe is a flow, let's fetch directly or iterate
-        // For simplicity, we can fetch all from DAO or rely on existing items
+        dao.getAllCartItems().forEach { syncItemToFirestore(it.toModel()) }
     }
 
-    suspend fun updateQuantity(itemId: Int, quantity: Int){
-        val newQty = quantity.coerceAtLeast(1)
-        dao.updateQuantity(itemId, newQty)
-        dao.getItemById(itemId)?.let {
-            syncItemToFirestore(it.toModel())
-        }
+    suspend fun updateQuantity(itemId: Int, quantity: Int) {
+        dao.updateQuantity(itemId, quantity.coerceIn(1, MAX_QUANTITY))
+        dao.getItemById(itemId)?.let { syncItemToFirestore(it.toModel()) }
     }
 
-    suspend fun removeItem(itemId: Int){
+    suspend fun removeItem(itemId: Int) {
         dao.removeItem(itemId)
-        removeCartItemFromFirestore(itemId)
+        removeRemoteItem(itemId)
     }
 
-    suspend fun deleteSelectedItems(){
-        // Get selected items before deleting locally so we know what to delete in Firestore
-        // For now, we can check all items or query dao
-        // Since CartDao doesn't return selected items directly, let's add a query or handle it
+    suspend fun deleteSelectedItems() {
         dao.deleteSelectedItems()
-        // Clear selected in Firestore: easiest is to fetch remote and delete those where isSelected == true, or clear user cart collection
         val uid = getUserId() ?: return
         try {
-            val snapshot = firestore.collection("users")
-                .document(uid)
-                .collection("cart")
-                .whereEqualTo("selected", true)
-                .get()
-                .await()
-            for (doc in snapshot.documents) {
-                doc.reference.delete().await()
+            runCatching {
+                firestore.userCollection(uid, NEW_CART_COLLECTION)
+                    .whereEqualTo("selected", true)
+                    .get()
+                    .await()
+                    .documents
+                    .forEach { it.reference.delete().await() }
             }
-        } catch (e: Exception) {
-            e.printStackTrace()
+            runCatching {
+                firestore.userCollection(uid, LEGACY_CART_COLLECTION)
+                    .whereEqualTo("isSelected", true)
+                    .get()
+                    .await()
+                    .documents
+                    .forEach { it.reference.delete().await() }
+            }
+        } catch (exception: Exception) {
+            Log.e(TAG, "Failed to delete selected remote cart items", exception)
         }
     }
 
-    private fun CartItemEntity.toModel(): CartItemModel{
+    private suspend fun syncItemToFirestore(item: CartItemModel) {
+        val uid = getUserId() ?: return
+        try {
+            val reference = catalogResolver.resolveLegacyId(item.id)
+            if (reference != null) {
+                val newDocument = firestore.userCollection(uid, NEW_CART_COLLECTION)
+                    .document(reference.variant.documentId)
+                newDocument.set(
+                    mapOf(
+                        "schemaVersion" to 1,
+                        "productId" to reference.product.documentId,
+                        "variantId" to reference.variant.documentId,
+                        "quantity" to item.quantity.coerceIn(1, MAX_QUANTITY),
+                        "selected" to item.isSelected,
+                        "createdAt" to FieldValue.serverTimestamp(),
+                        "updatedAt" to FieldValue.serverTimestamp(),
+                    )
+                ).await()
+                firestore.userCollection(uid, LEGACY_CART_COLLECTION)
+                    .document(item.id.toString())
+                    .delete()
+                    .await()
+                Log.d(TAG, "Synced cart item ${item.id} to new cartItems path")
+            } else {
+                firestore.userCollection(uid, LEGACY_CART_COLLECTION)
+                    .document(item.id.toString())
+                    .set(item)
+                    .await()
+                Log.d(TAG, "Kept cart item ${item.id} on legacy path until catalog migration")
+            }
+        } catch (exception: Exception) {
+            Log.w(TAG, "New cart path unavailable; keeping item ${item.id} on legacy path", exception)
+            runCatching { syncLegacyItem(uid, item) }
+                .onFailure { fallbackError -> Log.e(TAG, "Legacy cart fallback failed", fallbackError) }
+        }
+    }
+
+    private suspend fun syncLegacyItem(uid: String, item: CartItemModel) {
+        firestore.userCollection(uid, LEGACY_CART_COLLECTION)
+            .document(item.id.toString())
+            .set(item)
+            .await()
+    }
+
+    private suspend fun removeRemoteItem(itemId: Int) {
+        val uid = getUserId() ?: return
+        runCatching {
+            catalogResolver.resolveLegacyId(itemId)?.let { reference ->
+                firestore.userCollection(uid, NEW_CART_COLLECTION)
+                    .document(reference.variant.documentId)
+                    .delete()
+                    .await()
+            }
+        }.onFailure { exception ->
+            Log.w(TAG, "New cart removal unavailable for item $itemId", exception)
+        }
+        try {
+            firestore.userCollection(uid, LEGACY_CART_COLLECTION)
+                .document(itemId.toString())
+                .delete()
+                .await()
+        } catch (exception: Exception) {
+            Log.e(TAG, "Failed to remove cart item $itemId", exception)
+        }
+    }
+
+    private suspend fun remoteCartItem(document: com.google.firebase.firestore.DocumentSnapshot): CartItemModel? {
+        val productId = document.getString("productId") ?: return null
+        val variantId = document.getString("variantId") ?: return null
+        val reference = catalogResolver.resolve(productId, variantId) ?: return null
+        val product = reference.product.toProductResponse(listOf(reference.variant))
         return CartItemModel(
-            id = id,
-            title = title,
-            description = description,
-            mrp = mrp,
-            price = price,
-            rating = rating,
-            ratingCount = ratingCount,
-            returnPolicy = returnPolicy,
-            deliveryDetails = deliveryDetails,
-            imageUrl = imageUrl,
-            imageRes = imageRes,
-            quantity = quantity,
-            isSelected = isSelected
+            id = product.id,
+            title = product.title,
+            description = product.description,
+            mrp = reference.variant.mrpMinor / 100.0,
+            price = reference.variant.priceMinor / 100.0,
+            rating = product.reviews.firstOrNull()?.rating?.toDouble() ?: 0.0,
+            ratingCount = 0,
+            returnPolicy = product.returnPolicy,
+            deliveryDetails = product.shippingInformation,
+            imageUrl = product.thumbnail,
+            quantity = (document.getLong("quantity") ?: 1L).toInt().coerceIn(1, MAX_QUANTITY),
+            isSelected = document.getBoolean("selected") ?: true,
         )
     }
 
-    private fun CartItemModel.toEntity(): CartItemEntity{
-        return CartItemEntity(
-            id = id,
-            title = title,
-            description = description,
-            mrp = mrp,
-            price = price,
-            rating = rating,
-            ratingCount = ratingCount,
-            returnPolicy = returnPolicy,
-            deliveryDetails = deliveryDetails,
-            imageUrl = imageUrl,
-            imageRes = imageRes,
-            quantity = quantity,
-            isSelected = isSelected
-        )
+    private fun CartItemEntity.toModel() = CartItemModel(
+        id = id,
+        title = title,
+        description = description,
+        mrp = mrp,
+        price = price,
+        rating = rating,
+        ratingCount = ratingCount,
+        returnPolicy = returnPolicy,
+        deliveryDetails = deliveryDetails,
+        imageUrl = imageUrl,
+        imageRes = imageRes,
+        quantity = quantity,
+        isSelected = isSelected,
+    )
+
+    private fun CartItemModel.toEntity() = CartItemEntity(
+        id = id,
+        title = title,
+        description = description,
+        mrp = mrp,
+        price = price,
+        rating = rating,
+        ratingCount = ratingCount,
+        returnPolicy = returnPolicy,
+        deliveryDetails = deliveryDetails,
+        imageUrl = imageUrl,
+        imageRes = imageRes,
+        quantity = quantity,
+        isSelected = isSelected,
+    )
+
+    private fun FirebaseFirestore.userCollection(uid: String, collection: String) =
+        collection("users").document(uid).collection(collection)
+
+    private companion object {
+        const val TAG = "CartRepository"
+        const val NEW_CART_COLLECTION = "cartItems"
+        const val LEGACY_CART_COLLECTION = "cart"
+        const val MAX_QUANTITY = 10
     }
 }
