@@ -60,7 +60,8 @@ npm run verify:seed
 ```
 
 Start the normal development emulators with the saved catalog already loaded. On Windows, the
-project command automatically finds Android Studio's bundled Java runtime:
+project command automatically finds Android Studio's bundled Java runtime. This command imports
+the baseline but does not export temporary data when it stops:
 
 ```powershell
 npm run emulators
