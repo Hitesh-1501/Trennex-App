@@ -97,3 +97,10 @@ data class CatalogCategory(
         url = "",
     )
 }
+
+data class HomeCatalogContent(
+    val products: List<ProductResponse>,
+    val featuredProducts: List<ProductResponse>,
+    val newArrivals: List<ProductResponse>,
+    val banners: List<String>,
+)
