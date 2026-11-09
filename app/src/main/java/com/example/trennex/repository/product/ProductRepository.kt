@@ -6,6 +6,7 @@ import com.example.trennex.data.model.catalog.CatalogCategory
 import com.example.trennex.data.model.catalog.CatalogDocumentMapper
 import com.example.trennex.data.model.catalog.CatalogProduct
 import com.example.trennex.data.model.catalog.CatalogVariant
+import com.example.trennex.data.model.catalog.HomeCatalogContent
 import com.example.trennex.data.remote.network.RetrofitInstance
 import com.google.firebase.firestore.DocumentSnapshot
 import com.google.firebase.firestore.FirebaseFirestore
@@ -126,6 +127,64 @@ class ProductRepository(
         }
     }
 
+    suspend fun getHomeCatalogContent(): HomeCatalogContent? {
+        return try {
+            val catalogProducts = loadActiveCatalogProducts()
+                .sortedBy(CatalogProduct::sortOrder)
+            if (catalogProducts.isEmpty()) return null
+
+            val productResponses = catalogProducts.map { it.toProductResponse() }
+            val responsesById = catalogProducts.associate { it.documentId to it.toProductResponse() }
+
+            val featuredProducts = catalogProducts
+                .filter(CatalogProduct::featured)
+                .map { it.toProductResponse() }
+            val newArrivals = catalogProducts
+                .filter(CatalogProduct::newArrival)
+                .map { it.toProductResponse() }
+
+            val curatedSection = firestore.collection(HOME_SECTIONS)
+                .whereEqualTo("active", true)
+                .get()
+                .await()
+                .documents
+                .firstOrNull { it.getString("type") == "CURATED_PRODUCTS" }
+
+            val curatedProducts = if (curatedSection == null) {
+                emptyList()
+            } else {
+                curatedSection.reference.collection(HOME_ITEMS)
+                    .whereEqualTo("active", true)
+                    .get()
+                    .await()
+                    .documents
+                    .sortedBy { it.getLong("sortOrder") ?: Long.MAX_VALUE }
+                    .mapNotNull { item -> responsesById[item.getString("productId")] }
+            }
+
+            val bannerUrls = firestore.collection(BANNERS)
+                .whereEqualTo("active", true)
+                .get()
+                .await()
+                .documents
+                .sortedBy { it.getLong("sortOrder") ?: Long.MAX_VALUE }
+                .mapNotNull { document ->
+                    @Suppress("UNCHECKED_CAST")
+                    val image = document.get("image") as? Map<String, Any?>
+                    image?.get("url") as? String
+                }
+
+            HomeCatalogContent(
+                products = if (curatedProducts.isNotEmpty()) curatedProducts else productResponses,
+                featuredProducts = featuredProducts,
+                newArrivals = newArrivals,
+                banners = bannerUrls,
+            )
+        } catch (_: Exception) {
+            null
+        }
+    }
+
     private fun activeProductsQuery(): Query = firestore.collection(PRODUCTS)
         .whereEqualTo("status", STATUS_ACTIVE)
 
@@ -198,5 +257,8 @@ class ProductRepository(
         const val VARIANTS = "variants"
         const val STATUS_ACTIVE = "ACTIVE"
         const val TOP_PICKS_CATEGORY = "top-picks"
+        const val BANNERS = "banners"
+        const val HOME_SECTIONS = "homeSections"
+        const val HOME_ITEMS = "items"
     }
 }
