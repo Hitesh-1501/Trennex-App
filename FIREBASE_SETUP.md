@@ -114,7 +114,12 @@ validate all inputs and enforce authorization independently.
 
 ## Temporary compatibility
 
-The rules temporarily support the Android app's existing paths:
+The rules support the new variant-based paths used by the migrated repositories:
+
+- `users/{uid}/cartItems`
+- `users/{uid}/wishlistItems`
+
+They also temporarily support the Android app's existing paths during rollout:
 
 - `users/{uid}/cart`
 - `users/{uid}/wishlist`
@@ -124,6 +129,11 @@ The rules temporarily support the Android app's existing paths:
 Legacy order creation permits only a `Pending` order with the current model's field set. Updates and
 deletes remain admin-only. This compatibility block should be removed after checkout is migrated to
 a callable Cloud Function and top-level `orders` documents.
+
+During the cart and wishlist rollout, the app reads the new paths first. If no migrated documents
+are available, it reads the legacy paths and attempts an automatic migration by resolving each
+numeric `legacyId` to an active catalog variant. Items that cannot be resolved, or when the new
+path is temporarily unavailable, remain on the legacy path so the existing UI continues to work.
 
 ## Production deployment (not performed)
 
