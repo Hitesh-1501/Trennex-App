@@ -7,6 +7,7 @@ import com.google.firebase.firestore.FirebaseFirestore
 import com.google.firebase.firestore.ListenerRegistration
 import com.google.firebase.firestore.Query
 import com.google.firebase.firestore.SetOptions
+import com.google.firebase.functions.FirebaseFunctions
 import kotlinx.coroutines.channels.awaitClose
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.callbackFlow
@@ -15,6 +16,7 @@ import kotlinx.coroutines.tasks.await
 class UserRepository {
     private val firestore = FirebaseFirestore.getInstance()
     private val auth = FirebaseAuth.getInstance()
+    private val functions = FirebaseFunctions.getInstance("asia-south1")
 
     fun getUserId(): String? = auth.currentUser?.uid
 
@@ -227,12 +229,17 @@ class UserRepository {
             "payment" to mapOf("method" to paymentMethod),
             "createdAt" to FieldValue.serverTimestamp(),
         )
-        return firestore.collection("users")
+        val requestId = firestore.collection("users")
             .document(uid)
             .collection("orderRequests")
             .add(request)
             .await()
             .id
+        functions
+            .getHttpsCallable("createOrder")
+            .call(mapOf("requestId" to requestId))
+            .await()
+        return requestId
     }
 
     fun observeOrders(): Flow<List<OrderModel>> = callbackFlow {

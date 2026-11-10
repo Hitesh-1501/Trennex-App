@@ -12,6 +12,7 @@ import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.firestore.FirebaseFirestore
 import com.google.firebase.firestore.FirebaseFirestoreSettings
 import com.google.firebase.firestore.MemoryCacheSettings
+import com.google.firebase.functions.FirebaseFunctions
 import com.google.firebase.storage.FirebaseStorage
 
 class TrenNexApp: Application(){
@@ -38,6 +39,8 @@ class TrenNexApp: Application(){
             .build()
         firestore.useEmulator(host, FIRESTORE_EMULATOR_PORT)
         FirebaseStorage.getInstance().useEmulator(host, STORAGE_EMULATOR_PORT)
+        FirebaseFunctions.getInstance(FUNCTIONS_REGION)
+            .useEmulator(host, FUNCTIONS_EMULATOR_PORT)
 
         if (BuildConfig.USE_FIREBASE_AUTH_EMULATOR) {
             FirebaseAuth.getInstance().useEmulator(host, AUTH_EMULATOR_PORT)
@@ -55,5 +58,7 @@ class TrenNexApp: Application(){
         const val AUTH_EMULATOR_PORT = 9099
         const val FIRESTORE_EMULATOR_PORT = 8080
         const val STORAGE_EMULATOR_PORT = 9199
+        const val FUNCTIONS_EMULATOR_PORT = 5001
+        const val FUNCTIONS_REGION = "asia-south1"
     }
 }
