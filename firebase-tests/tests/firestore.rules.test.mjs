@@ -154,6 +154,36 @@ describe('order migration rules', () => {
       expectedDeliveryDate: '2026-11-12',
     }));
   });
+
+  test('users can create immutable checkout requests but cannot create orders directly', async () => {
+    const request = {
+      schemaVersion: 1,
+      status: 'PENDING',
+      items: [{ legacyId: 101, quantity: 1 }],
+      itemCount: 1,
+      shippingAddress: { address: '1 Main Street' },
+      recipient: { name: 'Buyer One', phone: '+910000000000' },
+      payment: { method: 'COD' },
+      createdAt: serverTimestamp(),
+    };
+
+    await assertSucceeds(setDoc(
+      doc(user('buyer-1'), 'users/buyer-1/orderRequests/request-1'),
+      request,
+    ));
+    await assertSucceeds(getDoc(doc(
+      user('buyer-1'),
+      'users/buyer-1/orderRequests/request-1',
+    )));
+    await assertFails(getDoc(doc(
+      user('buyer-2'),
+      'users/buyer-1/orderRequests/request-1',
+    )));
+    await assertFails(updateDoc(
+      doc(user('buyer-1'), 'users/buyer-1/orderRequests/request-1'),
+      { status: 'CONFIRMED' },
+    ));
+  });
 });
 
 describe('review moderation', () => {
