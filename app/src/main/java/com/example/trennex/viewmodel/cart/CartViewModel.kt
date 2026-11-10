@@ -5,10 +5,7 @@ import androidx.lifecycle.viewModelScope
 import com.example.trennex.repository.user.AddressEntity
 import com.example.trennex.repository.user.UserRepository
 import com.example.trennex.ui.cart.CartUiState
-import com.example.trennex.ui.profile.model.OrderModel
-import com.example.trennex.utils.DateUtils
 import com.example.trennex.utils.cart.CartStore
-import com.google.firebase.Timestamp
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.combine
@@ -53,25 +50,33 @@ class CartViewModel: ViewModel() {
 
         viewModelScope.launch {
             try {
-                selectedItems.forEach { item ->
-                    val expectedDate = DateUtils.calculateExpectedDeliveryDate(item.deliveryDetails)
-                    val order = OrderModel(
-                        title = item.title,
-                        description = item.description,
-                        imageUrl = item.imageUrl,
-                        imageRes = item.imageRes,
-                        price = item.price,
-                        quantity = item.quantity,
-                        status = "PENDING",
-                        orderDate = Timestamp.now(),
-                        expectedDeliveryDate = expectedDate
-                    )
-                    userRepository.saveOrder(order)
-                }
-                android.util.Log.d("CartViewModel", "placeOrder: all items saved, deleting from cart")
+                val address = uiState.value.selectedAddress
+                    ?: throw IllegalStateException("Please select a delivery address")
+                val requestId = userRepository.submitOrderRequest(
+                    items = selectedItems.map { item ->
+                        mapOf(
+                            "legacyId" to item.id,
+                            "quantity" to item.quantity.coerceIn(1, 10),
+                        )
+                    },
+                    shippingAddress = mapOf(
+                        "address" to address.address,
+                        "flatNo" to address.flatNo,
+                        "placeName" to address.placeName,
+                        "addressType" to address.addressType,
+                        "latitude" to address.latitude,
+                        "longitude" to address.longitude,
+                    ),
+                    recipient = mapOf(
+                        "name" to uiState.value.userName,
+                        "phone" to uiState.value.userPhone,
+                    ),
+                    paymentMethod = "COD",
+                )
+                android.util.Log.d("CartViewModel", "order request accepted: $requestId")
                 CartStore.deleteSelectedItems()
             } catch (e: Exception) {
-                android.util.Log.e("CartViewModel", "placeOrder failed", e)
+                android.util.Log.e("CartViewModel", "order request failed; cart was preserved", e)
             }
         }
     }
