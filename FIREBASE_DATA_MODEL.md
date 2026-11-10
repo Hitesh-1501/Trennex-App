@@ -316,6 +316,15 @@ Orders are top-level so server/admin queries do not require scanning every user 
 | `placedAt` | timestamp | yes | Server timestamp. |
 | `updatedAt` | timestamp | yes | Server timestamp. |
 
+### `users/{uid}/orderRequests/{requestId}`
+
+Checkout creates an owner-scoped request rather than writing an order directly from the Android
+client. The request contains legacy product IDs temporarily, quantities, an immutable address and
+recipient snapshot, and a payment method. A trusted Cloud Function must re-resolve catalog
+variants, read live prices and inventory, validate the payment method, and create the top-level
+`orders/{orderId}` document. Requests are never authoritative orders and clients cannot update or
+delete them after creation.
+
 ### `orders/{orderId}/items/{itemId}`
 
 Immutable purchase snapshots: `productId`, `variantId`, `sku`, `name`, `variantName`, `attributes`, `imageUrl`, `quantity`, `unitPriceMinor`, `unitMrpMinor`, `discountMinor`, `lineTotalMinor`, `returnPolicy`, and `reviewStatus`.

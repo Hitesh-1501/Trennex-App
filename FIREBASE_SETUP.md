@@ -135,6 +135,13 @@ are available, it reads the legacy paths and attempts an automatic migration by 
 numeric `legacyId` to an active catalog variant. Items that cannot be resolved, or when the new
 path is temporarily unavailable, remain on the legacy path so the existing UI continues to work.
 
+Checkout now follows the same staged migration: Android creates an owner-scoped
+`users/{uid}/orderRequests/{requestId}` request, but cannot create authoritative top-level orders.
+The trusted `createOrder` Cloud Function is still required to validate live catalog prices, stock,
+address, and payment before creating `orders/{orderId}`. Until that function is deployed, a request
+may be accepted without appearing in the order-history screen; the cart is cleared only after the
+request write succeeds.
+
 ## Production deployment (not performed)
 
 Before production deployment:
