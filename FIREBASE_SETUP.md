@@ -137,10 +137,10 @@ path is temporarily unavailable, remain on the legacy path so the existing UI co
 
 Checkout now follows the same staged migration: Android creates an owner-scoped
 `users/{uid}/orderRequests/{requestId}` request, but cannot create authoritative top-level orders.
-The trusted `createOrder` Cloud Function is still required to validate live catalog prices, stock,
-address, and payment before creating `orders/{orderId}`. Until that function is deployed, a request
-may be accepted without appearing in the order-history screen; the cart is cleared only after the
-request write succeeds.
+The trusted `createOrder` Cloud Function in `functions/index.js` validates live catalog prices,
+stock, address, and payment before creating `orders/{orderId}`. The function source is currently
+local only; dependencies have not been installed and it has not been deployed to production.
+Until it is deployed, the Android callable request will fail safely and the cart will remain intact.
 
 ## Production deployment (not performed)
 
