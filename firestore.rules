@@ -217,6 +217,23 @@ service cloud.firestore {
             && request.resource.data.status == 'Pending');
         allow update, delete: if isAdmin();
       }
+
+      // Client checkout requests are untrusted input. A trusted server function
+      // validates prices, stock, address, and payment before creating top-level orders.
+      match /orderRequests/{requestId} {
+        allow create: if owns(userId)
+          && onlyFields([
+            'schemaVersion', 'status', 'items', 'itemCount',
+            'shippingAddress', 'recipient', 'payment', 'createdAt'
+          ])
+          && request.resource.data.schemaVersion == 1
+          && request.resource.data.status == 'PENDING'
+          && request.resource.data.items is list
+          && request.resource.data.itemCount is int
+          && request.resource.data.itemCount >= 1;
+        allow read: if owns(userId) || isAdmin();
+        allow update, delete: if isAdmin();
+      }
     }
 
     match /orders/{orderId} {
