@@ -205,12 +205,34 @@ class UserRepository {
     }
 
     suspend fun saveOrder(order: OrderModel) {
-        val uid = getUserId() ?: return
-        firestore.collection("users")
+        throw UnsupportedOperationException(
+            "Direct client order writes are disabled. Submit an order request instead."
+        )
+    }
+
+    suspend fun submitOrderRequest(
+        items: List<Map<String, Any>>,
+        shippingAddress: Map<String, Any>,
+        recipient: Map<String, Any>,
+        paymentMethod: String,
+    ): String {
+        val uid = getUserId() ?: throw IllegalStateException("User is not authenticated")
+        val request = mapOf(
+            "schemaVersion" to 1,
+            "status" to "PENDING",
+            "items" to items,
+            "itemCount" to items.sumOf { (it["quantity"] as? Int ?: 1) },
+            "shippingAddress" to shippingAddress,
+            "recipient" to recipient,
+            "payment" to mapOf("method" to paymentMethod),
+            "createdAt" to FieldValue.serverTimestamp(),
+        )
+        return firestore.collection("users")
             .document(uid)
-            .collection("orders")
-            .add(order)
+            .collection("orderRequests")
+            .add(request)
             .await()
+            .id
     }
 
     fun observeOrders(): Flow<List<OrderModel>> = callbackFlow {
