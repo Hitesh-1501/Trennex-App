@@ -1,5 +1,7 @@
 {
   "projects": {
-    "default": "demo-trennex"
+    "default": "demo-trennex",
+    "staging": "trennex-staging-ebbeb",
+    "production": "trennex-ebbeb"
   }
 }
