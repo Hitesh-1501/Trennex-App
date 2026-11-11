@@ -146,12 +146,26 @@ Until it is deployed, the Android callable request will fail safely and the cart
 
 Before production deployment:
 
-1. Create a separate production alias in `.firebaserc` rather than replacing `demo-trennex`.
-2. Run the full emulator rules test suite.
-3. Validate every required query against the emulator and a staging Firebase project.
+1. Use the separate `staging` and `production` aliases in `.firebaserc`; never replace
+   `demo-trennex`.
+2. Run the full emulator rules suite and catalog validator.
+3. Validate every required query against the emulator and staging Firebase project.
 4. Configure admin custom claims using trusted server tooling.
 5. Enable App Check for Android and server endpoints.
-6. Deploy rules and indexes first to staging, then production after review.
+6. Deploy rules and indexes to staging first, then import catalog data using a local service
+   credential, and only deploy to production after review.
+
+Current aliases:
+
+```text
+default/demo  = demo-trennex
+staging       = trennex-staging-ebbeb
+production    = trennex-ebbeb
+```
+
+Staging Firestore rules and indexes have been deployed. Catalog data has not been imported yet;
+the migration script requires a local Admin SDK credential and must never receive a production key
+through source control or chat.
 
 Example deployment commands are intentionally omitted until the migration reaches the staging
 approval step, preventing accidental deployment to the live project.

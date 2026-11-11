@@ -6,6 +6,9 @@
     "test": "firebase emulators:exec --config ../firebase.json --project demo-trennex --only firestore,storage \"node --test tests/*.test.mjs\"",
     "seed": "firebase emulators:exec --config ../firebase.json --project demo-trennex --only firestore,storage --export-on-exit=../firebase-data/emulator-snapshot \"node scripts/seed-emulator.mjs --reset\"",
     "verify:seed": "firebase emulators:exec --config ../firebase.json --project demo-trennex --only firestore,storage --import=../firebase-data/emulator-snapshot \"node scripts/verify-seed.mjs\"",
+    "validate:catalog": "node scripts/validate-catalog.mjs",
+    "migrate:staging": "node scripts/migrate-staging.mjs",
+    "verify:staging": "node scripts/verify-staging.mjs",
     "emulators": "powershell -NoProfile -ExecutionPolicy Bypass -File scripts/firebase-cli.ps1 emulators:start --config ../firebase.json --project demo-trennex --only auth,firestore,storage,functions --import=../firebase-data/emulator-snapshot"
   },
   "devDependencies": {
