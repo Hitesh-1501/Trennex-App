@@ -7,6 +7,8 @@ import androidx.fragment.app.Fragment
 import androidx.fragment.app.activityViewModels
 import androidx.fragment.app.viewModels
 import androidx.lifecycle.lifecycleScope
+import androidx.lifecycle.repeatOnLifecycle
+import androidx.lifecycle.Lifecycle
 import androidx.navigation.fragment.findNavController
 import com.example.trennex.R
 import com.example.trennex.databinding.FragmentPaymentSuccessBinding
@@ -29,16 +31,51 @@ class PaymentSuccessFragment : Fragment(R.layout.fragment_payment_success) {
 
         (activity as? MainActivity)?.showToolBar(ToolBarType.NONE)
         
-        // Start animation
-        startSuccessAnimation()
-        
-        // Save to Firestore and remove from Room
+        observeCheckoutResult()
         viewModel.placeOrder()
+    }
 
-        // Navigate away after delay
+    private fun observeCheckoutResult() {
         viewLifecycleOwner.lifecycleScope.launch {
-            delay(2500)
-            findNavController().navigate(R.id.action_paymentSuccessFragment_to_ordersFragment)
+            viewLifecycleOwner.repeatOnLifecycle(Lifecycle.State.STARTED) {
+                viewModel.checkoutState.collect { state ->
+                    binding.tvSuccessTitle.text = when {
+                        state.isSubmitting -> "Placing your order..."
+                        state.isSuccess -> "Order placed successfully!"
+                        state.errorMessage != null -> "Order could not be placed"
+                        else -> ""
+                    }
+                    binding.tvSuccessSubtitle.text = when {
+                        state.isSubmitting -> "We are securely validating your items and delivery details."
+                        state.isSuccess -> "Your order has been confirmed."
+                        state.errorMessage != null -> state.errorMessage
+                        else -> ""
+                    }
+
+                    if (state.isSubmitting) {
+                        binding.ivSuccessCheck.visibility = View.INVISIBLE
+                    } else {
+                        binding.ivSuccessCheck.visibility = View.VISIBLE
+                    }
+
+                    if (state.isSuccess) {
+                        startSuccessAnimation()
+                        launch {
+                            delay(2500)
+                            if (findNavController().currentDestination?.id == R.id.paymentSuccessFragment) {
+                                findNavController().navigate(R.id.action_paymentSuccessFragment_to_ordersFragment)
+                            }
+                        }
+                    } else if (state.errorMessage != null) {
+                        launch {
+                            delay(2500)
+                            if (findNavController().currentDestination?.id == R.id.paymentSuccessFragment) {
+                                findNavController().popBackStack()
+                            }
+                        }
+                    }
+                }
+            }
         }
     }
 
