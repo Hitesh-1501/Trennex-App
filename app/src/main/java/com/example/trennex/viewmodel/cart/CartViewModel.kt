@@ -7,14 +7,23 @@ import com.example.trennex.repository.user.UserRepository
 import com.example.trennex.ui.cart.CartUiState
 import com.example.trennex.utils.cart.CartStore
 import kotlinx.coroutines.flow.SharingStarted
+import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 
+data class CheckoutState(
+    val isSubmitting: Boolean = false,
+    val isSuccess: Boolean = false,
+    val errorMessage: String? = null,
+)
+
 class CartViewModel: ViewModel() {
     private val userRepository = UserRepository()
+    private val _checkoutState = MutableStateFlow(CheckoutState())
+    val checkoutState: StateFlow<CheckoutState> = _checkoutState
 
     val uiState: StateFlow<CartUiState> = combine(
         CartStore.items,
@@ -44,11 +53,16 @@ class CartViewModel: ViewModel() {
     fun deleteSelectedItems() = CartStore.deleteSelectedItems()
 
     fun placeOrder() {
+        if (_checkoutState.value.isSubmitting || _checkoutState.value.isSuccess) return
         val selectedItems = uiState.value.items.filter { it.isSelected }
         android.util.Log.d("CartViewModel", "placeOrder: items count = ${selectedItems.size}")
-        if (selectedItems.isEmpty()) return
+        if (selectedItems.isEmpty()) {
+            _checkoutState.value = CheckoutState(errorMessage = "Your cart has no selected items.")
+            return
+        }
 
         viewModelScope.launch {
+            _checkoutState.value = CheckoutState(isSubmitting = true)
             try {
                 val address = uiState.value.selectedAddress
                     ?: throw IllegalStateException("Please select a delivery address")
@@ -75,8 +89,13 @@ class CartViewModel: ViewModel() {
                 )
                 android.util.Log.d("CartViewModel", "order request accepted: $requestId")
                 CartStore.deleteSelectedItems()
+                _checkoutState.value = CheckoutState(isSuccess = true)
             } catch (e: Exception) {
                 android.util.Log.e("CartViewModel", "order request failed; cart was preserved", e)
+                _checkoutState.value = CheckoutState(
+                    errorMessage = e.message?.takeIf { it.isNotBlank() }
+                        ?: "We could not place your order. Please try again.",
+                )
             }
         }
     }

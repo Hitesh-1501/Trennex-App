@@ -6,7 +6,8 @@
   },
   "main": "index.js",
   "scripts": {
-    "check": "node --check index.js"
+    "check": "node --check index.js",
+    "test:integration": "node integration-test.js"
   },
   "dependencies": {
     "firebase-admin": "^13.0.2",
