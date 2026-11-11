@@ -53,6 +53,11 @@ android {
             buildConfigField("boolean", "USE_FIREBASE_AUTH_EMULATOR", useFirebaseAuthEmulator.toString())
             buildConfigField("String", "FIREBASE_EMULATOR_HOST", "\"$firebaseEmulatorHost\"")
         }
+        create("staging") {
+            initWith(getByName("debug"))
+            matchingFallbacks += listOf("debug")
+            versionNameSuffix = "-staging"
+        }
         release {
             isMinifyEnabled = false
             buildConfigField("boolean", "USE_FIREBASE_EMULATORS", "false")

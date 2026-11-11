@@ -48,3 +48,16 @@ The staging migration script also requires a staging Cloud Storage bucket. The n
 does not have one yet, so enable Firebase Storage in the staging Firebase Console before running
 `npm run migrate:staging`. The existing emulator seed script remains the only completed local
 catalog import path in this phase.
+
+## Android staging variant
+
+The staging Firebase Android app uses the same package name and is configured through the ignored
+`app/src/staging/google-services.json` file. Build it with:
+
+```powershell
+./gradlew.bat testStagingUnitTest assembleStaging
+```
+
+The `staging` build type connects to `trennex-staging-ebbeb` when
+`USE_FIREBASE_EMULATORS=false`; the existing `debug` and `release` builds continue using the
+production `app/google-services.json` configuration.

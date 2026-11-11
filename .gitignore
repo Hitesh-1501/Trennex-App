@@ -16,6 +16,7 @@ local.properties
 
 # Project-specific Firebase and signing credentials
 app/google-services.json
+app/src/*/google-services.json
 *.jks
 *.keystore
 node_modules/
