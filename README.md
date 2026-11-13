@@ -3,13 +3,6 @@
 TrenNex is a native Android shopping application built with Kotlin. It includes phone authentication, product browsing, search, cart and wishlist persistence, account management, and map-based delivery addresses stored in Firebase Firestore.
 
 
-## Requirements
-
-- Android Studio with JDK 11 support
-- Android SDK 36
-- An emulator or device running Android 10 (API 29) or later
-- A Firebase Android app for package `com.example.trennex`
-- A Google Maps Platform API key with **Maps SDK for Android** and **Places API** enabled
 
 ## Project setup
 
