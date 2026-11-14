@@ -36,8 +36,18 @@ exports.createOrder = onCall({ region: REGION }, async (request) => {
     if (rawItems.length === 0 || rawItems.length > 50) {
       throw new HttpsError('invalid-argument', 'Checkout must contain between one and fifty items.');
     }
+    if (checkout.payment?.method !== 'COD') {
+      throw new HttpsError('invalid-argument', 'Only cash on delivery is currently supported.');
+    }
+    if (typeof checkout.shippingAddress?.address !== 'string'
+        || !checkout.shippingAddress.address.trim()
+        || typeof checkout.recipient?.name !== 'string'
+        || !checkout.recipient.name.trim()) {
+      throw new HttpsError('invalid-argument', 'A delivery address and recipient name are required.');
+    }
 
     const resolvedItems = [];
+    const inventoryReservations = new Map();
     for (const rawItem of rawItems) {
       const quantity = Number(rawItem.quantity);
       if (!Number.isInteger(quantity) || quantity < 1 || quantity > MAX_QUANTITY) {
@@ -78,7 +88,9 @@ exports.createOrder = onCall({ region: REGION }, async (request) => {
       const inventorySnapshot = await transaction.get(inventoryRef);
       const inventory = inventorySnapshot.data() || {};
       const available = Number(inventory.available);
-      if (!inventorySnapshot.exists || !Number.isInteger(available) || available < quantity) {
+      const onHand = Number(inventory.onHand);
+      if (!inventorySnapshot.exists || !Number.isInteger(available)
+          || !Number.isInteger(onHand) || available < quantity || onHand < quantity) {
         throw new HttpsError('failed-precondition', 'One or more items are out of stock.');
       }
 
@@ -89,7 +101,7 @@ exports.createOrder = onCall({ region: REGION }, async (request) => {
         name: product.name || product.title || 'Product',
         variantName: variant.name || '',
         attributes: variant.attributes || {},
-        imageUrl: product.imageUrl || product.thumbnail || null,
+        imageUrl: product.thumbnail?.url || product.imageUrl || null,
         quantity,
         unitPriceMinor: priceMinor,
         unitMrpMinor: mrpMinor,
@@ -98,7 +110,21 @@ exports.createOrder = onCall({ region: REGION }, async (request) => {
         returnPolicy: product.returnPolicy || null,
         inventoryRef,
         available,
+        onHand,
       });
+      const reservation = inventoryReservations.get(inventoryRef.path);
+      inventoryReservations.set(inventoryRef.path, {
+        ref: inventoryRef,
+        available,
+        onHand,
+        quantity: (reservation?.quantity || 0) + quantity,
+      });
+    }
+
+    for (const reservation of inventoryReservations.values()) {
+      if (reservation.quantity > reservation.available || reservation.quantity > reservation.onHand) {
+        throw new HttpsError('failed-precondition', 'One or more items are out of stock.');
+      }
     }
 
     const subtotalMinor = resolvedItems.reduce((total, item) => total + item.lineTotalMinor, 0);
@@ -124,7 +150,7 @@ exports.createOrder = onCall({ region: REGION }, async (request) => {
       coupon: null,
       shippingAddress: checkout.shippingAddress || {},
       recipient: checkout.recipient || {},
-      payment: checkout.payment || { method: 'COD' },
+      payment: { method: 'COD' },
       itemCount: resolvedItems.reduce((total, item) => total + item.quantity, 0),
       preview: {
         title: resolvedItems[0].name,
@@ -152,12 +178,15 @@ exports.createOrder = onCall({ region: REGION }, async (request) => {
         returnPolicy: item.returnPolicy,
         reviewStatus: 'NOT_ELIGIBLE',
       });
-      transaction.update(item.inventoryRef, {
-        onHand: item.available - item.quantity,
-        available: item.available - item.quantity,
+    });
+
+    for (const reservation of inventoryReservations.values()) {
+      transaction.update(reservation.ref, {
+        onHand: reservation.onHand - reservation.quantity,
+        available: reservation.available - reservation.quantity,
         updatedAt: now,
       });
-    });
+    }
 
     transaction.update(requestRef, {
       status: 'PROCESSED',

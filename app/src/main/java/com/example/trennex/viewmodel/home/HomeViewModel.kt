@@ -14,6 +14,7 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.collectLatest
+import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
@@ -83,8 +84,14 @@ class HomeViewModel : ViewModel() {
     private fun observeUserData() {
         viewModelScope.launch {
             combine(
-                userRepository.observeSavedAddresses(),
-                userRepository.observeSelectedAddressId(),
+                userRepository.observeSavedAddresses().catch {
+                    android.util.Log.w("HomeViewModel", "Address listener stopped", it)
+                    emit(emptyList())
+                },
+                userRepository.observeSelectedAddressId().catch {
+                    android.util.Log.w("HomeViewModel", "Selected-address listener stopped", it)
+                    emit(null)
+                },
                 MutableStateFlow(userRepository.getUserName())
             ) { addresses, selectedId, name ->
                 val selected = addresses.find { it.id == selectedId }
