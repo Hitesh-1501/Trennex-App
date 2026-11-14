@@ -20,6 +20,7 @@ import com.example.trennex.ui.main.ToolBarType
 import com.example.trennex.ui.profile.adapter.OrderAdapter
 import com.example.trennex.viewmodel.order.OrdersViewModel
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.flow.combine
 
 class OrdersFragment : Fragment(R.layout.fragment_orders) {
 
@@ -79,9 +80,11 @@ class OrdersFragment : Fragment(R.layout.fragment_orders) {
     private fun observeViewModel() {
         viewLifecycleOwner.lifecycleScope.launch {
             viewLifecycleOwner.repeatOnLifecycle(Lifecycle.State.STARTED) {
-                viewModel.orders.collect { orders ->
+                combine(viewModel.orders, viewModel.isLoading) { orders, loading ->
+                    orders to loading
+                }.collect { (orders, loading) ->
                     orderAdapter.submitList(orders)
-                    val isEmpty = orders.isEmpty() && !viewModel.isLoading.value
+                    val isEmpty = orders.isEmpty() && !loading
                     binding.layoutEmptyOrders.visibility = if (isEmpty) View.VISIBLE else View.GONE
                     binding.rvOrders.visibility = if (isEmpty) View.GONE else View.VISIBLE
                 }
