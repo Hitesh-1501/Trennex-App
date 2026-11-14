@@ -3,6 +3,7 @@ package com.example.trennex.repository.user
 import com.example.trennex.ui.profile.model.OrderModel
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.firestore.FieldValue
+import com.google.firebase.firestore.DocumentSnapshot
 import com.google.firebase.firestore.FirebaseFirestore
 import com.google.firebase.firestore.ListenerRegistration
 import com.google.firebase.firestore.Query
@@ -11,6 +12,7 @@ import com.google.firebase.functions.FirebaseFunctions
 import kotlinx.coroutines.channels.awaitClose
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.callbackFlow
+import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.tasks.await
 
 class UserRepository {
@@ -242,14 +244,55 @@ class UserRepository {
         return requestId
     }
 
-    fun observeOrders(): Flow<List<OrderModel>> = callbackFlow {
+    fun observeOrders(): Flow<List<OrderModel>> = combine(
+        observeCurrentOrders(), observeLegacyOrders()
+    ) { current, legacy ->
+        (current + legacy).sortedByDescending { it.orderDate.toDate().time }
+    }
+
+    private fun observeCurrentOrders(): Flow<List<OrderModel>> = callbackFlow {
         val uid = getUserId()
         if (uid == null) {
             trySend(emptyList())
             close()
             return@callbackFlow
         }
+        val listener = firestore.collection("orders")
+            .whereEqualTo("userId", uid)
+            .orderBy("placedAt", Query.Direction.DESCENDING)
+            .addSnapshotListener { snapshot, error ->
+                if (error != null) {
+                    close(error)
+                    return@addSnapshotListener
+                }
+                trySend(snapshot?.documents?.map { it.toCurrentOrder() } ?: emptyList())
+            }
+        awaitClose { listener.remove() }
+    }
 
+    private fun DocumentSnapshot.toCurrentOrder(): OrderModel {
+        val preview = get("preview") as? Map<*, *>
+        val itemCount = (getLong("itemCount") ?: 1L).toInt().coerceAtLeast(1)
+        return OrderModel(
+            id = id,
+            title = preview?.get("title") as? String ?: "Order",
+            description = if (itemCount > 1) "$itemCount items" else "",
+            imageUrl = preview?.get("imageUrl") as? String,
+            price = (getLong("totalMinor") ?: 0L).toDouble() / 100 / itemCount,
+            quantity = itemCount,
+            status = getString("status") ?: "CONFIRMED",
+            orderDate = getTimestamp("placedAt") ?: com.google.firebase.Timestamp.now(),
+            expectedDeliveryDate = getTimestamp("expectedDeliveryAt"),
+        )
+    }
+
+    private fun observeLegacyOrders(): Flow<List<OrderModel>> = callbackFlow {
+        val uid = getUserId()
+        if (uid == null) {
+            trySend(emptyList())
+            close()
+            return@callbackFlow
+        }
         val listener = firestore.collection("users")
             .document(uid)
             .collection("orders")
