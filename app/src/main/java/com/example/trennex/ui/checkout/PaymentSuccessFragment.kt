@@ -32,7 +32,6 @@ class PaymentSuccessFragment : Fragment(R.layout.fragment_payment_success) {
         (activity as? MainActivity)?.showToolBar(ToolBarType.NONE)
         
         observeCheckoutResult()
-        viewModel.placeOrder()
     }
 
     private fun observeCheckoutResult() {
