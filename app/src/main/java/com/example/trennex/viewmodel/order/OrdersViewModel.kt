@@ -12,6 +12,8 @@ import kotlinx.coroutines.launch
 
 class OrdersViewModel : ViewModel() {
     private val userRepository = UserRepository()
+    private var allOrders: List<OrderModel> = emptyList()
+    private var searchQuery: String = ""
 
     private val _orders = MutableStateFlow<List<OrderModel>>(emptyList())
     val orders: StateFlow<List<OrderModel>> = _orders.asStateFlow()
@@ -34,13 +36,23 @@ class OrdersViewModel : ViewModel() {
                     _isLoading.value = false
                 }
                 .collect { orderList ->
-                    _orders.value = orderList
+                    allOrders = orderList
+                    applyFilter()
                     _isLoading.value = false
                 }
         }
     }
     
     fun filterOrders(query: String) {
-        // Implement filtering if needed
+        searchQuery = query.trim()
+        applyFilter()
+    }
+
+    private fun applyFilter() {
+        _orders.value = if (searchQuery.isBlank()) allOrders else allOrders.filter { order ->
+            order.id.contains(searchQuery, ignoreCase = true) ||
+                order.title.contains(searchQuery, ignoreCase = true) ||
+                order.status.contains(searchQuery, ignoreCase = true)
+        }
     }
 }

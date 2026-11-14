@@ -4,6 +4,7 @@ import android.os.Bundle
 import android.transition.AutoTransition
 import android.transition.TransitionManager
 import android.view.View
+import android.view.ViewGroup
 import android.widget.Toast
 import androidx.core.view.isVisible
 import androidx.fragment.app.Fragment
@@ -37,6 +38,7 @@ class PaymentFragment : Fragment(R.layout.fragment_payment) {
         (activity as? MainActivity)?.toggleCartProgress(true)
         (activity as? MainActivity)?.updateCartStep(3)
 
+        viewModel.resetCheckoutState()
         setupListeners()
         observeViewModel()
     }
@@ -46,14 +48,17 @@ class PaymentFragment : Fragment(R.layout.fragment_payment) {
             toggleAmountDetailsCard()
         }
 
-        binding.optionSaved.setOnClickListener { toggleAccordion(0) }
-        binding.optionUpi.setOnClickListener { toggleAccordion(1) }
-        binding.optionCard.setOnClickListener { toggleAccordion(2) }
-        binding.optionEmi.setOnClickListener { toggleAccordion(3) }
-        binding.optionNetBanking.setOnClickListener { toggleAccordion(4) }
+        val paymentContainer = binding.optionCod.parent as ViewGroup
+        listOf(binding.optionSaved, binding.optionUpi, binding.optionCard,
+            binding.optionEmi, binding.optionNetBanking).forEach { option ->
+            val index = paymentContainer.indexOfChild(option)
+            for (offset in 0..2) paymentContainer.getChildAt(index + offset)?.visibility = View.GONE
+        }
         binding.optionCod.setOnClickListener { toggleAccordion(5) }
-        
-        setupRadioGroupListeners()
+        binding.root.findViewById<View>(R.id.btnPlaceOrderCod)?.setOnClickListener {
+            viewModel.placeOrder()
+        }
+        toggleAccordion(5)
     }
 
     private fun setupRadioGroupListeners() {
@@ -218,6 +223,19 @@ class PaymentFragment : Fragment(R.layout.fragment_payment) {
             viewLifecycleOwner.repeatOnLifecycle(Lifecycle.State.STARTED) {
                 viewModel.uiState.collect { state ->
                     render(state)
+                }
+            }
+        }
+        viewLifecycleOwner.lifecycleScope.launch {
+            viewLifecycleOwner.repeatOnLifecycle(Lifecycle.State.STARTED) {
+                viewModel.checkoutState.collect { state ->
+                    binding.root.findViewById<View>(R.id.btnPlaceOrderCod)?.isEnabled = !state.isSubmitting
+                    if (state.isSuccess && findNavController().currentDestination?.id == R.id.paymentFragment) {
+                        findNavController().navigate(R.id.action_paymentFragment_to_paymentSuccessFragment)
+                    } else if (state.errorMessage != null) {
+                        Toast.makeText(requireContext(), state.errorMessage, Toast.LENGTH_LONG).show()
+                        viewModel.resetCheckoutState()
+                    }
                 }
             }
         }
