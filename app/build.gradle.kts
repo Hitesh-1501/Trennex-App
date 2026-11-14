@@ -49,16 +49,19 @@ android {
 
     buildTypes {
         debug {
+            buildConfigField("boolean", "USE_OWN_CATALOG_ONLY", "false")
             buildConfigField("boolean", "USE_FIREBASE_EMULATORS", useFirebaseEmulators.toString())
             buildConfigField("boolean", "USE_FIREBASE_AUTH_EMULATOR", useFirebaseAuthEmulator.toString())
             buildConfigField("String", "FIREBASE_EMULATOR_HOST", "\"$firebaseEmulatorHost\"")
         }
         create("staging") {
             initWith(getByName("debug"))
+            buildConfigField("boolean", "USE_OWN_CATALOG_ONLY", "true")
             matchingFallbacks += listOf("debug")
             versionNameSuffix = "-staging"
         }
         release {
+            buildConfigField("boolean", "USE_OWN_CATALOG_ONLY", "false")
             isMinifyEnabled = false
             buildConfigField("boolean", "USE_FIREBASE_EMULATORS", "false")
             buildConfigField("boolean", "USE_FIREBASE_AUTH_EMULATOR", "false")
