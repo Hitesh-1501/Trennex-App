@@ -1,5 +1,6 @@
 package com.example.trennex.repository.product
 
+import com.example.trennex.BuildConfig
 import com.example.trennex.data.model.CategoryApiResponse
 import com.example.trennex.data.model.ProductResponse
 import com.example.trennex.data.model.catalog.CatalogCategory
@@ -24,12 +25,15 @@ class ProductRepository(
                     .sortedBy(CatalogProduct::sortOrder)
                     .window(limit, skip)
                     .map { it.toProductResponse() }
+            } else if (BuildConfig.USE_OWN_CATALOG_ONLY) {
+                emptyList()
             } else {
                 loadLegacyProducts().ifEmpty {
                     RetrofitInstance.api.getProducts(limit, skip).products
                 }
             }
-        } catch (_: Exception) {
+        } catch (error: Exception) {
+            if (BuildConfig.USE_OWN_CATALOG_ONLY) throw error
             RetrofitInstance.api.getProducts(limit, skip).products
         }
     }
@@ -53,8 +57,12 @@ class ProductRepository(
                 }
             }
 
+            if (BuildConfig.USE_OWN_CATALOG_ONLY) {
+                throw NoSuchElementException("Product is unavailable")
+            }
             loadLegacyProductDetail(id) ?: RetrofitInstance.api.getProductDetail(id)
-        } catch (_: Exception) {
+        } catch (error: Exception) {
+            if (BuildConfig.USE_OWN_CATALOG_ONLY) throw error
             RetrofitInstance.api.getProductDetail(id)
         }
     }
@@ -71,10 +79,13 @@ class ProductRepository(
 
             if (catalogCategories.isNotEmpty()) {
                 catalogCategories.map { it.toCategoryApiResponse() }
+            } else if (BuildConfig.USE_OWN_CATALOG_ONLY) {
+                emptyList()
             } else {
                 loadLegacyCategories().ifEmpty { RetrofitInstance.api.getCategories() }
             }
-        } catch (_: Exception) {
+        } catch (error: Exception) {
+            if (BuildConfig.USE_OWN_CATALOG_ONLY) throw error
             RetrofitInstance.api.getCategories()
         }
     }
@@ -92,12 +103,15 @@ class ProductRepository(
 
             if (catalogProducts.isNotEmpty()) {
                 catalogProducts.map { it.toProductResponse() }
+            } else if (BuildConfig.USE_OWN_CATALOG_ONLY) {
+                emptyList()
             } else {
                 loadLegacyProductsByCategory(slug).ifEmpty {
                     RetrofitInstance.api.getProductByCategory(slug).products
                 }
             }
-        } catch (_: Exception) {
+        } catch (error: Exception) {
+            if (BuildConfig.USE_OWN_CATALOG_ONLY) throw error
             RetrofitInstance.api.getProductByCategory(slug).products
         }
     }
@@ -115,6 +129,8 @@ class ProductRepository(
                     }
                     .sortedBy(CatalogProduct::sortOrder)
                     .map { it.toProductResponse() }
+            } else if (BuildConfig.USE_OWN_CATALOG_ONLY) {
+                emptyList()
             } else {
                 val legacyResults = loadLegacyProducts().filter { product ->
                     product.title.contains(query, ignoreCase = true) ||
@@ -122,7 +138,8 @@ class ProductRepository(
                 }
                 legacyResults.ifEmpty { RetrofitInstance.api.searchProducts(query).products }
             }
-        } catch (_: Exception) {
+        } catch (error: Exception) {
+            if (BuildConfig.USE_OWN_CATALOG_ONLY) throw error
             RetrofitInstance.api.searchProducts(query).products
         }
     }
