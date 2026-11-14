@@ -9,6 +9,7 @@ import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.collectLatest
+import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
@@ -30,8 +31,14 @@ class MainViewModel : ViewModel() {
     private fun observeAddress() {
         viewModelScope.launch {
             combine(
-                userRepository.observeSavedAddresses(),
-                userRepository.observeSelectedAddressId()
+                userRepository.observeSavedAddresses().catch {
+                    android.util.Log.w("MainViewModel", "Address listener stopped", it)
+                    emit(emptyList())
+                },
+                userRepository.observeSelectedAddressId().catch {
+                    android.util.Log.w("MainViewModel", "Selected-address listener stopped", it)
+                    emit(null)
+                }
             ) { addresses, selectedId ->
                 val selected = addresses.find { it.id == selectedId } ?: addresses.firstOrNull()
                 selected?.displayAddress

@@ -16,7 +16,10 @@ async function main() {
 
   const productRef = db.doc('products/test-product');
   const variantRef = productRef.collection('variants').doc('test-variant');
-  await productRef.set({ status: 'ACTIVE', legacyId: 999, name: 'Test Product' });
+  await productRef.set({
+    status: 'ACTIVE', legacyId: 999, name: 'Test Product',
+    thumbnail: { url: 'https://example.test/product.png' },
+  });
   await variantRef.set({
     active: true,
     sku: 'TEST-SKU',
@@ -78,6 +81,9 @@ async function main() {
   const inventory = await db.doc('inventory/test-variant').get();
   const request = await requestRef.get();
   if (order.data().totalMinor !== 2000) throw new Error('Unexpected order total');
+  if (order.data().preview.imageUrl !== 'https://example.test/product.png') {
+    throw new Error('Order preview image was not mapped from the catalog thumbnail');
+  }
   if (inventory.data().available !== 3) throw new Error('Inventory was not decremented');
   if (request.data().status !== 'PROCESSED') throw new Error('Request was not marked processed');
 
@@ -92,8 +98,8 @@ async function main() {
     status: 'PENDING',
     items: [{ legacyId: 999, quantity: 0 }],
     itemCount: 0,
-    shippingAddress: {},
-    recipient: {},
+    shippingAddress: { address: 'Test Street' },
+    recipient: { name: 'Test User' },
     payment: { method: 'COD' },
     createdAt: Timestamp.now(),
   });
@@ -108,8 +114,8 @@ async function main() {
     status: 'PENDING',
     items: [{ legacyId: 999, quantity: 4 }],
     itemCount: 4,
-    shippingAddress: {},
-    recipient: {},
+    shippingAddress: { address: 'Test Street' },
+    recipient: { name: 'Test User' },
     payment: { method: 'COD' },
     createdAt: Timestamp.now(),
   });
@@ -129,8 +135,8 @@ async function main() {
     status: 'PENDING',
     items: [{ legacyId: 999, quantity: 1, priceMinor: 1 }],
     itemCount: 1,
-    shippingAddress: {},
-    recipient: {},
+    shippingAddress: { address: 'Test Street' },
+    recipient: { name: 'Test User' },
     payment: { method: 'COD' },
     createdAt: Timestamp.now(),
   });
@@ -138,6 +144,32 @@ async function main() {
   if (!tampered.result?.orderId) throw new Error(`Tampered request failed: ${JSON.stringify(tampered)}`);
   const tamperedOrder = await db.doc(`orders/${tampered.result.orderId}`).get();
   if (tamperedOrder.data().totalMinor !== 1000) throw new Error('Client price was trusted');
+
+  const unsupportedPaymentRef = db.doc(`users/${user.uid}/orderRequests/unsupported-payment`);
+  await unsupportedPaymentRef.set({
+    status: 'PENDING',
+    items: [{ legacyId: 999, quantity: 1 }],
+    shippingAddress: { address: 'Test Street' },
+    recipient: { name: 'Test User' },
+    payment: { method: 'UPI' },
+  });
+  const unsupportedPayment = await callCreateOrder('unsupported-payment');
+  if (unsupportedPayment.error?.status !== 'INVALID_ARGUMENT') {
+    throw new Error(`Unsupported payment was accepted: ${JSON.stringify(unsupportedPayment)}`);
+  }
+
+  const duplicateVariantRef = db.doc(`users/${user.uid}/orderRequests/duplicate-variant`);
+  await duplicateVariantRef.set({
+    status: 'PENDING',
+    items: [{ legacyId: 999, quantity: 2 }, { legacyId: 999, quantity: 2 }],
+    shippingAddress: { address: 'Test Street' },
+    recipient: { name: 'Test User' },
+    payment: { method: 'COD' },
+  });
+  const duplicateVariant = await callCreateOrder('duplicate-variant');
+  if (duplicateVariant.error?.status !== 'FAILED_PRECONDITION') {
+    throw new Error(`Duplicate variants exceeded stock: ${JSON.stringify(duplicateVariant)}`);
+  }
 
   console.log(`PASS createOrder success and rejection cases: ${functionBody.result.orderNumber}`);
 }

@@ -27,18 +27,27 @@ class OrderAdapter(
                 Glide.with(binding.ivProduct).load(order.imageUrl).placeholder(R.drawable.placeholder).into(binding.ivProduct)
             } else if (order.imageRes != null) {
                 binding.ivProduct.setImageResource(order.imageRes)
+            } else {
+                binding.ivProduct.setImageResource(R.drawable.placeholder)
             }
             
             binding.tvTitle.text = order.title
             
             if (order.status == "DELIVERED") {
                 binding.tvStatus.text = "Delivered on"
-                binding.tvDate.text = dateFormat.format(order.expectedDeliveryDate.toDate())
-                binding.layoutRating.visibility = View.VISIBLE
-            } else {
+                binding.tvDate.text = dateFormat.format((order.expectedDeliveryDate ?: order.orderDate).toDate())
+            } else if (order.expectedDeliveryDate != null) {
                 binding.tvStatus.text = "Your order is expected to be delivered by"
                 binding.tvDate.text = dateFormat.format(order.expectedDeliveryDate.toDate())
                 binding.layoutRating.visibility = View.GONE
+            } else {
+                binding.tvStatus.text = order.status.replace('_', ' ').lowercase()
+                    .replaceFirstChar { it.uppercase() }
+                binding.tvDate.text = dateFormat.format(order.orderDate.toDate())
+                binding.layoutRating.visibility = View.GONE
+            }
+            if (order.status == "DELIVERED") {
+                binding.layoutRating.visibility = View.VISIBLE
             }
 
             binding.root.setOnClickListener {
