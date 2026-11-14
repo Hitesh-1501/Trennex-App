@@ -54,16 +54,19 @@ class SearchFragment : Fragment(R.layout.fragment_search){
         super.onViewCreated(view, savedInstanceState)
         viewModel.initDao(AppDatabase.getInstance(requireContext()).recentSearchDao())
         setupAdapters()
-        setupToolbar()
         setupRecyclerViews()
-        setupListeners()
         observeViewModel()
         setupWindowInsets()
-        
-        // Focus search input and show keyboard
-        searchInput?.requestFocus()
-        val imm = requireContext().getSystemService(Context.INPUT_METHOD_SERVICE) as InputMethodManager
-        imm.showSoftInput(searchInput, InputMethodManager.SHOW_IMPLICIT)
+        binding.root.post {
+            if (_binding == null || !isAdded) return@post
+            setupToolbar()
+            setupListeners()
+            searchInput?.let { input ->
+                input.requestFocus()
+                val imm = requireContext().getSystemService(Context.INPUT_METHOD_SERVICE) as InputMethodManager
+                imm.showSoftInput(input, InputMethodManager.SHOW_IMPLICIT)
+            }
+        }
     }
 
     private fun setupWindowInsets() {

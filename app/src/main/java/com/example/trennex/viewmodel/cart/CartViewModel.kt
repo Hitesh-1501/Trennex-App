@@ -6,10 +6,12 @@ import com.example.trennex.repository.user.AddressEntity
 import com.example.trennex.repository.user.UserRepository
 import com.example.trennex.ui.cart.CartUiState
 import com.example.trennex.utils.cart.CartStore
+import com.google.firebase.functions.FirebaseFunctionsException
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
@@ -27,8 +29,14 @@ class CartViewModel: ViewModel() {
 
     val uiState: StateFlow<CartUiState> = combine(
         CartStore.items,
-        userRepository.observeSavedAddresses(),
-        userRepository.observeSelectedAddressId(),
+        userRepository.observeSavedAddresses().catch {
+            android.util.Log.w("CartViewModel", "Address listener stopped", it)
+            emit(emptyList())
+        },
+        userRepository.observeSelectedAddressId().catch {
+            android.util.Log.w("CartViewModel", "Selected-address listener stopped", it)
+            emit(null)
+        },
         flow { emit(userRepository.getUserDetails()) }
     ) { items, addresses, selectedId, userDetails ->
         val selected = addresses.find { it.id == selectedId }
@@ -51,6 +59,10 @@ class CartViewModel: ViewModel() {
     fun removeItem(itemId: Int) = CartStore.removeItem(itemId)
 
     fun deleteSelectedItems() = CartStore.deleteSelectedItems()
+
+    fun resetCheckoutState() {
+        if (!_checkoutState.value.isSubmitting) _checkoutState.value = CheckoutState()
+    }
 
     fun placeOrder() {
         if (_checkoutState.value.isSubmitting || _checkoutState.value.isSuccess) return
@@ -93,7 +105,11 @@ class CartViewModel: ViewModel() {
             } catch (e: Exception) {
                 android.util.Log.e("CartViewModel", "order request failed; cart was preserved", e)
                 _checkoutState.value = CheckoutState(
-                    errorMessage = e.message?.takeIf { it.isNotBlank() }
+                    errorMessage = (if (e is FirebaseFunctionsException &&
+                        e.code == FirebaseFunctionsException.Code.NOT_FOUND
+                    ) {
+                        "Order service is unavailable. Please try again later."
+                    } else e.message)?.takeIf { it.isNotBlank() }
                         ?: "We could not place your order. Please try again.",
                 )
             }

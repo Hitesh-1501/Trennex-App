@@ -64,7 +64,7 @@ class AddNewAddressFragment : Fragment(R.layout.fragment_add_new_address), OnMap
     private var bottomSheetDialog: BottomSheetDialog? = null
     private lateinit var googleMap: GoogleMap
     private lateinit var fusedLocationClient: FusedLocationProviderClient
-    private lateinit var placesClient: PlacesClient
+    private var placesClient: PlacesClient? = null
     private lateinit var searchSuggestionAdapter: SearchSuggestionAdapter
     private var autoCompleteSessionToken: AutocompleteSessionToken? = null
 
@@ -115,7 +115,9 @@ class AddNewAddressFragment : Fragment(R.layout.fragment_add_new_address), OnMap
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
         fusedLocationClient = LocationServices.getFusedLocationProviderClient(requireContext())
-        placesClient = Places.createClient(requireContext())
+        placesClient = runCatching { Places.createClient(requireContext()) }
+            .onFailure { Log.w("AddNewAddress", "Places search is unavailable", it) }
+            .getOrNull()
         
         searchedLat = args.latitude.toDoubleOrNull() ?: 0.0
         searchedLng = args.longitude.toDoubleOrNull() ?: 0.0
@@ -359,12 +361,14 @@ class AddNewAddressFragment : Fragment(R.layout.fragment_add_new_address), OnMap
     }
 
     private fun searchPlaces(query: String){
+        val client = placesClient ?: return
         val request = FindAutocompletePredictionsRequest.builder()
             .setQuery(query)
             .setSessionToken(autoCompleteSessionToken)
             .build()
 
-        placesClient.findAutocompletePredictions(request).addOnSuccessListener { response ->
+        client.findAutocompletePredictions(request).addOnSuccessListener { response ->
+            if (_binding == null) return@addOnSuccessListener
             val predictions = response.autocompletePredictions
             if (predictions.isNotEmpty()) {
                 binding.searchSuggestionsRv.visibility = View.VISIBLE
@@ -372,12 +376,14 @@ class AddNewAddressFragment : Fragment(R.layout.fragment_add_new_address), OnMap
             }else{
                 binding.searchSuggestionsRv.visibility = View.GONE
             }
-        }.addOnFailureListener { binding.searchSuggestionsRv.visibility = View.GONE }
+        }.addOnFailureListener { if (_binding != null) binding.searchSuggestionsRv.visibility = View.GONE }
     }
 
     private fun fetchPlaceAndMoveMap(placeId: String){
+        val client = placesClient ?: return
         val fields = listOf(Place.Field.LAT_LNG, Place.Field.NAME, Place.Field.FORMATTED_ADDRESS)
-        placesClient.fetchPlace(FetchPlaceRequest.newInstance(placeId, fields)).addOnSuccessListener { response ->
+        client.fetchPlace(FetchPlaceRequest.newInstance(placeId, fields)).addOnSuccessListener { response ->
+            if (_binding == null || !::googleMap.isInitialized) return@addOnSuccessListener
             val place = response.place
             place.latLng?.let { latLng -> googleMap.animateCamera(CameraUpdateFactory.newLatLngZoom(latLng, 17f)) }
             isSelectingPlace = true

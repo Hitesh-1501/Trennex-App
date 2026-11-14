@@ -4,6 +4,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.trennex.repository.user.UserRepository
 import com.example.trennex.utils.cart.CartStore
+import com.google.firebase.auth.FirebaseAuth
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
@@ -14,9 +15,13 @@ import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.Job
 
 class MainViewModel : ViewModel() {
     private val userRepository = UserRepository()
+    private val auth = FirebaseAuth.getInstance()
+    private var addressJob: Job? = null
+    private val authListener = FirebaseAuth.AuthStateListener { observeAddress() }
 
     val cartCount: StateFlow<Int> = CartStore.totalQuantity
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), 0)
@@ -25,11 +30,13 @@ class MainViewModel : ViewModel() {
     val selectedAddress: StateFlow<String?> = _selectedAddress.asStateFlow()
 
     init {
-        observeAddress()
+        auth.addAuthStateListener(authListener)
     }
 
     private fun observeAddress() {
-        viewModelScope.launch {
+        addressJob?.cancel()
+        _selectedAddress.value = null
+        addressJob = viewModelScope.launch {
             combine(
                 userRepository.observeSavedAddresses().catch {
                     android.util.Log.w("MainViewModel", "Address listener stopped", it)
@@ -50,5 +57,10 @@ class MainViewModel : ViewModel() {
     
     fun updateSelectedAddress(address: String?) {
         _selectedAddress.value = address
+    }
+
+    override fun onCleared() {
+        auth.removeAuthStateListener(authListener)
+        super.onCleared()
     }
 }
