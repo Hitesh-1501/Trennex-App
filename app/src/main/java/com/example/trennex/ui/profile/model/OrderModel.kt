@@ -13,5 +13,10 @@ data class OrderModel(
     val quantity: Int = 1,
     val status: String = "PENDING", // PENDING, DELIVERED
     val orderDate: Timestamp = Timestamp.now(),
-    val expectedDeliveryDate: Timestamp? = null
+    val expectedDeliveryDate: Timestamp? = null,
+    val listingPrice: Double = 0.0,
+    val paymentMethod: String = "",
+    val deliveryAddress: String = "",
+    val recipientName: String = "",
+    val recipientPhone: String = ""
 ) : Serializable

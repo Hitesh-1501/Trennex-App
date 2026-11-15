@@ -37,7 +37,12 @@ class OrdersFragment : Fragment(R.layout.fragment_orders) {
                 imageUrl = order.imageUrl,
                 price = order.price.toFloat(),
                 quantity = order.quantity,
-                status = order.status
+                status = order.status,
+                listingPrice = order.listingPrice.toFloat(),
+                paymentMethod = order.paymentMethod,
+                deliveryAddress = order.deliveryAddress,
+                recipientName = order.recipientName,
+                recipientPhone = order.recipientPhone
             )
             findNavController().navigate(action)
         }
