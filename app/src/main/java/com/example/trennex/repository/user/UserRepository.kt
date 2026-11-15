@@ -272,6 +272,9 @@ class UserRepository {
 
     private fun DocumentSnapshot.toCurrentOrder(): OrderModel {
         val preview = get("preview") as? Map<*, *>
+        val payment = get("payment") as? Map<*, *>
+        val shippingAddress = get("shippingAddress") as? Map<*, *>
+        val recipient = get("recipient") as? Map<*, *>
         val itemCount = (getLong("itemCount") ?: 1L).toInt().coerceAtLeast(1)
         return OrderModel(
             id = id,
@@ -283,6 +286,14 @@ class UserRepository {
             status = getString("status") ?: "CONFIRMED",
             orderDate = getTimestamp("placedAt") ?: com.google.firebase.Timestamp.now(),
             expectedDeliveryDate = getTimestamp("expectedDeliveryAt"),
+            listingPrice = ((getLong("subtotalMinor") ?: 0L) + (getLong("discountMinor") ?: 0L)).toDouble() / 100,
+            paymentMethod = payment?.get("method") as? String ?: "",
+            deliveryAddress = listOfNotNull(
+                (shippingAddress?.get("flatNo") as? String)?.takeIf { it.isNotBlank() },
+                (shippingAddress?.get("address") as? String)?.takeIf { it.isNotBlank() },
+            ).joinToString(", "),
+            recipientName = recipient?.get("name") as? String ?: "",
+            recipientPhone = recipient?.get("phone") as? String ?: "",
         )
     }
 
