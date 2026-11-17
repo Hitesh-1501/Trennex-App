@@ -4,6 +4,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.trennex.repository.user.AddressEntity
 import com.example.trennex.repository.user.UserRepository
+import com.example.trennex.data.local.AccountScope
 import com.example.trennex.ui.cart.CartUiState
 import com.example.trennex.utils.cart.CartStore
 import com.google.firebase.functions.FirebaseFunctionsException
@@ -73,6 +74,7 @@ class CartViewModel: ViewModel() {
             return
         }
 
+        val checkoutOwner = AccountScope.currentOwner()
         viewModelScope.launch {
             _checkoutState.value = CheckoutState(isSubmitting = true)
             try {
@@ -100,7 +102,7 @@ class CartViewModel: ViewModel() {
                     paymentMethod = "COD",
                 )
                 android.util.Log.d("CartViewModel", "order request accepted: $requestId")
-                CartStore.deleteSelectedItems()
+                CartStore.deleteSelectedItems(checkoutOwner)
                 _checkoutState.value = CheckoutState(isSuccess = true)
             } catch (e: Exception) {
                 android.util.Log.e("CartViewModel", "order request failed; cart was preserved", e)

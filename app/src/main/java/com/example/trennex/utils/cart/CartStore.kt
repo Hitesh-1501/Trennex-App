@@ -1,6 +1,7 @@
 package com.example.trennex.utils.cart
 
 import android.content.Context
+import com.example.trennex.data.local.AccountScope
 import com.example.trennex.data.local.cart.AppDatabase
 import com.example.trennex.repository.cart.CartRepository
 import com.example.trennex.ui.cart.model.CartItemModel
@@ -10,6 +11,7 @@ import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.launch
 
 object CartStore {
@@ -30,7 +32,9 @@ object CartStore {
                 cartRepository =
                     CartRepository(AppDatabase.Companion.getInstance(context).cartDao())
                 scope.launch {
-                    cartRepository?.fetchAndSyncRemoteCart()
+                    AccountScope.owner.collectLatest { ownerId ->
+                        cartRepository?.fetchAndSyncRemoteCart(ownerId)
+                    }
                 }
             }
         }
@@ -45,36 +49,45 @@ object CartStore {
             .distinctUntilChanged()
 
     fun addItem(item: CartItemModel){
+        val ownerId = AccountScope.currentOwner()
         scope.launch {
-            repo().addItem(item)
+            repo().addItem(ownerId, item)
         }
     }
 
 
     fun toggleSelection(itemId: Int , selected: Boolean){
+        val ownerId = AccountScope.currentOwner()
         scope.launch {
-            repo().toggleSelection(itemId,selected)
+            repo().toggleSelection(ownerId, itemId,selected)
         }
     }
     fun toggleSelectAll(selected: Boolean){
+       val ownerId = AccountScope.currentOwner()
        scope.launch {
-           repo().toggleAllSelection(selected)
+           repo().toggleAllSelection(ownerId, selected)
        }
     }
     fun updateQuantity(itemId: Int, quantity: Int) {
+       val ownerId = AccountScope.currentOwner()
        scope.launch {
-           repo().updateQuantity(itemId,quantity)
+           repo().updateQuantity(ownerId, itemId,quantity)
        }
     }
     fun removeItem(itemId: Int){
+        val ownerId = AccountScope.currentOwner()
         scope.launch {
-            repo().removeItem(itemId)
+            repo().removeItem(ownerId, itemId)
         }
     }
 
     fun deleteSelectedItems(){
+        deleteSelectedItems(AccountScope.currentOwner())
+    }
+
+    fun deleteSelectedItems(ownerId: String){
         scope.launch {
-            repo().deleteSelectedItems()
+            repo().deleteSelectedItems(ownerId)
         }
     }
 }
