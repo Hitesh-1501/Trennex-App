@@ -53,6 +53,9 @@ class LoginFragment : Fragment(R.layout.fragment_login) {
                 viewModel.sendOtp(hostActivity,binding.etPhone.text.toString())
             }
         }
+        binding.skipLogin.setOnClickListener {
+            findNavController().navigate(R.id.action_loginFragment_to_homeFragment)
+        }
 
         viewLifecycleOwner.lifecycleScope.launch {
             viewLifecycleOwner.repeatOnLifecycle(Lifecycle.State.STARTED) {
