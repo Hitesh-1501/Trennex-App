@@ -1,6 +1,7 @@
 package com.example.trennex.repository.wishlist
 
 import android.util.Log
+import com.example.trennex.data.local.AccountScope
 import com.example.trennex.data.local.wihslist.WishlistDao
 import com.example.trennex.data.local.wihslist.WishlistItemEntity
 import com.example.trennex.repository.product.CatalogItemResolver
@@ -9,7 +10,10 @@ import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.firestore.FieldValue
 import com.google.firebase.firestore.FirebaseFirestore
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.flatMapLatest
 import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.flow.onStart
+import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.tasks.await
 
 class WishlistRepository(
@@ -19,14 +23,15 @@ class WishlistRepository(
 ) {
     private val catalogResolver = CatalogItemResolver(firestore)
 
-    private fun getUserId(): String? = auth.currentUser?.uid
-
-    fun observeItems(): Flow<List<WishlistItemsModel>> = dao.observeWishlistItems().map { entities ->
-        entities.map { it.toModel() }
+    @OptIn(ExperimentalCoroutinesApi::class)
+    fun observeItems(): Flow<List<WishlistItemsModel>> = AccountScope.owner.flatMapLatest { ownerId ->
+        dao.observeWishlistItems(ownerId).map { entities -> entities.map { it.toModel() } }
+            .onStart { emit(emptyList()) }
     }
 
-    suspend fun fetchAndSyncRemoteWishlist() {
-        val uid = getUserId() ?: return
+    suspend fun fetchAndSyncRemoteWishlist(ownerId: String) {
+        val uid = AccountScope.uid(ownerId) ?: return
+        if (auth.currentUser?.uid != uid) return
         try {
             val newItems = runCatching {
                 firestore.userCollection(uid, NEW_WISHLIST_COLLECTION)
@@ -37,7 +42,7 @@ class WishlistRepository(
             }.getOrDefault(emptyList())
 
             if (newItems.isNotEmpty()) {
-                newItems.forEach { dao.upsert(it.toEntity()) }
+                newItems.forEach { dao.upsert(it.toEntity(ownerId)) }
                 return
             }
 
@@ -52,22 +57,23 @@ class WishlistRepository(
             }.getOrDefault(emptyList())
 
             for (item in legacyItems) {
-                dao.upsert(item.toEntity())
-                syncItemToFirestore(item)
+                dao.upsert(item.toEntity(ownerId))
+                syncItemToFirestore(ownerId, item)
             }
         } catch (exception: Exception) {
             Log.e(TAG, "Failed to sync remote wishlist", exception)
         }
     }
 
-    suspend fun addOrUpdate(item: WishlistItemsModel) {
-        dao.upsert(item.toEntity())
-        syncItemToFirestore(item)
+    suspend fun addOrUpdate(ownerId: String, item: WishlistItemsModel) {
+        dao.upsert(item.toEntity(ownerId))
+        syncItemToFirestore(ownerId, item)
     }
 
-    suspend fun removeItem(itemId: Int) {
-        dao.removeItem(itemId)
-        val uid = getUserId() ?: return
+    suspend fun removeItem(ownerId: String, itemId: Int) {
+        dao.removeItem(ownerId, itemId)
+        val uid = AccountScope.uid(ownerId) ?: return
+        if (auth.currentUser?.uid != uid) return
         runCatching {
             catalogResolver.resolveLegacyId(itemId)?.let { reference ->
                 firestore.userCollection(uid, NEW_WISHLIST_COLLECTION)
@@ -88,8 +94,9 @@ class WishlistRepository(
         }
     }
 
-    private suspend fun syncItemToFirestore(item: WishlistItemsModel) {
-        val uid = getUserId() ?: return
+    private suspend fun syncItemToFirestore(ownerId: String, item: WishlistItemsModel) {
+        val uid = AccountScope.uid(ownerId) ?: return
+        if (auth.currentUser?.uid != uid) return
         try {
             val reference = catalogResolver.resolveLegacyId(item.id)
             if (reference != null) {
@@ -163,7 +170,8 @@ class WishlistRepository(
         deliveryDetails = deliveryDetails,
     )
 
-    private fun WishlistItemsModel.toEntity() = WishlistItemEntity(
+    private fun WishlistItemsModel.toEntity(ownerId: String) = WishlistItemEntity(
+        ownerId = ownerId,
         id = id,
         imageUrl = imageUrl,
         title = title,

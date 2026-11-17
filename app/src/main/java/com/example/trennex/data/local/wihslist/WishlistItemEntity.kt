@@ -1,11 +1,10 @@
 package com.example.trennex.data.local.wihslist
 
 import androidx.room.Entity
-import androidx.room.PrimaryKey
 
-@Entity(tableName = "wishlist_items")
+@Entity(tableName = "wishlist_items", primaryKeys = ["ownerId", "id"])
 data class WishlistItemEntity(
-    @PrimaryKey
+    val ownerId: String,
     val id: Int,
     val imageUrl: String,
     val title: String,
