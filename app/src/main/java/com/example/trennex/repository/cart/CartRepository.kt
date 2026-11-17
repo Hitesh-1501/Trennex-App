@@ -1,6 +1,7 @@
 package com.example.trennex.repository.cart
 
 import android.util.Log
+import com.example.trennex.data.local.AccountScope
 import com.example.trennex.data.local.cart.CartDao
 import com.example.trennex.data.local.cart.CartItemEntity
 import com.example.trennex.repository.product.CatalogItemResolver
@@ -9,7 +10,10 @@ import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.firestore.FieldValue
 import com.google.firebase.firestore.FirebaseFirestore
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.flatMapLatest
 import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.flow.onStart
+import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.tasks.await
 
 class CartRepository(
@@ -19,14 +23,15 @@ class CartRepository(
 ) {
     private val catalogResolver = CatalogItemResolver(firestore)
 
-    private fun getUserId(): String? = auth.currentUser?.uid
-
-    fun observeItems(): Flow<List<CartItemModel>> = dao.observeCartItems().map { entities ->
-        entities.map { it.toModel() }
+    @OptIn(ExperimentalCoroutinesApi::class)
+    fun observeItems(): Flow<List<CartItemModel>> = AccountScope.owner.flatMapLatest { ownerId ->
+        dao.observeCartItems(ownerId).map { entities -> entities.map { it.toModel() } }
+            .onStart { emit(emptyList()) }
     }
 
-    suspend fun fetchAndSyncRemoteCart() {
-        val uid = getUserId() ?: return
+    suspend fun fetchAndSyncRemoteCart(ownerId: String) {
+        val uid = AccountScope.uid(ownerId) ?: return
+        if (auth.currentUser?.uid != uid) return
         try {
             val newItems = runCatching {
                 firestore.userCollection(uid, NEW_CART_COLLECTION)
@@ -37,7 +42,7 @@ class CartRepository(
             }.getOrDefault(emptyList())
 
             if (newItems.isNotEmpty()) {
-                newItems.forEach { dao.upsert(it.toEntity()) }
+                newItems.forEach { dao.upsert(it.toEntity(ownerId)) }
                 return
             }
 
@@ -53,17 +58,17 @@ class CartRepository(
 
             for (item in legacyItems) {
                 val migrated = item.copy(quantity = item.quantity.coerceIn(1, MAX_QUANTITY))
-                dao.upsert(migrated.toEntity())
-                syncItemToFirestore(migrated)
+                dao.upsert(migrated.toEntity(ownerId))
+                syncItemToFirestore(ownerId, migrated)
             }
         } catch (exception: Exception) {
             Log.e(TAG, "Failed to sync remote cart", exception)
         }
     }
 
-    suspend fun addItem(item: CartItemModel) {
+    suspend fun addItem(ownerId: String, item: CartItemModel) {
         val safeQuantity = item.quantity.coerceIn(1, MAX_QUANTITY)
-        val existing = dao.getItemById(item.id)
+        val existing = dao.getItemById(ownerId, item.id)
         val updatedItem = if (existing == null) {
             item.copy(quantity = safeQuantity, isSelected = true)
         } else {
@@ -83,33 +88,34 @@ class CartRepository(
             )
         }
 
-        dao.upsert(updatedItem.toEntity())
-        syncItemToFirestore(updatedItem)
+        dao.upsert(updatedItem.toEntity(ownerId))
+        syncItemToFirestore(ownerId, updatedItem)
     }
 
-    suspend fun toggleSelection(itemId: Int, selected: Boolean) {
-        dao.updateSelection(itemId, selected)
-        dao.getItemById(itemId)?.let { syncItemToFirestore(it.toModel()) }
+    suspend fun toggleSelection(ownerId: String, itemId: Int, selected: Boolean) {
+        dao.updateSelection(ownerId, itemId, selected)
+        dao.getItemById(ownerId, itemId)?.let { syncItemToFirestore(ownerId, it.toModel()) }
     }
 
-    suspend fun toggleAllSelection(selected: Boolean) {
-        dao.updateAllSelection(selected)
-        dao.getAllCartItems().forEach { syncItemToFirestore(it.toModel()) }
+    suspend fun toggleAllSelection(ownerId: String, selected: Boolean) {
+        dao.updateAllSelection(ownerId, selected)
+        dao.getAllCartItems(ownerId).forEach { syncItemToFirestore(ownerId, it.toModel()) }
     }
 
-    suspend fun updateQuantity(itemId: Int, quantity: Int) {
-        dao.updateQuantity(itemId, quantity.coerceIn(1, MAX_QUANTITY))
-        dao.getItemById(itemId)?.let { syncItemToFirestore(it.toModel()) }
+    suspend fun updateQuantity(ownerId: String, itemId: Int, quantity: Int) {
+        dao.updateQuantity(ownerId, itemId, quantity.coerceIn(1, MAX_QUANTITY))
+        dao.getItemById(ownerId, itemId)?.let { syncItemToFirestore(ownerId, it.toModel()) }
     }
 
-    suspend fun removeItem(itemId: Int) {
-        dao.removeItem(itemId)
-        removeRemoteItem(itemId)
+    suspend fun removeItem(ownerId: String, itemId: Int) {
+        dao.removeItem(ownerId, itemId)
+        removeRemoteItem(ownerId, itemId)
     }
 
-    suspend fun deleteSelectedItems() {
-        dao.deleteSelectedItems()
-        val uid = getUserId() ?: return
+    suspend fun deleteSelectedItems(ownerId: String) {
+        dao.deleteSelectedItems(ownerId)
+        val uid = AccountScope.uid(ownerId) ?: return
+        if (auth.currentUser?.uid != uid) return
         try {
             runCatching {
                 firestore.userCollection(uid, NEW_CART_COLLECTION)
@@ -132,8 +138,9 @@ class CartRepository(
         }
     }
 
-    private suspend fun syncItemToFirestore(item: CartItemModel) {
-        val uid = getUserId() ?: return
+    private suspend fun syncItemToFirestore(ownerId: String, item: CartItemModel) {
+        val uid = AccountScope.uid(ownerId) ?: return
+        if (auth.currentUser?.uid != uid) return
         try {
             val reference = catalogResolver.resolveLegacyId(item.id)
             if (reference != null) {
@@ -176,8 +183,9 @@ class CartRepository(
             .await()
     }
 
-    private suspend fun removeRemoteItem(itemId: Int) {
-        val uid = getUserId() ?: return
+    private suspend fun removeRemoteItem(ownerId: String, itemId: Int) {
+        val uid = AccountScope.uid(ownerId) ?: return
+        if (auth.currentUser?.uid != uid) return
         runCatching {
             catalogResolver.resolveLegacyId(itemId)?.let { reference ->
                 firestore.userCollection(uid, NEW_CART_COLLECTION)
@@ -235,7 +243,8 @@ class CartRepository(
         isSelected = isSelected,
     )
 
-    private fun CartItemModel.toEntity() = CartItemEntity(
+    private fun CartItemModel.toEntity(ownerId: String) = CartItemEntity(
+        ownerId = ownerId,
         id = id,
         title = title,
         description = description,
