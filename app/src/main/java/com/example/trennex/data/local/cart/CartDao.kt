@@ -12,8 +12,8 @@ interface CartDao {
     @Query("SELECT * FROM cart_items WHERE ownerId = :ownerId ORDER BY id DESC")
     fun observeCartItems(ownerId: String): Flow<List<CartItemEntity>>
 
-    @Query("SELECT * FROM cart_items WHERE ownerId = :ownerId AND id = :id LIMIT 1")
-    suspend fun getItemById(ownerId: String, id: Int): CartItemEntity?
+    @Query("SELECT * FROM cart_items WHERE ownerId = :ownerId AND cartKey = :cartKey LIMIT 1")
+    suspend fun getItemByKey(ownerId: String, cartKey: String): CartItemEntity?
 
     @Query("SELECT * FROM cart_items WHERE ownerId = :ownerId ORDER BY id DESC")
     suspend fun getAllCartItems(ownerId: String): List<CartItemEntity>
@@ -24,18 +24,18 @@ interface CartDao {
     @Update
     suspend fun update(item: CartItemEntity)
 
-    @Query("UPDATE cart_items SET isSelected = :isSelected WHERE ownerId = :ownerId AND id = :itemId")
-    suspend fun updateSelection(ownerId: String, itemId: Int, isSelected: Boolean)
+    @Query("UPDATE cart_items SET isSelected = :isSelected WHERE ownerId = :ownerId AND cartKey = :cartKey")
+    suspend fun updateSelection(ownerId: String, cartKey: String, isSelected: Boolean)
 
     @Query("UPDATE cart_items SET isSelected = :selected WHERE ownerId = :ownerId")
     suspend fun updateAllSelection(ownerId: String, selected: Boolean)
 
-    @Query("UPDATE cart_items SET quantity = :quantity WHERE ownerId = :ownerId AND id = :itemId")
-    suspend fun updateQuantity(ownerId: String, itemId: Int, quantity: Int)
+    @Query("UPDATE cart_items SET quantity = :quantity WHERE ownerId = :ownerId AND cartKey = :cartKey")
+    suspend fun updateQuantity(ownerId: String, cartKey: String, quantity: Int)
 
 
-    @Query("DELETE FROM cart_items WHERE ownerId = :ownerId AND id = :itemId")
-    suspend fun removeItem(ownerId: String, itemId: Int)
+    @Query("DELETE FROM cart_items WHERE ownerId = :ownerId AND cartKey = :cartKey")
+    suspend fun removeItem(ownerId: String, cartKey: String)
 
     @Query("DELETE FROM cart_items WHERE ownerId = :ownerId AND isSelected = 1")
     suspend fun deleteSelectedItems(ownerId: String)
