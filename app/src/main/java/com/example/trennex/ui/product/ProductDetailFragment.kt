@@ -86,6 +86,7 @@ class ProductDetailFragment : Fragment(R.layout.fragment_product_detail), WishLi
     private var isReviewExpandable = false
     private var isWishlisted = false
     private var isCart = false
+    private var cartItems: List<CartItemModel> = emptyList()
 
     private val cartViewModel: CartViewModel by activityViewModels()
     private var bottomSheetBinding: BottomSheetSelectLocationBinding? = null
@@ -318,6 +319,7 @@ class ProductDetailFragment : Fragment(R.layout.fragment_product_detail), WishLi
                     binding.tvPrice.text = it.Price
                     binding.tvMrp.text = it.mrpPrice
                 }
+                updateSelectedCatalogVariant()
                 updateMainTitle()
             }
 
@@ -415,6 +417,10 @@ class ProductDetailFragment : Fragment(R.layout.fragment_product_detail), WishLi
             binding.tvSelectedColor.text = it }, {selected ,position->
             selectedColor = selected.modelName
             selectedColorPosition = position
+            currentProduct?.catalogVariants?.indexOfFirst { it.color == selectedColor }
+                ?.takeIf { it >= 0 }?.let { selectedVariantPosition = it }
+            updateSelectedCatalogVariant()
+            if (::variantAdapter.isInitialized) variantAdapter.setSelectedVariantPosition(selectedVariantPosition)
             updateMainTitle()
 
         })
@@ -502,6 +508,12 @@ class ProductDetailFragment : Fragment(R.layout.fragment_product_detail), WishLi
 
     private fun setUpCart(){
         binding.addToCart.setOnClickListener {
+            updateSelectedCatalogVariant()
+            if (currentProduct?.catalogProductId != null &&
+                currentProduct?.catalogVariants?.getOrNull(selectedVariantPosition) == null) {
+                Toast.makeText(requireContext(), "This option is unavailable", Toast.LENGTH_SHORT).show()
+                return@setOnClickListener
+            }
             if(!isCart) {
                 isCart = true
                 updateCartIcon()
@@ -518,7 +530,10 @@ class ProductDetailFragment : Fragment(R.layout.fragment_product_detail), WishLi
                         deliveryDetails = cartDeliveryDetails,
                         imageUrl = currentImages.firstOrNull(),
                         quantity = 1,
-                        isSelected = true
+                        isSelected = true,
+                        productId = currentProduct?.catalogProductId,
+                        variantId = currentProduct?.catalogVariants?.getOrNull(selectedVariantPosition)?.id,
+                        variantName = currentProduct?.catalogVariants?.getOrNull(selectedVariantPosition)?.name,
                     )
                 )
                 val addToCartSheet = AddToCartSheet.newInstance(
@@ -541,7 +556,8 @@ class ProductDetailFragment : Fragment(R.layout.fragment_product_detail), WishLi
         viewLifecycleOwner.lifecycleScope.launch {
             viewLifecycleOwner.repeatOnLifecycle(androidx.lifecycle.Lifecycle.State.STARTED){
                 CartStore.items.collect {items->
-                    isCart = items.any{it.id == args.productId}
+                    cartItems = items
+                    updateSelectedCatalogVariant()
                     updateCartIcon()
                 }
             }
@@ -561,9 +577,11 @@ class ProductDetailFragment : Fragment(R.layout.fragment_product_detail), WishLi
             updateMainTitle()
         },{ variant , position ->
             binding.tvVariant.text = variant.variant
+            selectedVariant = variant.variant
             selectedVariantPosition = position
             binding.tvPrice.text = variant.Price
             binding.tvMrp.text = variant.mrpPrice
+            updateSelectedCatalogVariant()
         })
         binding.rvVariants.apply {
             layoutManager = LinearLayoutManager(requireContext(), LinearLayoutManager.HORIZONTAL,false)
@@ -573,6 +591,29 @@ class ProductDetailFragment : Fragment(R.layout.fragment_product_detail), WishLi
             variantAdapter.setSelectedVariantPosition(selectedVariantPosition)
         }
 
+    }
+
+    private fun updateSelectedCatalogVariant() {
+        val product = currentProduct
+        val option = product?.catalogVariants?.getOrNull(selectedVariantPosition)
+        if (option != null) {
+            cartPrice = option.price
+            cartMrp = option.mrp
+            binding.tvPrice.text = CurrencyFormator.formatInr(option.price)
+            binding.tvMrp.text = CurrencyFormator.formatInr(option.mrp)
+            binding.tvPriceDetails.text = CurrencyFormator.formatInr(option.price)
+            selectedVariant = option.name
+            option.color?.let { color ->
+                selectedColor = color
+                selectedColorPosition = currentColorOptions.indexOfFirst { it.modelName == color }
+                    .coerceAtLeast(0)
+                binding.tvSelectedColor.text = color
+                if (::colorAdapter.isInitialized) colorAdapter.setSelectedColorPosition(selectedColorPosition)
+            }
+        }
+        isCart = cartItems.any { it.id == args.productId &&
+            (option == null || it.variantId == option.id) }
+        updateCartIcon()
     }
 
     private fun updateMainTitle(){
@@ -606,8 +647,8 @@ class ProductDetailFragment : Fragment(R.layout.fragment_product_detail), WishLi
                 VariantModel(
                     id = index + 1,
                     variant = variantName,
-                    Price = CurrencyFormator.formatInr(product.price),
-                    mrpPrice = CurrencyFormator.formatInr(mrp)
+                    Price = CurrencyFormator.formatInr(product.catalogVariants.orEmpty().getOrNull(index)?.price ?: product.price),
+                    mrpPrice = CurrencyFormator.formatInr(product.catalogVariants.orEmpty().getOrNull(index)?.mrp ?: mrp)
                 )
             }
         val hasColors = currentColorOptions.isNotEmpty()
@@ -632,6 +673,7 @@ class ProductDetailFragment : Fragment(R.layout.fragment_product_detail), WishLi
             binding.tvVariant.text = selectedVariantModel.variant
             binding.tvPrice.text = selectedVariantModel.Price
             binding.tvMrp.text = selectedVariantModel.mrpPrice
+            updateSelectedCatalogVariant()
         } else {
             selectedVariant = ""
             selectedVariantPosition = 0

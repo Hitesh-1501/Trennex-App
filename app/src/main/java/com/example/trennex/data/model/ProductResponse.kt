@@ -24,5 +24,15 @@ data class ProductResponse(
     @SerializedName(value = "colors", alternate =  ["colorOptions"])
     val colors: List<String>? = null,
     @SerializedName(value = "variants", alternate = ["storageOptions", "sizeOptions"])
-    val variants: List<String>? = null
+    val variants: List<String>? = null,
+    val catalogProductId: String? = null,
+    val catalogVariants: List<CatalogVariantOption> = emptyList(),
+)
+
+data class CatalogVariantOption(
+    val id: String,
+    val name: String,
+    val price: Double,
+    val mrp: Double,
+    val color: String? = null,
 )
