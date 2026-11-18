@@ -13,7 +13,7 @@ import com.example.trennex.data.local.wihslist.CollectionEntity
 import com.example.trennex.data.local.wihslist.WishlistDao
 import com.example.trennex.data.local.wihslist.WishlistItemEntity
 
-@Database(entities = [CartItemEntity::class, WishlistItemEntity::class, CollectionEntity::class, RecentSearchEntity::class], version = 7, exportSchema = false)
+@Database(entities = [CartItemEntity::class, WishlistItemEntity::class, CollectionEntity::class, RecentSearchEntity::class], version = 8, exportSchema = false)
 abstract class AppDatabase: RoomDatabase(){
     abstract fun cartDao():CartDao
     abstract fun wishlistDao(): WishlistDao
@@ -30,7 +30,7 @@ abstract class AppDatabase: RoomDatabase(){
                     context.applicationContext,
                     AppDatabase::class.java,
                     "app_database"
-                ).addMigrations(MIGRATION_6_7).fallbackToDestructiveMigration().build().also { INSTANCE = it }
+                ).addMigrations(MIGRATION_6_7, MIGRATION_7_8).fallbackToDestructiveMigration().build().also { INSTANCE = it }
             }
         }
 
@@ -51,6 +51,15 @@ abstract class AppDatabase: RoomDatabase(){
                 db.execSQL("""INSERT INTO collections_new SELECT '${com.example.trennex.data.local.AccountScope.LEGACY_UNASSIGNED}', id, name, itemJson FROM collections""")
                 db.execSQL("DROP TABLE collections")
                 db.execSQL("ALTER TABLE collections_new RENAME TO collections")
+            }
+        }
+
+        internal val MIGRATION_7_8 = object : Migration(7, 8) {
+            override fun migrate(db: SupportSQLiteDatabase) {
+                db.execSQL("""CREATE TABLE IF NOT EXISTS cart_items_new (ownerId TEXT NOT NULL, id INTEGER NOT NULL, title TEXT NOT NULL, description TEXT NOT NULL, mrp REAL NOT NULL, price REAL NOT NULL, rating REAL NOT NULL, ratingCount INTEGER NOT NULL, returnPolicy TEXT NOT NULL, deliveryDetails TEXT NOT NULL, imageUrl TEXT, imageRes INTEGER, quantity INTEGER NOT NULL, isSelected INTEGER NOT NULL, cartKey TEXT NOT NULL, productId TEXT, variantId TEXT, variantName TEXT, PRIMARY KEY(ownerId, cartKey))""")
+                db.execSQL("""INSERT INTO cart_items_new SELECT ownerId, id, title, description, mrp, price, rating, ratingCount, returnPolicy, deliveryDetails, imageUrl, imageRes, quantity, isSelected, 'legacy:' || id, NULL, NULL, NULL FROM cart_items""")
+                db.execSQL("DROP TABLE cart_items")
+                db.execSQL("ALTER TABLE cart_items_new RENAME TO cart_items")
             }
         }
     }
