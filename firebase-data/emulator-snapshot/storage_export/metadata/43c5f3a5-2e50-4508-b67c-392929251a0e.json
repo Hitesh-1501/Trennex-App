@@ -1,0 +1,19 @@
+{
+  "name": "catalog/products/prd_f2k8z6nw/primary.jpg",
+  "bucket": "demo-trennex.appspot.com",
+  "metageneration": 1,
+  "generation": 1794989900856,
+  "contentType": "image/jpeg",
+  "storageClass": "STANDARD",
+  "cacheControl": "public,max-age=3600",
+  "downloadTokens": [],
+  "etag": "4hfLrH+TA+nrn60Xe0kUWajbDCs",
+  "customMetadata": {
+    "seededBy": "trennex-local-catalog-v1"
+  },
+  "timeCreated": "2026-11-18T08:18:20.856Z",
+  "updated": "2026-11-18T08:18:20.856Z",
+  "size": 160094,
+  "md5Hash": "1ESQeNK+QcLq3eh7efb84w==",
+  "crc32c": "1027628430"
+}

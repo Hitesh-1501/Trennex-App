@@ -1,0 +1,19 @@
+{
+  "name": "catalog/categories/toys-books.png",
+  "bucket": "demo-trennex.appspot.com",
+  "metageneration": 1,
+  "generation": 1794989900780,
+  "contentType": "image/png",
+  "storageClass": "STANDARD",
+  "cacheControl": "public,max-age=3600",
+  "downloadTokens": [],
+  "etag": "gddSzMImXrWjFacYg1AUUJLLPao",
+  "customMetadata": {
+    "seededBy": "trennex-local-catalog-v1"
+  },
+  "timeCreated": "2026-11-18T08:18:20.781Z",
+  "updated": "2026-11-18T08:18:20.781Z",
+  "size": 5950,
+  "md5Hash": "vJvR52bSCxi2QJ6dg1ctXw==",
+  "crc32c": "659322278"
+}

@@ -1,0 +1,19 @@
+{
+  "name": "catalog/categories/furniture.png",
+  "bucket": "demo-trennex.appspot.com",
+  "metageneration": 1,
+  "generation": 1794989900765,
+  "contentType": "image/png",
+  "storageClass": "STANDARD",
+  "cacheControl": "public,max-age=3600",
+  "downloadTokens": [],
+  "etag": "RNJ3uOHeI1NieG8mzKT9U08s+Vo",
+  "customMetadata": {
+    "seededBy": "trennex-local-catalog-v1"
+  },
+  "timeCreated": "2026-11-18T08:18:20.765Z",
+  "updated": "2026-11-18T08:18:20.765Z",
+  "size": 9991,
+  "md5Hash": "kGv8ApjlQ8kxw9en2GDKYg==",
+  "crc32c": "2225794435"
+}
