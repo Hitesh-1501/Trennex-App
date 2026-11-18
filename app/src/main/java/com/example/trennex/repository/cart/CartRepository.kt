@@ -42,7 +42,12 @@ class CartRepository(
             }.getOrDefault(emptyList())
 
             if (newItems.isNotEmpty()) {
-                newItems.forEach { dao.upsert(it.toEntity(ownerId)) }
+                newItems.forEach { item ->
+                    dao.getItemByKey(ownerId, "legacy:${item.id}")?.let {
+                        dao.removeItem(ownerId, it.cartKey)
+                    }
+                    dao.upsert(item.toEntity(ownerId))
+                }
                 return
             }
 
@@ -68,7 +73,7 @@ class CartRepository(
 
     suspend fun addItem(ownerId: String, item: CartItemModel) {
         val safeQuantity = item.quantity.coerceIn(1, MAX_QUANTITY)
-        val existing = dao.getItemById(ownerId, item.id)
+        val existing = dao.getItemByKey(ownerId, item.cartKey)
         val updatedItem = if (existing == null) {
             item.copy(quantity = safeQuantity, isSelected = true)
         } else {
@@ -83,6 +88,9 @@ class CartRepository(
                 deliveryDetails = item.deliveryDetails,
                 imageUrl = item.imageUrl,
                 imageRes = item.imageRes,
+                productId = item.productId,
+                variantId = item.variantId,
+                variantName = item.variantName,
                 quantity = (existing.quantity + safeQuantity).coerceAtMost(MAX_QUANTITY),
                 isSelected = true,
             )
@@ -92,9 +100,9 @@ class CartRepository(
         syncItemToFirestore(ownerId, updatedItem)
     }
 
-    suspend fun toggleSelection(ownerId: String, itemId: Int, selected: Boolean) {
-        dao.updateSelection(ownerId, itemId, selected)
-        dao.getItemById(ownerId, itemId)?.let { syncItemToFirestore(ownerId, it.toModel()) }
+    suspend fun toggleSelection(ownerId: String, cartKey: String, selected: Boolean) {
+        dao.updateSelection(ownerId, cartKey, selected)
+        dao.getItemByKey(ownerId, cartKey)?.let { syncItemToFirestore(ownerId, it.toModel()) }
     }
 
     suspend fun toggleAllSelection(ownerId: String, selected: Boolean) {
@@ -102,14 +110,15 @@ class CartRepository(
         dao.getAllCartItems(ownerId).forEach { syncItemToFirestore(ownerId, it.toModel()) }
     }
 
-    suspend fun updateQuantity(ownerId: String, itemId: Int, quantity: Int) {
-        dao.updateQuantity(ownerId, itemId, quantity.coerceIn(1, MAX_QUANTITY))
-        dao.getItemById(ownerId, itemId)?.let { syncItemToFirestore(ownerId, it.toModel()) }
+    suspend fun updateQuantity(ownerId: String, cartKey: String, quantity: Int) {
+        dao.updateQuantity(ownerId, cartKey, quantity.coerceIn(1, MAX_QUANTITY))
+        dao.getItemByKey(ownerId, cartKey)?.let { syncItemToFirestore(ownerId, it.toModel()) }
     }
 
-    suspend fun removeItem(ownerId: String, itemId: Int) {
-        dao.removeItem(ownerId, itemId)
-        removeRemoteItem(ownerId, itemId)
+    suspend fun removeItem(ownerId: String, cartKey: String) {
+        val item = dao.getItemByKey(ownerId, cartKey)?.toModel() ?: return
+        dao.removeItem(ownerId, cartKey)
+        removeRemoteItem(ownerId, item)
     }
 
     suspend fun deleteSelectedItems(ownerId: String) {
@@ -142,7 +151,13 @@ class CartRepository(
         val uid = AccountScope.uid(ownerId) ?: return
         if (auth.currentUser?.uid != uid) return
         try {
-            val reference = catalogResolver.resolveLegacyId(item.id)
+            val reference = if (item.productId != null && item.variantId != null) {
+                catalogResolver.resolve(item.productId, item.variantId)
+            } else catalogResolver.resolveLegacyId(item.id)
+            if (item.variantId != null && reference == null) {
+                Log.w(TAG, "Selected variant ${item.variantId} is unavailable; keeping local cart row")
+                return
+            }
             if (reference != null) {
                 val newDocument = firestore.userCollection(uid, NEW_CART_COLLECTION)
                     .document(reference.variant.documentId)
@@ -170,9 +185,11 @@ class CartRepository(
                 Log.d(TAG, "Kept cart item ${item.id} on legacy path until catalog migration")
             }
         } catch (exception: Exception) {
-            Log.w(TAG, "New cart path unavailable; keeping item ${item.id} on legacy path", exception)
-            runCatching { syncLegacyItem(uid, item) }
-                .onFailure { fallbackError -> Log.e(TAG, "Legacy cart fallback failed", fallbackError) }
+            Log.w(TAG, "Cart sync failed for ${item.cartKey}", exception)
+            if (item.variantId == null) {
+                runCatching { syncLegacyItem(uid, item) }
+                    .onFailure { fallbackError -> Log.e(TAG, "Legacy cart fallback failed", fallbackError) }
+            }
         }
     }
 
@@ -183,26 +200,29 @@ class CartRepository(
             .await()
     }
 
-    private suspend fun removeRemoteItem(ownerId: String, itemId: Int) {
+    private suspend fun removeRemoteItem(ownerId: String, item: CartItemModel) {
         val uid = AccountScope.uid(ownerId) ?: return
         if (auth.currentUser?.uid != uid) return
         runCatching {
-            catalogResolver.resolveLegacyId(itemId)?.let { reference ->
+            val reference = if (item.productId != null && item.variantId != null) {
+                catalogResolver.resolve(item.productId, item.variantId)
+            } else catalogResolver.resolveLegacyId(item.id)
+            reference?.let {
                 firestore.userCollection(uid, NEW_CART_COLLECTION)
-                    .document(reference.variant.documentId)
+                    .document(it.variant.documentId)
                     .delete()
                     .await()
             }
         }.onFailure { exception ->
-            Log.w(TAG, "New cart removal unavailable for item $itemId", exception)
+            Log.w(TAG, "New cart removal unavailable for item ${item.cartKey}", exception)
         }
         try {
             firestore.userCollection(uid, LEGACY_CART_COLLECTION)
-                .document(itemId.toString())
+                .document(item.id.toString())
                 .delete()
                 .await()
         } catch (exception: Exception) {
-            Log.e(TAG, "Failed to remove cart item $itemId", exception)
+            Log.e(TAG, "Failed to remove cart item ${item.cartKey}", exception)
         }
     }
 
@@ -224,6 +244,9 @@ class CartRepository(
             imageUrl = product.thumbnail,
             quantity = (document.getLong("quantity") ?: 1L).toInt().coerceIn(1, MAX_QUANTITY),
             isSelected = document.getBoolean("selected") ?: true,
+            productId = productId,
+            variantId = variantId,
+            variantName = reference.variant.name,
         )
     }
 
@@ -241,6 +264,9 @@ class CartRepository(
         imageRes = imageRes,
         quantity = quantity,
         isSelected = isSelected,
+        productId = productId,
+        variantId = variantId,
+        variantName = variantName,
     )
 
     private fun CartItemModel.toEntity(ownerId: String) = CartItemEntity(
@@ -258,6 +284,10 @@ class CartRepository(
         imageRes = imageRes,
         quantity = quantity,
         isSelected = isSelected,
+        cartKey = cartKey,
+        productId = productId,
+        variantId = variantId,
+        variantName = variantName,
     )
 
     private fun FirebaseFirestore.userCollection(uid: String, collection: String) =

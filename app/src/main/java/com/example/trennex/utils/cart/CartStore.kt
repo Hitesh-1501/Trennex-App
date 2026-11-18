@@ -56,10 +56,10 @@ object CartStore {
     }
 
 
-    fun toggleSelection(itemId: Int , selected: Boolean){
+    fun toggleSelection(cartKey: String , selected: Boolean){
         val ownerId = AccountScope.currentOwner()
         scope.launch {
-            repo().toggleSelection(ownerId, itemId,selected)
+            repo().toggleSelection(ownerId, cartKey,selected)
         }
     }
     fun toggleSelectAll(selected: Boolean){
@@ -68,16 +68,16 @@ object CartStore {
            repo().toggleAllSelection(ownerId, selected)
        }
     }
-    fun updateQuantity(itemId: Int, quantity: Int) {
+    fun updateQuantity(cartKey: String, quantity: Int) {
        val ownerId = AccountScope.currentOwner()
        scope.launch {
-           repo().updateQuantity(ownerId, itemId,quantity)
+           repo().updateQuantity(ownerId, cartKey,quantity)
        }
     }
-    fun removeItem(itemId: Int){
+    fun removeItem(cartKey: String){
         val ownerId = AccountScope.currentOwner()
         scope.launch {
-            repo().removeItem(ownerId, itemId)
+            repo().removeItem(ownerId, cartKey)
         }
     }
 
