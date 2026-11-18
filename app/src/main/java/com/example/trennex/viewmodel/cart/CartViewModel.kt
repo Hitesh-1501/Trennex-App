@@ -55,9 +55,9 @@ class CartViewModel: ViewModel() {
     )
 
     fun toggleAll(selected: Boolean) = CartStore.toggleSelectAll(selected)
-    fun toggleItem(itemId: Int, selected: Boolean) = CartStore.toggleSelection(itemId, selected)
-    fun updateQuantity(itemId: Int, quantity: Int) = CartStore.updateQuantity(itemId, quantity)
-    fun removeItem(itemId: Int) = CartStore.removeItem(itemId)
+    fun toggleItem(cartKey: String, selected: Boolean) = CartStore.toggleSelection(cartKey, selected)
+    fun updateQuantity(cartKey: String, quantity: Int) = CartStore.updateQuantity(cartKey, quantity)
+    fun removeItem(cartKey: String) = CartStore.removeItem(cartKey)
 
     fun deleteSelectedItems() = CartStore.deleteSelectedItems()
 
@@ -82,10 +82,13 @@ class CartViewModel: ViewModel() {
                     ?: throw IllegalStateException("Please select a delivery address")
                 val requestId = userRepository.submitOrderRequest(
                     items = selectedItems.map { item ->
-                        mapOf(
-                            "legacyId" to item.id,
-                            "quantity" to item.quantity.coerceIn(1, 10),
-                        )
+                        buildMap<String, Any> {
+                            if (item.productId != null && item.variantId != null) {
+                                put("productId", item.productId)
+                                put("variantId", item.variantId)
+                            } else put("legacyId", item.id)
+                            put("quantity", item.quantity.coerceIn(1, 10))
+                        }
                     },
                     shippingAddress = mapOf(
                         "address" to address.address,

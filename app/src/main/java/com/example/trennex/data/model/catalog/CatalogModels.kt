@@ -2,6 +2,7 @@ package com.example.trennex.data.model.catalog
 
 import com.example.trennex.data.model.CategoryApiResponse
 import com.example.trennex.data.model.ProductResponse
+import com.example.trennex.data.model.CatalogVariantOption
 
 data class CatalogImage(
     val storagePath: String = "",
@@ -69,6 +70,11 @@ data class CatalogProduct(
             tags = tags,
             colors = colorOptions,
             variants = variantOptions,
+            catalogProductId = documentId,
+            catalogVariants = variants.sortedBy(CatalogVariant::sortOrder).map {
+                CatalogVariantOption(it.documentId, it.name, it.priceMinor / 100.0,
+                    it.mrpMinor / 100.0, it.attributes["color"] ?: it.attributes["shade"])
+            },
         )
     }
 }
