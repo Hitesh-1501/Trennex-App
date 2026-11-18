@@ -26,7 +26,7 @@
   "products": [
     {
       "id": "prd_q7m2a9kx", "legacyId": 101, "name": "Samsung Galaxy A56 5G", "slug": "samsung-galaxy-a56-5g",
-      "categoryId": "mobiles", "brandId": "samsung", "imageAsset": "samsung_mobile.png",
+      "categoryId": "mobiles", "brandId": "samsung", "imageAsset": "products/samsung_mobile.jpg",
       "shortDescription": "Premium 5G phone with a vivid AMOLED display and all-day battery.",
       "description": "A balanced everyday smartphone with a bright display, dependable cameras, smooth performance and long battery life.",
       "tags": ["5g", "smartphone", "amoled"], "ratingAverage": 4.5, "ratingCount": 1842, "featured": true, "newArrival": true, "sortOrder": 1,
@@ -39,7 +39,7 @@
     },
     {
       "id": "prd_b4v8n2rt", "legacyId": 102, "name": "Lenovo IdeaPad Slim Laptop", "slug": "lenovo-ideapad-slim-laptop",
-      "categoryId": "electronics", "brandId": "lenovo", "imageAsset": "lenovo_laptop.png",
+      "categoryId": "electronics", "brandId": "lenovo", "imageAsset": "products/lenovo_laptop.jpg",
       "shortDescription": "Slim productivity laptop with fast SSD storage and a full-HD display.",
       "description": "Designed for study, office work and entertainment with a portable chassis, responsive keyboard and dependable performance.",
       "tags": ["laptop", "ssd", "work"], "ratingAverage": 4.3, "ratingCount": 726, "featured": true, "newArrival": false, "sortOrder": 2,
@@ -51,7 +51,7 @@
     },
     {
       "id": "prd_h6t1w9fp", "legacyId": 103, "name": "TrenNex Essential Cotton T-Shirt", "slug": "trennex-essential-cotton-tshirt",
-      "categoryId": "fashion", "brandId": "trennex", "imageAsset": "trennex_tshirt.png",
+      "categoryId": "fashion", "brandId": "trennex", "imageAsset": "products/trennex_tshirt.jpg",
       "shortDescription": "Soft everyday cotton T-shirt with a clean regular fit.",
       "description": "A breathable wardrobe staple made for daily wear, finished with reinforced seams and a comfortable crew neck.",
       "tags": ["tshirt", "cotton", "men"], "ratingAverage": 4.4, "ratingCount": 315, "featured": true, "newArrival": true, "sortOrder": 3,
@@ -65,7 +65,7 @@
     },
     {
       "id": "prd_m3e7s5ua", "legacyId": 104, "name": "Handwoven Festive Saree", "slug": "handwoven-festive-saree",
-      "categoryId": "fashion", "brandId": "trennex", "imageAsset": "women_sarees.png",
+      "categoryId": "fashion", "brandId": "trennex", "imageAsset": "products/women_sarees.jpg",
       "shortDescription": "Elegant festive saree with a woven border and lightweight drape.",
       "description": "A celebration-ready saree featuring traditional woven detailing, a comfortable lightweight finish and an included blouse piece.",
       "tags": ["saree", "women", "festive"], "ratingAverage": 4.6, "ratingCount": 268, "featured": false, "newArrival": true, "sortOrder": 4,
@@ -77,7 +77,7 @@
     },
     {
       "id": "prd_c9y4l2dh", "legacyId": 105, "name": "UrbanNest Modern 3-Seater Sofa", "slug": "urbannest-modern-three-seater-sofa",
-      "categoryId": "furniture", "brandId": "urbannest", "imageAsset": "home_sofa.png",
+      "categoryId": "furniture", "brandId": "urbannest", "imageAsset": "products/home_sofa.jpg",
       "shortDescription": "Comfortable modern sofa with durable upholstery and deep seating.",
       "description": "A clean-lined three-seater built with supportive cushioning, solid framing and easy-care fabric for modern living rooms.",
       "tags": ["sofa", "living-room", "furniture"], "ratingAverage": 4.2, "ratingCount": 119, "featured": true, "newArrival": false, "sortOrder": 5,
@@ -89,7 +89,7 @@
     },
     {
       "id": "prd_f2k8z6nw", "legacyId": 106, "name": "HomeTech Smart Inverter Washing Machine", "slug": "hometech-smart-inverter-washing-machine",
-      "categoryId": "appliances", "brandId": "hometech", "imageAsset": "appliance_washing_machine.png",
+      "categoryId": "appliances", "brandId": "hometech", "imageAsset": "products/appliance_washing_machine.jpg",
       "shortDescription": "Energy-efficient front-load washer with quiet inverter operation.",
       "description": "A family-sized automatic washing machine with multiple fabric programs, hygienic wash modes and low-noise inverter technology.",
       "tags": ["washing-machine", "inverter", "appliance"], "ratingAverage": 4.4, "ratingCount": 497, "featured": true, "newArrival": false, "sortOrder": 6,
@@ -101,7 +101,7 @@
     },
     {
       "id": "prd_p5d1j7vc", "legacyId": 107, "name": "Aura Velvet Matte Lipstick", "slug": "aura-velvet-matte-lipstick",
-      "categoryId": "beauty", "brandId": "aura", "imageAsset": "lipstick.png",
+      "categoryId": "beauty", "brandId": "aura", "imageAsset": "products/lipstick.jpg",
       "shortDescription": "Comfortable long-wear matte colour with a smooth velvet finish.",
       "description": "A richly pigmented lipstick formulated for even application, comfortable wear and a soft matte finish that lasts through the day.",
       "tags": ["lipstick", "makeup", "matte"], "ratingAverage": 4.5, "ratingCount": 903, "featured": false, "newArrival": true, "sortOrder": 7,
@@ -114,7 +114,7 @@
     },
     {
       "id": "prd_r8u3x1qb", "legacyId": 108, "name": "MoveX All-Terrain Bicycle", "slug": "movex-all-terrain-bicycle",
-      "categoryId": "sports", "brandId": "movex", "imageAsset": "sports_cycle.png",
+      "categoryId": "sports", "brandId": "movex", "imageAsset": "products/sports_cycle.jpg",
       "shortDescription": "Geared mountain bicycle designed for city roads and weekend trails.",
       "description": "A versatile bicycle with responsive disc brakes, front suspension and a durable geared drivetrain for confident everyday riding.",
       "tags": ["cycle", "fitness", "outdoor"], "ratingAverage": 4.3, "ratingCount": 211, "featured": true, "newArrival": false, "sortOrder": 8,
@@ -126,7 +126,7 @@
     },
     {
       "id": "prd_t1g6o4me", "legacyId": 109, "name": "PlayForge Creative Building Set", "slug": "playforge-creative-building-set",
-      "categoryId": "toys-books", "brandId": "playforge", "imageAsset": "toys_games.png",
+      "categoryId": "toys-books", "brandId": "playforge", "imageAsset": "products/toys_games.jpg",
       "shortDescription": "Colourful 350-piece construction set for open-ended creative play.",
       "description": "A reusable building kit that encourages imagination, fine motor skills and collaborative play with child-friendly pieces and idea cards.",
       "tags": ["toys", "building", "creative"], "ratingAverage": 4.7, "ratingCount": 642, "featured": false, "newArrival": true, "sortOrder": 9,
@@ -138,7 +138,7 @@
     },
     {
       "id": "prd_z4s9i2la", "legacyId": 110, "name": "CloudRest Memory Foam Pillow", "slug": "cloudrest-memory-foam-pillow",
-      "categoryId": "home", "brandId": "urbannest", "imageAsset": "home_pillow.png",
+      "categoryId": "home", "brandId": "urbannest", "imageAsset": "products/home_pillow.jpg",
       "shortDescription": "Supportive memory foam pillow with a breathable washable cover.",
       "description": "A contouring sleep pillow that supports the neck and shoulders while its ventilated foam and removable cover improve everyday comfort.",
       "tags": ["pillow", "bedding", "home"], "ratingAverage": 4.4, "ratingCount": 388, "featured": false, "newArrival": false, "sortOrder": 10,
@@ -150,7 +150,7 @@
     },
     {
       "id": "prd_n2b7k5cw", "legacyId": 111, "name": "TrenNex Classic Analog Watch", "slug": "trennex-classic-analog-watch",
-      "categoryId": "fashion", "brandId": "trennex", "imageAsset": "watch.png",
+      "categoryId": "fashion", "brandId": "trennex", "imageAsset": "products/watch.jpg",
       "shortDescription": "Minimal everyday analog watch with a comfortable leather strap.",
       "description": "A versatile timepiece with a clean dial, reliable quartz movement and a soft leather strap suitable for work and casual wear.",
       "tags": ["watch", "accessories", "unisex"], "ratingAverage": 4.2, "ratingCount": 174, "featured": false, "newArrival": true, "sortOrder": 11,
@@ -162,9 +162,9 @@
     }
   ],
   "banners": [
-    { "id": "bnr_home_welcome", "title": "Welcome to TrenNex", "subtitle": "Everything you love, in one place", "imageAsset": "home_banner.png", "actionType": "CATEGORY", "actionValue": "top-picks", "placement": "HOME_HERO", "sortOrder": 1 },
-    { "id": "bnr_mobile_launch", "title": "Upgrade to Galaxy 5G", "subtitle": "Powerful performance and brilliant photos", "imageAsset": "samsung_banner.png", "actionType": "PRODUCT", "actionValue": "prd_q7m2a9kx", "placement": "HOME_HERO", "sortOrder": 2 },
-    { "id": "bnr_beauty_edit", "title": "The Beauty Edit", "subtitle": "Fresh shades for every mood", "imageAsset": "beauty_banner.png", "actionType": "CATEGORY", "actionValue": "beauty", "placement": "HOME_HERO", "sortOrder": 3 }
+    { "id": "bnr_home_welcome", "title": "Welcome to TrenNex", "subtitle": "Everything you love, in one place", "imageAsset": "banners/home_banner.jpg", "actionType": "CATEGORY", "actionValue": "top-picks", "placement": "HOME_HERO", "sortOrder": 1 },
+    { "id": "bnr_mobile_launch", "title": "Upgrade to Galaxy 5G", "subtitle": "Powerful performance and brilliant photos", "imageAsset": "banners/samsung_banner.jpg", "actionType": "PRODUCT", "actionValue": "prd_q7m2a9kx", "placement": "HOME_HERO", "sortOrder": 2 },
+    { "id": "bnr_beauty_edit", "title": "The Beauty Edit", "subtitle": "Fresh shades for every mood", "imageAsset": "banners/beauty_banner.jpg", "actionType": "CATEGORY", "actionValue": "beauty", "placement": "HOME_HERO", "sortOrder": 3 }
   ],
   "homeSections": [
     { "id": "featured", "title": "Featured for you", "type": "FEATURED_PRODUCTS", "sortOrder": 1, "maxItems": 8 },

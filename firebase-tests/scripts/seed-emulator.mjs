@@ -9,6 +9,7 @@ const currentDirectory = path.dirname(fileURLToPath(import.meta.url));
 const repositoryRoot = path.resolve(currentDirectory, '..', '..');
 const dataPath = path.join(repositoryRoot, 'firebase-data', 'catalog.seed.json');
 const drawableDirectory = path.join(repositoryRoot, 'app', 'src', 'main', 'res', 'drawable');
+const mediaDirectory = path.join(repositoryRoot, 'firebase-data', 'assets');
 const projectId = process.env.GCLOUD_PROJECT || 'demo-trennex';
 const firestoreHost = process.env.FIRESTORE_EMULATOR_HOST;
 const storageHost = process.env.FIREBASE_STORAGE_EMULATOR_HOST;
@@ -48,7 +49,9 @@ function contentType(fileName) {
 }
 
 async function uploadAsset(assetName, storagePath, altText) {
-  const sourcePath = path.join(drawableDirectory, assetName);
+  const root = assetName.startsWith('products/') || assetName.startsWith('banners/')
+    ? mediaDirectory : drawableDirectory;
+  const sourcePath = path.join(root, assetName);
   await bucket.upload(sourcePath, {
     destination: storagePath,
     metadata: {

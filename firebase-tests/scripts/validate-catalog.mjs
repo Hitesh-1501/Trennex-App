@@ -7,6 +7,7 @@ const currentDirectory = path.dirname(fileURLToPath(import.meta.url));
 const repositoryRoot = path.resolve(currentDirectory, '..', '..');
 const catalogPath = path.join(repositoryRoot, 'firebase-data', 'catalog.seed.json');
 const drawableDirectory = path.join(repositoryRoot, 'app', 'src', 'main', 'res', 'drawable');
+const mediaDirectory = path.join(repositoryRoot, 'firebase-data', 'assets');
 const catalog = JSON.parse(await readFile(catalogPath, 'utf8'));
 
 const ids = (items, label) => {
@@ -55,7 +56,9 @@ const assetNames = [
   ...catalog.banners.map((item) => item.imageAsset),
 ];
 for (const assetName of new Set(assetNames)) {
-  await access(path.join(drawableDirectory, assetName));
+  const root = assetName.startsWith('products/') || assetName.startsWith('banners/')
+    ? mediaDirectory : drawableDirectory;
+  await access(path.join(root, assetName));
 }
 
 const summary = {

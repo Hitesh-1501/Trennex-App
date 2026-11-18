@@ -40,8 +40,15 @@ the emulators. It never connects to the production project.
 ## Seed the local TrenNex catalog
 
 The source catalog lives in `firebase-data/catalog.seed.json`. It contains editable TrenNex-owned
-categories, brands, products, variants, banners, and home sections. Product images are copied from
-the Android project's existing drawable assets into the local Storage emulator.
+categories, brands, products, variants, banners, and home sections. Product images and banners are
+read from `firebase-data/assets/`; category icons still come from Android drawable assets.
+
+To publish only product and banner media to the staging project after setting
+`GOOGLE_APPLICATION_CREDENTIALS` and `GCLOUD_PROJECT=trennex-staging-ebbeb`, run
+`npm run publish:staging-media` from `firebase-tests`. This updates Storage images and their
+Firestore image references. It does not reset inventory, prices, orders, or accounts. Then run
+`npm run verify:staging`. The full `migrate:staging` command is for initial catalog migration and
+rewrites inventory from the seed manifest.
 
 From `firebase-tests`:
 

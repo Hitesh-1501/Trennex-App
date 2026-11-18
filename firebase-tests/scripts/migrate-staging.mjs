@@ -18,6 +18,7 @@ const currentDirectory = path.dirname(fileURLToPath(import.meta.url));
 const repositoryRoot = path.resolve(currentDirectory, '..', '..');
 const catalog = JSON.parse(await readFile(path.join(repositoryRoot, 'firebase-data', 'catalog.seed.json'), 'utf8'));
 const drawableDirectory = path.join(repositoryRoot, 'app', 'src', 'main', 'res', 'drawable');
+const mediaDirectory = path.join(repositoryRoot, 'firebase-data', 'assets');
 const bucketName = process.env.STAGING_STORAGE_BUCKET || `${projectId}.firebasestorage.app`;
 
 initializeApp({ credential: applicationDefault(), projectId, storageBucket: bucketName });
@@ -36,7 +37,9 @@ const storageUrl = (storagePath) =>
   `https://firebasestorage.googleapis.com/v0/b/${bucketName}/o/${encodeURIComponent(storagePath)}?alt=media`;
 
 async function uploadAsset(assetName, storagePath, altText) {
-  await bucket.upload(path.join(drawableDirectory, assetName), {
+  const root = assetName.startsWith('products/') || assetName.startsWith('banners/')
+    ? mediaDirectory : drawableDirectory;
+  await bucket.upload(path.join(root, assetName), {
     destination: storagePath,
     metadata: {
       contentType: assetName.endsWith('.jpg') ? 'image/jpeg' : 'image/png',

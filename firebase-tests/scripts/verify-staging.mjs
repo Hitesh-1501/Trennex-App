@@ -35,7 +35,13 @@ for (const product of snapshots[2].docs) {
   assert.equal(product.get('status'), 'ACTIVE', `${product.id} is not active`);
   assert.equal(product.get('currency'), 'INR', `${product.id} is not INR`);
 }
+for (const document of [...snapshots[2].docs, ...snapshots[3].docs, ...snapshots[5].docs]) {
+  const image = document.get(document.ref.parent.id === 'products' ? 'thumbnail' : 'image');
+  assert.ok(image?.storagePath, `${document.id} has no image path`);
+  assert.equal((await bucket.file(image.storagePath).exists())[0], true,
+    `${document.id} references a missing Storage image`);
+}
 const [files] = await bucket.getFiles({ prefix: 'catalog/' });
-assert.equal(files.length, 24, 'Storage asset count mismatch');
+assert.ok(files.length >= 24, 'Storage asset count is below the original catalog baseline');
 console.log(`Staging catalog verified in ${projectId}.`);
 console.table({ ...actual, storageAssets: files.length });
