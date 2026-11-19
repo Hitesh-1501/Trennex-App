@@ -19,7 +19,6 @@ import android.view.View
 import android.view.ViewGroup
 import android.graphics.Color
 import android.graphics.drawable.ColorDrawable
-import android.widget.LinearLayout
 import android.widget.PopupWindow
 import android.widget.TextView
 import android.widget.Toast
@@ -47,7 +46,6 @@ import com.example.trennex.ui.home.adapters.SaveAddressAdapter
 import com.example.trennex.ui.home.model.BannerModel
 import com.example.trennex.ui.home.model.CategoryModel
 import com.example.trennex.ui.home.model.ProductModel
-import com.example.trennex.ui.main.MainActivity
 import com.example.trennex.viewmodel.home.HomeViewModel
 import com.example.trennex.repository.user.AddressEntity
 import com.google.android.gms.common.api.ResolvableApiException
@@ -123,7 +121,6 @@ class HomeFragment : Fragment(R.layout.fragment_home) {
         UserDetailsDialog.showIfNeeded(this){}
         
         setupRefreshLayout()
-        setupLocationUi()
         observeViewModel()
     }
 
@@ -159,10 +156,8 @@ class HomeFragment : Fragment(R.layout.fragment_home) {
         }
     }
 
-    private fun setupLocationUi() {
-        (activity as? MainActivity)?.findViewById<LinearLayout>(R.id.location_bar)?.setOnClickListener { 
-            showLocationBottomSheet() 
-        }
+    fun showLocationSelector() {
+        if (isAdded && _binding != null) showLocationBottomSheet()
     }
 
     private fun showLocationPermissionDialog(){
@@ -390,9 +385,14 @@ class HomeFragment : Fragment(R.layout.fragment_home) {
     private fun setupCategories(categories: List<CategoryModel>){
         if (currentCategories == categories) return
         currentCategories = categories
+        val designOrder = listOf(null, "electronics", "fashion", "mobiles", "appliances",
+            "beauty", "home", "furniture", "toys-books", "sports", "top-picks")
+        val orderedCategories = categories.sortedBy { category ->
+            designOrder.indexOf(category.slug).takeIf { it >= 0 } ?: Int.MAX_VALUE
+        }
         binding.rvCategories.apply {
             layoutManager = LinearLayoutManager(requireContext(), LinearLayoutManager.HORIZONTAL,false)
-            adapter = CategoryAdapter(categories){
+            adapter = CategoryAdapter(orderedCategories){
                 viewModel.fetchProductsByCategory(it.slug)
             }
         }

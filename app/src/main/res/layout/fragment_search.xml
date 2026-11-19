@@ -136,6 +136,16 @@
             android:contentDescription="Empty Box Icon"
             android:adjustViewBounds="true" />
 
+        <TextView
+            android:id="@+id/noProductsMessage"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="12dp"
+            android:fontFamily="@font/poppins_medium"
+            android:text="No matching products"
+            android:textColor="@color/textSecondary"
+            android:textSize="14sp" />
+
     </LinearLayout>
 
 

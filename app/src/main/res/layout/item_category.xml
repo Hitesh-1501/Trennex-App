@@ -1,29 +1,34 @@
 <?xml version="1.0" encoding="utf-8"?>
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
-    android:layout_width="wrap_content"
-    android:layout_height="wrap_content"
     android:orientation="vertical"
     android:gravity="center"
     android:id="@+id/category_layout"
-    android:layout_marginEnd="8dp"
-    android:paddingHorizontal="10dp"
-    android:paddingVertical="6dp"
+    android:layout_width="56dp"
+    android:layout_height="52dp"
+    android:layout_marginEnd="12dp"
+    android:padding="2dp"
     android:background="@drawable/bg_category_selector"
     >
 
-<!--    <ImageView-->
-<!--        android:id="@+id/category_img"-->
-<!--        android:layout_width="36dp"-->
-<!--        android:layout_height="36dp"-->
-<!--        android:src="@drawable/for_you"-->
-<!--        android:padding="4dp"/>-->
+    <ImageView
+        android:id="@+id/category_img"
+        android:layout_width="24dp"
+        android:layout_height="24dp"
+        android:src="@drawable/figma_home_for_you"
+        android:contentDescription="@null" />
 
     <TextView
         android:id="@+id/category_title"
-        android:layout_width="wrap_content"
+        android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:text="For you"
-        android:textSize="12sp"
+        android:textSize="10sp"
+        android:autoSizeTextType="uniform"
+        android:autoSizeMinTextSize="8sp"
+        android:autoSizeMaxTextSize="10sp"
+        android:autoSizeStepGranularity="1sp"
+        android:fontFamily="sans"
+        android:gravity="center"
         android:maxLines="1"
         android:textColor="@color/colorAccent"
         android:layout_marginTop="2dp"/>
