@@ -17,6 +17,8 @@ This document is analysis only. No UI implementation, backend rewrite, API migra
 
 ## Implementation principles
 
+Owner clarification, 2026-11-18: use Figma as the visual reference while correcting visible misalignment and omitting unnecessary UI elements where the owner directs. Keep interactions and data behavior working.
+
 1. Implement one approved route or coherent state family at a time.
 2. Preserve repository, ViewModel, Room, Firebase, Maps, Safe Args, and navigation behavior.
 3. Treat Figma variants as view states unless navigation semantics require a destination.

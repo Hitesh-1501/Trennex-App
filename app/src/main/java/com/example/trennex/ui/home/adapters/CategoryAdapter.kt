@@ -26,12 +26,11 @@ class CategoryAdapter(
         position: Int
     ) {
         val item = list[position]
-//        holder.binding.categoryImg.setImageResource(item.icon)
-        holder.binding.categoryTitle.text = item.title
+        holder.binding.categoryImg.setImageResource(iconFor(item.slug))
+        holder.binding.categoryTitle.text = if (item.slug == null) "For you" else item.title
         val isSelected = (position == selectedPosition)
         holder.binding.categoryLayout.isSelected = isSelected
         holder.binding.categoryTitle.isSelected = isSelected
-//        holder.binding.categoryImg.isSelected = isSelected
         holder.itemView.setOnClickListener {
             val currentPosition = holder.bindingAdapterPosition
             if(selectedPosition != currentPosition){
@@ -46,6 +45,20 @@ class CategoryAdapter(
 
     override fun getItemCount(): Int {
         return list.size
+    }
+
+    private fun iconFor(slug: String?): Int = when (slug) {
+        null, "top-picks" -> R.drawable.figma_home_for_you
+        "electronics" -> R.drawable.figma_home_electronics
+        "fashion" -> R.drawable.figma_home_fashion
+        "mobiles" -> R.drawable.figma_home_mobiles
+        "appliances" -> R.drawable.figma_home_appliances
+        "beauty" -> R.drawable.figma_home_beauty
+        "home" -> R.drawable.figma_home_home
+        "furniture" -> R.drawable.figma_home_furniture
+        "toys-books" -> R.drawable.figma_home_toys
+        "sports" -> R.drawable.figma_home_sports
+        else -> R.drawable.figma_home_for_you
     }
 
     inner class CategoryViewHolder(val binding: ItemCategoryBinding): RecyclerView.ViewHolder(binding.root)

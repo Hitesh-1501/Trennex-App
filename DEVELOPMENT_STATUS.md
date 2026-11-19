@@ -1,6 +1,22 @@
 # TrenNex development status
 
-Updated 2026-11-18. This is the working status for the portfolio app roadmap.
+Updated 2026-11-19. This is the working status for the portfolio app roadmap.
+
+## Issue 5: Figma phone UI comparison, in progress, 2026-11-18
+
+- Compared Figma Search start/results and location selector/Add New frames with the staging phone. The Home location bar now opens the saved-address sheet; selecting another saved address updates the bar immediately. Add New opens the existing manual map screen without a crash. The original staging address was restored after the check.
+- Search result rows now use a compact photo, title, and price layout. Catalog MRP comes from the variant when available. Search requests cancel stale work and debounce suggestions; returning from product details restores the query and results, while clearing it restores recent searches. The staging phone confirmed the Samsung result opens product detail and the clear flow works. The keyboard no longer opens automatically over a restored result list.
+- Restored the fuller Search result card after the compact version removed useful description and price context. Search now loads active variant records in parallel for exact MRP and discount; the staging phone showed Samsung at ₹41,999 against its real ₹45,999 MRP.
+- Added working Sort (relevance, price in both directions, name) and Gender (all, men, women) controls over loaded results. Gender appears when returned products carry gender tags. The physical-phone test filtered a broad query down to the women-tagged saree and confirmed the selected filter label updates. Price-low sorting moved the ₹599 lipstick ahead of higher-priced products.
+- Voice search opens Android's speech prompt and passes a recognized phrase into product search. Camera and gallery actions open the system capture/picker; on-device ML Kit text recognition and image labeling produce approximate matches against the existing catalog. Photo search loads full variant detail only for matched products. A controlled gallery test with a TrenNex Samsung image returned the Samsung product; the temporary test image was removed from the phone. Voice transcription and live camera recognition still need a person-driven test.
+- `assembleStaging` passed and the staging APK was installed on the connected Motorola without clearing app data. Figma MCP reached its Starter plan call limit before the Sort/Gender frames could be inspected, so their precise visual comparison remains open. No production Firebase data or backend logic changed in this Search pass.
+- Compared the Home and general product-detail frames in the TrenNex Figma file with a physical Motorola staging build. Home now uses the ten Figma category icons, Figma-sized category tiles, a taller banner, narrower search/address fields, and more compact product cards. The rebuilt device screenshot confirmed the full category labels fit.
+- Kept category navigation, Firestore-backed catalog/banner loading, product taps, and the existing bottom navigation. The banner still displays image-only staging media because the current banner data exposes only image URLs; product-specific Figma promotional text must not be hardcoded over unrelated rotating images.
+- Corrected product-detail variant description formatting after the device check exposed ` (, , )` on selection. The rebuilt staging APK displayed the selected 256 GB variant and its ₹47,999 price correctly.
+- `assembleStaging` passed after the Home spacing adjustment. The APK was installed without clearing data, and a new physical-device screenshot confirmed the adjusted header, banner, category row, and product cards.
+- Aligned Home search and location fields to the same left edge and width, matched their corners, and removed the unused "View All" text. The revised staging build passed and its physical-device screenshot showed both bars aligned with Home content loaded.
+- Expanded both Home header fields to the available width, increased their vertical gap to 8dp, and tightened the notification/wishlist visual spacing without shrinking their 40dp tap views. `assembleStaging` passed; the updated staging APK and loaded Home screen were verified on the connected phone.
+- The visual pass continues with remaining Home states, search/location, product-detail variants, and shared navigation. Variant-specific imagery remains a catalog-media gap: both Samsung options currently share one photo.
 
 ## Issue 4: original catalog media, 2026-11-18
 
@@ -13,7 +29,7 @@ Updated 2026-11-18. This is the working status for the portfolio app roadmap.
 
 - Product detail now uses each active Firebase variant's ID, name, color, price, and MRP. Selecting an option updates its displayed price and the Add to Cart state.
 - Cart rows are keyed by account and variant ID, so two options of the same product remain separate. Checkout sends product and variant IDs for these rows. The order service remains authoritative for price and stock; legacy cart rows still use the existing numeric-ID compatibility path.
-- Room version 7 to 8 migration retains old cart rows under legacy keys. `assembleStaging`, `testStagingUnitTest`, and `assembleStagingAndroidTest` passed. Four focused Room instrumentation tests passed on the connected Motorola phone using direct ADB, which kept the staging app installed and its data intact. The updated app launched with a live process. A manual variant-to-checkout UI flow still needs verification.
+- Room version 7 to 8 migration retains old cart rows under legacy keys. `assembleStaging`, `testStagingUnitTest`, and `assembleStagingAndroidTest` passed. Four focused Room instrumentation tests passed on the connected Motorola phone using direct ADB, which kept the staging app installed and its data intact. The updated app launched with a live process. On 18 November, the manual staging check selected both Samsung Galaxy A56 options. They appeared as separate cart rows at ₹41,999 and ₹47,999, checkout showed ₹89,998, and a COD order completed. My Orders showed two confirmed entries. The test order remains in staging history.
 - No Firebase project or Cloud Function was changed for this issue. Inventory remains private under Firestore rules and is checked by the existing order function; the UI does not currently display live stock counts.
 
 ## Issue 2: account-scoped local shopping data, 2026-11-17
@@ -55,7 +71,7 @@ Updated 2026-11-18. This is the working status for the portfolio app roadmap.
 
 1. Continue the full physical-device flow beyond the completed COD checkout and order-history check: OTP, login/logout, Home, product detail, location, and a rejected checkout that preserves the cart. Capture Logcat for any failure.
 2. Optionally verify a second staging account through the UI. The guest → account A → logout → account A flow and the Room migration/isolation device tests passed.
-3. Verify the exact-variant cart and checkout flow on a physical device, including switching between two options of the same product and a rejected checkout that preserves the cart.
+3. Verify the rejected checkout path on a physical device and confirm that its cart remains intact. The successful two-variant checkout path passed.
 4. Compare the new catalog images with the Figma visual direction. Replace illustrative branded-product concepts with exact approved photos before any commercial release.
 5. Inspect remaining Figma frames visually, consolidate UI components and states, and compare phone screenshots screen by screen.
 6. Add the catalog-grounded shopping assistant through a server-side Google AI integration with usage limits and tests.
