@@ -138,5 +138,7 @@ dependencies {
     implementation(libs.play.services.location)
     implementation(libs.play.services.maps)
     implementation(libs.places)
+    implementation("com.google.mlkit:text-recognition:16.0.1")
+    implementation("com.google.mlkit:image-labeling:17.0.9")
 
 }
