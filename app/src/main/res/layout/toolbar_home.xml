@@ -5,7 +5,8 @@
     android:minHeight="?attr/actionBarSize"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     android:background="@drawable/toolbar_home_gradient_color"
-    android:padding="12dp">
+    android:padding="12dp"
+    android:paddingBottom="0dp">
 
 
     <TextView
@@ -26,13 +27,13 @@
         android:layout_width="0dp"
         android:layout_height="30dp"
         android:layout_marginStart="4dp"
+        android:layout_marginEnd="12dp"
         app:cardCornerRadius="6dp"
         android:layout_marginTop="5dp"
         app:cardBackgroundColor="@color/white"
         app:cardElevation="5dp"
-        app:layout_constraintEnd_toStartOf="@id/notification_bar"
         app:layout_constraintStart_toStartOf="parent"
-        android:layout_marginBottom="50dp"
+        app:layout_constraintEnd_toStartOf="@id/notification_bar"
         app:layout_constraintBottom_toTopOf="@+id/location_bar"
         app:layout_constraintTop_toBottomOf="@+id/trennex_heading"
        >
@@ -57,7 +58,7 @@
                 android:id="@+id/searchHint"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:text="Search in Trennex"
+                android:text="Search"
                 android:textColor="@color/textPlaceholder"
                 android:layout_marginStart="8dp"
                 android:layout_weight="1"
@@ -79,13 +80,12 @@
         android:layout_height="30dp"
         android:orientation="horizontal"
         app:layout_constraintTop_toBottomOf="@+id/searchBar"
-        android:layout_marginStart="4dp"
-        android:layout_marginTop="10dp"
-        app:layout_constraintEnd_toStartOf="@+id/notification_bar"
+        android:layout_marginTop="8dp"
+        android:layout_marginEnd="12dp"
         android:background="@drawable/toolbar_location_background"
-        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintStart_toStartOf="@id/searchBar"
+        app:layout_constraintEnd_toStartOf="@id/notification_bar"
         android:paddingHorizontal="10dp"
-        android:layout_marginEnd="10dp"
         android:gravity="center_vertical">
 
         <ImageView
@@ -122,9 +122,8 @@
         android:layout_width="40dp"
         android:layout_height="40dp"
         android:src="@drawable/notification_icon"
-        android:padding="8dp"
-        android:layout_marginStart="10dp"
-        app:layout_constraintStart_toEndOf="@+id/searchBar"
+        android:padding="6dp"
+        app:layout_constraintStart_toEndOf="@id/searchBar"
         app:layout_constraintEnd_toStartOf="@+id/wishlist_bar"
         app:layout_constraintTop_toTopOf="parent"
         app:layout_constraintBottom_toBottomOf="parent"/>
@@ -134,7 +133,7 @@
         android:layout_width="40dp"
         android:layout_height="40dp"
         android:src="@drawable/wishlist"
-        android:padding="8dp"
+        android:padding="6dp"
         app:layout_constraintStart_toEndOf="@+id/notification_bar"
         app:layout_constraintTop_toTopOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
