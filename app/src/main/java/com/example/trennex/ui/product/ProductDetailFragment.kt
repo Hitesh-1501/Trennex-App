@@ -618,13 +618,13 @@ class ProductDetailFragment : Fragment(R.layout.fragment_product_detail), WishLi
 
     private fun updateMainTitle(){
         val selectedInfo = listOfNotNull(
-            selectedColor.takeIf { it.isNotBlank() },
+            selectedColor.takeIf { it.isNotBlank() && !selectedVariant.contains(it, ignoreCase = true) },
             selectedVariant.takeIf { it.isNotBlank() }
         )
         val description = if(selectedInfo.isEmpty()){
             baseDescription
         }else{
-            "$baseDescription (${selectedInfo.joinToString {", "}})"
+            "$baseDescription (${selectedInfo.joinToString(", ")})"
         }
         binding.tvDescription.text = description
         binding.tvTitle.text = baseTitle

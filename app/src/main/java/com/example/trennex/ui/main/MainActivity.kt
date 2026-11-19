@@ -35,6 +35,7 @@ import kotlinx.coroutines.launch
 
 import androidx.activity.viewModels
 import com.example.trennex.viewmodel.main.MainViewModel
+import com.example.trennex.ui.home.HomeFragment
 import android.widget.TextView
 import kotlinx.coroutines.flow.collectLatest
 
@@ -260,6 +261,13 @@ class MainActivity : AppCompatActivity() {
                 toolbarBinding.searchBar.setOnClickListener {
                     if(navController.currentDestination?.id == R.id.homeFragment){
                         navController.navigate(R.id.searchFragment)
+                    }
+                }
+                toolbarBinding.locationBar.setOnClickListener {
+                    if (navController.currentDestination?.id == R.id.homeFragment) {
+                        val host = supportFragmentManager.findFragmentById(R.id.nav_host_fragment) as? NavHostFragment
+                        (host?.childFragmentManager?.primaryNavigationFragment as? HomeFragment)
+                            ?.showLocationSelector()
                     }
                 }
             }

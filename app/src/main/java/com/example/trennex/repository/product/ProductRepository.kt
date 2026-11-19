@@ -13,6 +13,9 @@ import com.google.firebase.firestore.DocumentSnapshot
 import com.google.firebase.firestore.FirebaseFirestore
 import com.google.firebase.firestore.Query
 import kotlinx.coroutines.tasks.await
+import kotlinx.coroutines.async
+import kotlinx.coroutines.awaitAll
+import kotlinx.coroutines.coroutineScope
 
 class ProductRepository(
     private val firestore: FirebaseFirestore = FirebaseFirestore.getInstance(),
@@ -116,19 +119,31 @@ class ProductRepository(
         }
     }
 
-    suspend fun searchProducts(query: String): List<ProductResponse> {
+    suspend fun searchProducts(query: String, includeVariants: Boolean = true): List<ProductResponse> {
         return try {
             val catalogProducts = loadActiveCatalogProducts()
             if (catalogProducts.isNotEmpty()) {
                 val normalizedQuery = query.trim()
-                catalogProducts
+                val matchedProducts = catalogProducts
                     .filter { product ->
                         product.name.contains(normalizedQuery, ignoreCase = true) ||
                             product.description.contains(normalizedQuery, ignoreCase = true) ||
                             product.tags.any { it.contains(normalizedQuery, ignoreCase = true) }
                     }
                     .sortedBy(CatalogProduct::sortOrder)
-                    .map { it.toProductResponse() }
+                if (!includeVariants) {
+                    matchedProducts.map { it.toProductResponse() }
+                } else coroutineScope {
+                    matchedProducts.map { product -> async {
+                        val variants = firestore.collection(PRODUCTS).document(product.documentId)
+                            .collection(VARIANTS)
+                            .whereEqualTo("active", true)
+                            .get().await().documents
+                            .mapNotNull { it.toCatalogVariant() }
+                            .sortedBy(CatalogVariant::sortOrder)
+                        product.toProductResponse(variants)
+                    } }.awaitAll()
+                }
             } else if (BuildConfig.USE_OWN_CATALOG_ONLY) {
                 emptyList()
             } else {
