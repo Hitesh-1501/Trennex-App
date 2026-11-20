@@ -30,7 +30,6 @@ class TrenNexApp: Application(){
             Places.initialize(this, apiKey)
         }
     }
-
     private fun configureFirebaseEmulators() {
         if (!BuildConfig.USE_FIREBASE_EMULATORS) return
 
