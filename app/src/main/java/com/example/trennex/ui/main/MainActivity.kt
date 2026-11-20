@@ -113,6 +113,11 @@ class MainActivity : AppCompatActivity() {
                     setLightStatusBar(true)
                     binding.curveBottomNav.visibility = View.VISIBLE
                 }
+                R.id.shoppingAssistantFragment -> {
+                    showToolBar(ToolBarType.TITLE, "Shopping Assistant")
+                    setLightStatusBar(true)
+                    binding.curveBottomNav.visibility = View.GONE
+                }
                 R.id.accountDetailsFragment -> {
                     showToolBar(ToolBarType.TITLE,"Manage Your Account")
                     setLightStatusBar(true)
