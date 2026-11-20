@@ -60,12 +60,14 @@ class ProfileFragment : Fragment(R.layout.fragment_profile) {
             ProfileGridItem(R.drawable.ic_explore, "Explore Trenex"),
             ProfileGridItem(R.drawable.order_icon, "Orders"),
             ProfileGridItem(R.drawable.ic_help, "Help Center"),
-            ProfileGridItem(R.drawable.ic_coupn, "Coupons")
+            ProfileGridItem(R.drawable.ic_coupn, "Coupons"),
+            ProfileGridItem(R.drawable.ic_help, "Shopping Assistant")
         )
 
         val adapter = ProfileGridAdapter(gridItems) { item ->
             when (item.title) {
                 "Orders" -> findNavController().navigate(R.id.action_profileFragment_to_ordersFragment)
+                "Shopping Assistant" -> findNavController().navigate(R.id.action_profileFragment_to_shoppingAssistantFragment)
                 else -> Toast.makeText(requireContext(), "${item.title} clicked", Toast.LENGTH_SHORT).show()
             }
         }
