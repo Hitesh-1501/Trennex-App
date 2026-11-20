@@ -137,7 +137,15 @@
         <action
             android:id="@+id/action_profileFragment_to_savedAddressesFragment"
             app:destination="@id/savedAddressesFragment" />
+        <action
+            android:id="@+id/action_profileFragment_to_shoppingAssistantFragment"
+            app:destination="@id/shoppingAssistantFragment" />
     </fragment>
+    <fragment
+        android:id="@+id/shoppingAssistantFragment"
+        android:name="com.example.trennex.ui.profile.ShoppingAssistantFragment"
+        android:label="Shopping Assistant"
+        tools:layout="@layout/fragment_shopping_assistant" />
     <fragment
         android:id="@+id/savedAddressesFragment"
         android:name="com.example.trennex.ui.profile.SavedAddressesFragment"
