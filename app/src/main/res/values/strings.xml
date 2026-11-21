@@ -23,6 +23,8 @@
     <string name="hello_blank_fragment">Hello blank fragment</string>
     <string name="location_address_deliver_text">Where would you like us to deliver your order</string>
     <string name="deliver_to_the_correct_location">This will help to deliver to the correct location</string>
+    <string name="detect_delivery_address">Detect your delivery address</string>
+    <string name="choose_address_on_map">Choose address on map</string>
     <string name="notifications">Notifications</string>
     <string name="no_notifications_yet">No Notifications Yet</string>
     <string name="notification_desc">We\'ll let you know when there\'s\nsomething new.</string>

@@ -4,6 +4,14 @@ Updated 2026-11-21. This is the working status for the portfolio app roadmap.
 
 ## Issue 5: Figma phone UI comparison, in progress, 2026-11-18
 
+### 2026-11-21 staging device pass
+
+1. Confirmed the staging build was running on the connected Motorola. Home loaded its catalog and the selected address. Switched to the other saved address and observed the Home bar change immediately, then restored the original address.
+2. Opened Add New Address from the Home sheet and opened its manual map without a crash. No address was saved. Corrected two misleading labels in the shared address UI: the location action now says "Detect your delivery address," and the manual option says "Choose address on map." The final staging APK displayed both labels on the phone.
+3. Opened the existing Samsung recent search and its product detail without a crash. The detail initially showed `0.0 | 0` because it calculated ratings only from individual review documents, while the owned catalog has aggregate rating fields. The detail and cart metadata now use `ratingAverage`/`ratingCount` when present, with review-list fallback for legacy products. The rebuilt phone screen displayed the catalog's `4.5 | 1842` for Samsung.
+4. `assembleStaging` and `testStagingUnitTest` passed. The staging APK was installed with `adb install -r`, preserving app data. Recent Logcat contained no TrenNex fatal exception during these checks. No Firebase project or production build was changed.
+5. Figma `get_design_context` for the remaining Gender frame (`2218:3152`) still returns the Starter-plan call limit. This pass did not claim a new Figma visual comparison. OTP/fresh login, a rejected checkout on-device, voice/camera search, and exact media approval remain unverified.
+
 - The owner reports that the staging app flows checked after Issue 6 are working. The Sort frame (`2218:3167`) was visually inspected in Figma. Search now opens a branded bottom sheet with its five choices and retains Recommended and Name for existing functionality. Catalog `newArrival`, `ratingAverage`, and `ratingCount` feed real new-arrival and popularity ordering; discount and price sorting use existing fields. `assembleStaging` and `testStagingUnitTest` passed, and the updated APK was installed without clearing data. A physical-phone search confirmed Price low to high moved the ₹599 lipstick to the top. Figma blocked the subsequent Gender frame with the Starter-plan call limit, so its precise visual comparison is still open.
 - Compared Figma Search start/results and location selector/Add New frames with the staging phone. The Home location bar now opens the saved-address sheet; selecting another saved address updates the bar immediately. Add New opens the existing manual map screen without a crash. The original staging address was restored after the check.
 - Search result rows now use a compact photo, title, and price layout. Catalog MRP comes from the variant when available. Search requests cancel stale work and debounce suggestions; returning from product details restores the query and results, while clearing it restores recent searches. The staging phone confirmed the Samsung result opens product detail and the clear flow works. The keyboard no longer opens automatically over a restored result list.
@@ -79,6 +87,8 @@ Updated 2026-11-21. This is the working status for the portfolio app roadmap.
 - Current scope is a single-question catalog assistant over the first 100 active Firestore products. Conversation survives Back and rotation in memory but is not saved across app restarts. Guest sign-in UI and a full 12-question limit run were not exercised on the physical phone; unauthenticated HTTP rejection and backend input/grounding tests passed.
 
 ## Still to complete, in order
+
+Production readiness was audited on 2026-11-21 in `PRODUCTION_READINESS_AUDIT.md`. The production project and Android app registration were confirmed, but unauthenticated catalog reads returned HTTP 403 and the CLI could not list production functions. No production data was changed. A production inventory, approved media/content, safe dry-run migration, backup, and release validation remain prerequisites.
 
 1. Continue the full physical-device flow beyond the completed COD checkout and order-history check: OTP, login/logout, Home, product detail, location, and a rejected checkout that preserves the cart. Capture Logcat for any failure.
 2. Optionally verify a second staging account through the UI. The guest → account A → logout → account A flow and the Room migration/isolation device tests passed.

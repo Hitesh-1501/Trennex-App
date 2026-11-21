@@ -206,7 +206,6 @@ class ProductDetailFragment : Fragment(R.layout.fragment_product_detail), WishLi
                         cartProductId = product.id
                         cartPrice = price
                         cartMrp = mrp
-                        cartRatingCount = product.reviews.size
                         cartReturnPolicy = product.returnPolicy
                         cartDeliveryDetails = product.shippingInformation
                         baseTitle = product.title
@@ -468,13 +467,17 @@ class ProductDetailFragment : Fragment(R.layout.fragment_product_detail), WishLi
             )
         }
         Log.d("REVIEW_CHECK", "Reviews size: ${product.reviews.size}")
-        binding.tvRatings.text = "${reviewsList.size} Ratings"
+        val ratingCount = product.ratingCount.takeIf { it > 0 } ?: reviewsList.size
+        binding.tvRatings.text = "$ratingCount Ratings"
         binding.tvReviews.text = "| ${reviewsList.size} Reviews"
-        val averageRatings = if(reviewsList.isNotEmpty()){
+        val averageRatings = if (product.ratingAverage in 0.1..5.0) {
+            product.ratingAverage
+        } else if(reviewsList.isNotEmpty()){
             reviewsList.map { it.rating }.average()
         }else 0.0
         binding.totalRatings.text = String.format("%.1f", averageRatings)
         cartRating = averageRatings
+        cartRatingCount = ratingCount
         val limitedReviews = reviewsList.take(4)
         reviewAdapter.updateList(limitedReviews)
 
@@ -503,7 +506,7 @@ class ProductDetailFragment : Fragment(R.layout.fragment_product_detail), WishLi
         binding.llReview.backgroundTintList = ColorStateList.valueOf(backgroundColor)
         binding.totalRatings.backgroundTintList = ColorStateList.valueOf(backgroundColor)
         binding.averageRatings.text = String.format("%.1f", averageRatings)
-        binding.ratings.text = "| ${reviewsList.size}"
+        binding.ratings.text = "| $ratingCount"
     }
 
     private fun setUpCart(){
