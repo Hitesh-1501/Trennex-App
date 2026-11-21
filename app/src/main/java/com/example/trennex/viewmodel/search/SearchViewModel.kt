@@ -136,8 +136,14 @@ class SearchViewModel: ViewModel(){
         }
         val sorted = when (state.sortOrder) {
             SearchSortOrder.RELEVANCE -> filtered
+            SearchSortOrder.NEWEST -> filtered.sortedByDescending { it.newArrival }
             SearchSortOrder.PRICE_LOW -> filtered.sortedBy { it.price }
             SearchSortOrder.PRICE_HIGH -> filtered.sortedByDescending { it.price }
+            SearchSortOrder.POPULARITY -> filtered.sortedWith(
+                compareByDescending<ProductResponse> { it.ratingCount }
+                    .thenByDescending { it.ratingAverage }
+            )
+            SearchSortOrder.DISCOUNT -> filtered.sortedByDescending { it.discountPercentage }
             SearchSortOrder.NAME -> filtered.sortedBy { it.title.lowercase() }
         }
         return state.copy(searchResults = sorted)

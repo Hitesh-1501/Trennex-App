@@ -17,6 +17,6 @@ data class SearchUiState(
     val showRecommendations: Boolean = false
 )
 
-enum class SearchSortOrder { RELEVANCE, PRICE_LOW, PRICE_HIGH, NAME }
+enum class SearchSortOrder { RELEVANCE, NEWEST, PRICE_LOW, PRICE_HIGH, POPULARITY, DISCOUNT, NAME }
 
 enum class SearchGenderFilter { ALL, MEN, WOMEN }
