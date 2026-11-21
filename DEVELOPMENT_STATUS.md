@@ -1,9 +1,10 @@
 # TrenNex development status
 
-Updated 2026-11-19. This is the working status for the portfolio app roadmap.
+Updated 2026-11-21. This is the working status for the portfolio app roadmap.
 
 ## Issue 5: Figma phone UI comparison, in progress, 2026-11-18
 
+- The owner reports that the staging app flows checked after Issue 6 are working. The Sort frame (`2218:3167`) was visually inspected in Figma. Search now opens a branded bottom sheet with its five choices and retains Recommended and Name for existing functionality. Catalog `newArrival`, `ratingAverage`, and `ratingCount` feed real new-arrival and popularity ordering; discount and price sorting use existing fields. `assembleStaging` and `testStagingUnitTest` passed, and the updated APK was installed without clearing data. A physical-phone search confirmed Price low to high moved the ₹599 lipstick to the top. Figma blocked the subsequent Gender frame with the Starter-plan call limit, so its precise visual comparison is still open.
 - Compared Figma Search start/results and location selector/Add New frames with the staging phone. The Home location bar now opens the saved-address sheet; selecting another saved address updates the bar immediately. Add New opens the existing manual map screen without a crash. The original staging address was restored after the check.
 - Search result rows now use a compact photo, title, and price layout. Catalog MRP comes from the variant when available. Search requests cancel stale work and debounce suggestions; returning from product details restores the query and results, while clearing it restores recent searches. The staging phone confirmed the Samsung result opens product detail and the clear flow works. The keyboard no longer opens automatically over a restored result list.
 - Restored the fuller Search result card after the compact version removed useful description and price context. Search now loads active variant records in parallel for exact MRP and discount; the staging phone showed Samsung at ₹41,999 against its real ₹45,999 MRP.

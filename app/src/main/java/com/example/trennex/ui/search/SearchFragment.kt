@@ -14,11 +14,13 @@ import android.view.View
 import android.view.ViewGroup
 import android.widget.EditText
 import android.widget.ImageView
+import android.widget.TextView
 import android.widget.Toast
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.core.view.ViewCompat
 import androidx.core.view.WindowInsetsCompat
 import androidx.core.view.isVisible
+import androidx.core.content.ContextCompat
 import androidx.core.widget.doAfterTextChanged
 import androidx.fragment.app.viewModels
 import androidx.lifecycle.lifecycleScope
@@ -28,11 +30,13 @@ import androidx.recyclerview.widget.LinearLayoutManager
 import com.example.trennex.R
 import com.example.trennex.data.local.cart.AppDatabase
 import com.example.trennex.databinding.FragmentSearchBinding
+import com.example.trennex.databinding.SheetSearchSortBinding
 import com.example.trennex.ui.main.MainActivity
 import com.example.trennex.ui.search.adapter.SearchOptionAdapter
 import com.example.trennex.ui.search.adapter.SearchResultAdapter
 import com.example.trennex.viewmodel.search.SearchViewModel
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
+import com.google.android.material.bottomsheet.BottomSheetDialog
 import com.google.mlkit.vision.common.InputImage
 import com.google.mlkit.vision.label.ImageLabeling
 import com.google.mlkit.vision.label.defaults.ImageLabelerOptions
@@ -167,16 +171,7 @@ class SearchFragment : Fragment(R.layout.fragment_search){
         binding.btnSearchWithCamera.setOnClickListener { cameraCapture.launch(null) }
         binding.btnSelectPhoto.setOnClickListener { photoPicker.launch("image/*") }
         binding.sortContainer.setOnClickListener {
-            val options = arrayOf("Relevance", "Price: low to high", "Price: high to low", "Name: A to Z")
-            val values = SearchSortOrder.entries
-            MaterialAlertDialogBuilder(requireContext(), R.style.ThemeOverlay_TrenNex_SearchDialog)
-                .setTitle("Sort products")
-                .setSingleChoiceItems(options, values.indexOf(viewModel.uiState.value.sortOrder)) { dialog, index ->
-                    viewModel.setSortOrder(values[index])
-                    dialog.dismiss()
-                }
-                .setNegativeButton("Cancel", null)
-                .show()
+            showSortSheet()
         }
         binding.optionSecondary.setOnClickListener {
             val options = arrayOf("All", "Men", "Women")
@@ -190,6 +185,36 @@ class SearchFragment : Fragment(R.layout.fragment_search){
                 .setNegativeButton("Cancel", null)
                 .show()
         }
+    }
+
+    private fun showSortSheet() {
+        val sheet = SheetSearchSortBinding.inflate(layoutInflater)
+        val dialog = BottomSheetDialog(requireContext())
+        val choices = listOf(
+            SearchSortOrder.NEWEST to "What's new",
+            SearchSortOrder.PRICE_HIGH to "Price - high to low",
+            SearchSortOrder.POPULARITY to "Popularity",
+            SearchSortOrder.DISCOUNT to "Discount",
+            SearchSortOrder.PRICE_LOW to "Price - low to high",
+            SearchSortOrder.RELEVANCE to "Recommended",
+            SearchSortOrder.NAME to "Name - A to Z",
+        )
+        choices.forEach { (order, label) ->
+            val row = layoutInflater.inflate(R.layout.item_search_sort_option,
+                sheet.sortOptions, false) as TextView
+            row.text = label
+            if (viewModel.uiState.value.sortOrder == order) {
+                row.setTextColor(ContextCompat.getColor(requireContext(), R.color.colorPrimary))
+                row.contentDescription = "$label, selected"
+            }
+            row.setOnClickListener {
+                viewModel.setSortOrder(order)
+                dialog.dismiss()
+            }
+            sheet.sortOptions.addView(row)
+        }
+        dialog.setContentView(sheet.root)
+        dialog.show()
     }
 
     private fun processPhoto(createImage: suspend () -> InputImage) {
@@ -322,8 +347,11 @@ class SearchFragment : Fragment(R.layout.fragment_search){
                         binding.optionDivider.isVisible = state.showGenderFilter
                         binding.optionSort.text = when (state.sortOrder) {
                             SearchSortOrder.RELEVANCE -> "SORT"
+                            SearchSortOrder.NEWEST -> "NEW"
                             SearchSortOrder.PRICE_LOW -> "PRICE: LOW"
                             SearchSortOrder.PRICE_HIGH -> "PRICE: HIGH"
+                            SearchSortOrder.POPULARITY -> "POPULAR"
+                            SearchSortOrder.DISCOUNT -> "DISCOUNT"
                             SearchSortOrder.NAME -> "NAME"
                         }
                         binding.optionSecondary.text = when (state.genderFilter) {

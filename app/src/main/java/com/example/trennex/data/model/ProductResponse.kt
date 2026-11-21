@@ -27,6 +27,9 @@ data class ProductResponse(
     val variants: List<String>? = null,
     val catalogProductId: String? = null,
     val catalogVariants: List<CatalogVariantOption> = emptyList(),
+    val newArrival: Boolean = false,
+    val ratingAverage: Double = 0.0,
+    val ratingCount: Int = 0,
 )
 
 data class CatalogVariantOption(
