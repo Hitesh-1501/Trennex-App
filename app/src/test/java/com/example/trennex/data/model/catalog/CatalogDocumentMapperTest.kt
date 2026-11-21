@@ -94,6 +94,9 @@ class CatalogDocumentMapperTest {
         assertEquals(listOf("Black"), response.colors)
         assertEquals(listOf("128 GB · Black"), response.variants)
         assertEquals("PHONE-BLK", response.sku)
+        assertEquals(true, response.newArrival)
+        assertEquals(4.5, response.ratingAverage, 0.0)
+        assertEquals(42, response.ratingCount)
     }
 
     @Test

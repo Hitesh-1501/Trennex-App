@@ -71,6 +71,9 @@ data class CatalogProduct(
             colors = colorOptions,
             variants = variantOptions,
             catalogProductId = documentId,
+            newArrival = newArrival,
+            ratingAverage = ratingAverage,
+            ratingCount = ratingCount,
             catalogVariants = variants.sortedBy(CatalogVariant::sortOrder).map {
                 CatalogVariantOption(it.documentId, it.name, it.priceMinor / 100.0,
                     it.mrpMinor / 100.0, it.attributes["color"] ?: it.attributes["shade"])
