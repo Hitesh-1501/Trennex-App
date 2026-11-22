@@ -108,6 +108,15 @@
         android:label="fragment_category"
         tools:layout="@layout/fragment_category" />
     <fragment
+        android:id="@+id/categoryProductsFragment"
+        android:name="com.example.trennex.ui.category.CategoryProductsFragment"
+        android:label="category_products"
+        tools:layout="@layout/fragment_category_products">
+        <argument android:name="categorySlug" app:argType="string" />
+        <argument android:name="categoryTitle" app:argType="string" />
+        <argument android:name="tileName" app:argType="string" android:defaultValue="" />
+    </fragment>
+    <fragment
         android:id="@+id/profileFragment"
         android:name="com.example.trennex.ui.profile.ProfileFragment"
         android:label="fragment_profile"

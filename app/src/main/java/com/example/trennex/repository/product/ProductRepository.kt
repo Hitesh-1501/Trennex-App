@@ -100,12 +100,18 @@ class ProductRepository(
             } else {
                 activeProductsQuery().whereEqualTo("categoryId", slug)
             }
-            val catalogProducts = query.get().await().documents
-                .mapNotNull { it.toCatalogProduct() }
-                .sortedBy(CatalogProduct::sortOrder)
+            val catalogDocuments = query.get().await().documents
+                .mapNotNull { document ->
+                    document.toCatalogProduct()?.let { product -> document to product }
+                }
+                .sortedBy { it.second.sortOrder }
 
-            if (catalogProducts.isNotEmpty()) {
-                catalogProducts.map { it.toProductResponse() }
+            if (catalogDocuments.isNotEmpty()) {
+                coroutineScope {
+                    catalogDocuments.map { (document, product) -> async {
+                        product.toProductResponse(loadVariants(document))
+                    } }.awaitAll()
+                }
             } else if (BuildConfig.USE_OWN_CATALOG_ONLY) {
                 emptyList()
             } else {

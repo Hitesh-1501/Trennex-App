@@ -10,6 +10,8 @@ import com.example.trennex.R
 import com.example.trennex.databinding.FragmentMobileBinding
 import com.example.trennex.ui.category.adapter.MobileCategoryAdapter
 import com.example.trennex.ui.category.model.MobileCategoryModel
+import com.example.trennex.ui.category.onTileTap
+import com.example.trennex.ui.category.openCategoryProducts
 
 class MobileFragment : Fragment() {
     private var _binding : FragmentMobileBinding? = null
@@ -48,6 +50,11 @@ class MobileFragment : Fragment() {
         binding.rvMobiles.apply {
             layoutManager = GridLayoutManager(requireContext(),3)
             adapter = MobileCategoryAdapter(mobileCategoryList)
+            val brands = listOf("Vivo", "Realme", "Samsung", "Oppo", "Poco", "Nothing",
+                "AJ", "Mi", "Google Pixel", "Tecno", "Alcatel", "Itel", "Infinix", "Motorola", "Apple")
+            onTileTap { position ->
+                openCategoryProducts("mobiles", "Mobiles", brands[position])
+            }
         }
     }
 

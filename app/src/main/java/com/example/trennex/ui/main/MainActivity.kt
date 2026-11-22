@@ -133,6 +133,14 @@ class MainActivity : AppCompatActivity() {
                     setLightStatusBar(true)
                     binding.curveBottomNav.visibility = View.VISIBLE
                 }
+                 R.id.categoryProductsFragment -> {
+                     showToolBar(ToolBarType.TITLE, navController.currentBackStackEntry
+                         ?.arguments?.getString("tileName")?.takeIf { it.isNotBlank() }
+                         ?: navController.currentBackStackEntry?.arguments?.getString("categoryTitle")
+                         ?: "Products")
+                     setLightStatusBar(true)
+                     binding.curveBottomNav.visibility = View.GONE
+                 }
                 R.id.productSpecFragment -> {
                     showToolBar(ToolBarType.TITLE,"All Details")
                     setLightStatusBar(true)
