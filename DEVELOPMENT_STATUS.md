@@ -1,8 +1,19 @@
 # TrenNex development status
 
-Updated 2026-11-21. This is the working status for the portfolio app roadmap.
+Updated 2026-11-22. This is the working status for the portfolio app roadmap.
 
-## Issue 5: Figma phone UI comparison, in progress, 2026-11-18
+## Issue 5: Figma phone UI comparison, complete for this pass, 2026-11-22
+
+The owner accepted the current Issue 5 pass and deferred its remaining visual and device checks to later testing. This status does not mean every Figma frame or failure path has been verified.
+
+### 2026-11-22 staging follow-up
+
+- The owner completed the phone OTP sign-in after the previous day's successful logout. On the connected Motorola, staging Profile showed the signed-in account again, Home displayed its selected saved address immediately while catalog content loaded, the account cart was empty, and its saved T-shirt returned to Wishlist. No OTP or SMS content was accessed by the agent.
+- The owner tested voice search and live camera search on the device and reported that both returned useful product results without crashing. These are owner-reported checks; the agent did not repeat them.
+- On the staging phone, the Stone Grey sofa opened from Home and added to Cart. The selected delivery address, product, variant, price, and quantity selector appeared. The temporary item was removed, and the empty-cart screen was confirmed. No order was submitted.
+- A device out-of-stock rejection could not be safely reproduced with the current staging catalog: the cart quantity selector is limited to five, while all 15 staging inventory records currently have at least five available units. The existing local function rejection test and code review cover this path, but cart preservation after a server rejection remains unverified on the phone. A dedicated low-stock staging fixture is needed for that check.
+- Figma MCP returned the default Gender sheet (`2218:3152`): a white 440 × 234 panel with a small GENDER heading and Male, Boys, Girls, Women choices. The app currently uses All, Men, Women in a generic selection dialog. The other Gender variants returned the Starter-plan call limit, so their visual states remain uninspected. The staging seed only has `men` and `women` tags; Boys/Girls would return no products until corresponding catalog entries exist. No Gender UI code was changed in this follow-up.
+- Next Issue 5 checks: rejected checkout with cart preservation using a dedicated staging fixture; remaining Figma frame/state comparisons when accessible; and exact approved product media review. Issue 6 remains complete on staging. Production migration is later.
 
 ### 2026-11-21 staging device pass
 
@@ -17,7 +28,7 @@ Updated 2026-11-21. This is the working status for the portfolio app roadmap.
 - Search result rows now use a compact photo, title, and price layout. Catalog MRP comes from the variant when available. Search requests cancel stale work and debounce suggestions; returning from product details restores the query and results, while clearing it restores recent searches. The staging phone confirmed the Samsung result opens product detail and the clear flow works. The keyboard no longer opens automatically over a restored result list.
 - Restored the fuller Search result card after the compact version removed useful description and price context. Search now loads active variant records in parallel for exact MRP and discount; the staging phone showed Samsung at ₹41,999 against its real ₹45,999 MRP.
 - Added working Sort (relevance, price in both directions, name) and Gender (all, men, women) controls over loaded results. Gender appears when returned products carry gender tags. The physical-phone test filtered a broad query down to the women-tagged saree and confirmed the selected filter label updates. Price-low sorting moved the ₹599 lipstick ahead of higher-priced products.
-- Voice search opens Android's speech prompt and passes a recognized phrase into product search. Camera and gallery actions open the system capture/picker; on-device ML Kit text recognition and image labeling produce approximate matches against the existing catalog. Photo search loads full variant detail only for matched products. A controlled gallery test with a TrenNex Samsung image returned the Samsung product; the temporary test image was removed from the phone. Voice transcription and live camera recognition still need a person-driven test.
+- Voice search opens Android's speech prompt and passes a recognized phrase into product search. Camera and gallery actions open the system capture/picker; on-device ML Kit text recognition and image labeling produce approximate matches against the existing catalog. Photo search loads full variant detail only for matched products. A controlled gallery test with a TrenNex Samsung image returned the Samsung product; the temporary test image was removed from the phone. The owner subsequently reported successful voice and live camera searches on the device.
 - `assembleStaging` passed and the staging APK was installed on the connected Motorola without clearing app data. Figma MCP reached its Starter plan call limit before the Sort/Gender frames could be inspected, so their precise visual comparison remains open. No production Firebase data or backend logic changed in this Search pass.
 - Compared the Home and general product-detail frames in the TrenNex Figma file with a physical Motorola staging build. Home now uses the ten Figma category icons, Figma-sized category tiles, a taller banner, narrower search/address fields, and more compact product cards. The rebuilt device screenshot confirmed the full category labels fit.
 - Kept category navigation, Firestore-backed catalog/banner loading, product taps, and the existing bottom navigation. The banner still displays image-only staging media because the current banner data exposes only image URLs; product-specific Figma promotional text must not be hardcoded over unrelated rotating images.
@@ -86,17 +97,23 @@ Updated 2026-11-21. This is the working status for the portfolio app roadmap.
 - The updated staging APK was installed on a signed-in physical Motorola without clearing app data. Profile opened the assistant, and its first phone run exposed the keyboard covering Send; the composer now moves above the keyboard and was verified on the device. A question returned a catalog-backed Samsung answer, a ₹41,999 product card, and a remaining-questions label. Tapping the card opened the Samsung product detail without a crash. Returning with Back preserved the question, answer, card, and limit label through the screen ViewModel. The final staging APK was rebuilt and installed with TrenNex blue on Send and a readable input hint.
 - Current scope is a single-question catalog assistant over the first 100 active Firestore products. Conversation survives Back and rotation in memory but is not saved across app restarts. Guest sign-in UI and a full 12-question limit run were not exercised on the physical phone; unauthenticated HTTP rejection and backend input/grounding tests passed.
 
+Production catalog work is on hold at the owner's request until the app is ready. The earlier read-only audit notes remain in `PRODUCTION_READINESS_AUDIT.md`; no production Firebase project was changed.
+
+## Issue 7: category browsing and product listings, started 2026-11-22
+
+- The ten existing sidebar categories and their tile layouts remain. Category tiles now open one reusable product-listing destination; the selected root category also has a direct browse action. Results come from the staging Firebase catalog through `ProductRepository`, and empty/error states do not display unrelated fallback products.
+- The listing reuses the existing Search product card and product-detail destination. It supports the existing sort choices through the same white bottom sheet as Search. Category reads now include active variants, so the cards use exact variant MRP instead of a calculated estimate.
+- `assembleStaging` and `testStagingUnitTest` passed. The updated staging APK was installed on the connected Motorola without clearing data. Top Picks → Mobiles showed the Samsung product, opened its details, and displayed the exact ₹45,999 MRP. Beauty → Face Wash showed an accurate empty state. Top Picks listed six featured products; Price low to high moved the ₹699 T-shirt to the first position. No production Firebase project was accessed or changed.
+- This pass makes existing category navigation useful with the current 11-product staging catalog. Many older subcategory tiles have no matching owned products yet; expanding the catalog and reviewing those labels/media are later Issue 7 work. A full Figma comparison of category states is also deferred while Figma access is limited.
+
 ## Still to complete, in order
 
 Production readiness was audited on 2026-11-21 in `PRODUCTION_READINESS_AUDIT.md`. The production project and Android app registration were confirmed, but unauthenticated catalog reads returned HTTP 403 and the CLI could not list production functions. No production data was changed. A production inventory, approved media/content, safe dry-run migration, backup, and release validation remain prerequisites.
 
-1. Continue the full physical-device flow beyond the completed COD checkout and order-history check: OTP, login/logout, Home, product detail, location, and a rejected checkout that preserves the cart. Capture Logcat for any failure.
-2. Optionally verify a second staging account through the UI. The guest → account A → logout → account A flow and the Room migration/isolation device tests passed.
-3. Verify the rejected checkout path on a physical device and confirm that its cart remains intact. The successful two-variant checkout path passed.
-4. Compare the new catalog images with the Figma visual direction. Replace illustrative branded-product concepts with exact approved photos before any commercial release.
-5. Inspect remaining Figma frames visually, consolidate UI components and states, and compare phone screenshots screen by screen.
-6. Extend assistant retrieval beyond 100 products and persist conversation history if needed after the initial staging assistant is accepted.
-7. After staging acceptance, plan production catalog migration and release separately. The production project `trennex-ebbeb` has not been changed in this update.
+1. Continue Issue 7 in staging: expand the owned catalog so visible subcategory tiles lead to relevant products, review their labels and media, and compare remaining Category Figma states when accessible.
+2. Later Issue 5 testing: use a dedicated low-stock staging fixture to confirm rejected checkout preserves the cart; optionally check a second account; inspect remaining Figma states when accessible; compare approved media with the design; and capture Logcat for failures.
+3. Extend assistant retrieval beyond 100 products and persist conversation history if needed after the initial staging assistant is accepted.
+4. When the app and catalog are accepted, run the read-only production catalog audit, review existing IDs, then plan a guarded migration and backup. The production project `trennex-ebbeb` has not been changed.
 
 ## Verification commands
 

@@ -13,6 +13,8 @@ import com.example.trennex.ui.category.adapter.FashionCategoryAdapter.Companion.
 import com.example.trennex.ui.category.adapter.FashionCategoryAdapter.Companion.TYPE_HEADER
 import com.example.trennex.ui.category.adapter.FashionCategoryAdapter.Companion.TYPE_ITEM
 import com.example.trennex.ui.category.model.FashionCategoryModel
+import com.example.trennex.ui.category.onTileTap
+import com.example.trennex.ui.category.openCategoryProducts
 
 class FashionFragment : Fragment() {
     private var _binding : FragmentFashionBinding? = null
@@ -36,6 +38,11 @@ class FashionFragment : Fragment() {
         }
         binding.rvFashion.layoutManager = grid
         binding.rvFashion.adapter = FashionCategoryAdapter(list)
+        binding.rvFashion.onTileTap { position ->
+            list[position].takeIf { it.Type == TYPE_ITEM }?.name?.let { tile ->
+                openCategoryProducts("fashion", "Fashion", tile)
+            }
+        }
     }
 
     private fun buildList(): List<FashionCategoryModel>{
