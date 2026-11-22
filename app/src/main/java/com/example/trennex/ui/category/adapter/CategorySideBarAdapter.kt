@@ -10,9 +10,11 @@ import com.example.trennex.ui.category.model.CategoryModel
 
 class CategorySideBarAdapter(
     private val categories : List<CategoryModel>,
+    selectedCategoryId: Int?,
     private val onCategoryClick: (CategoryModel) -> Unit
 ): RecyclerView.Adapter<CategorySideBarAdapter.ViewHolder>(){
-    private var selectedPosition = 0
+    private var selectedPosition = categories.indexOfFirst { it.id == selectedCategoryId }
+        .takeIf { it >= 0 } ?: 0
     inner class ViewHolder(val binding: ItemCategoryTabBinding) : RecyclerView.ViewHolder(binding.root){
         fun bind(category : CategoryModel, position: Int) {
             binding.ivCategoryIcon.setImageResource(category.icon)
@@ -28,7 +30,8 @@ class CategorySideBarAdapter(
             }
             binding.root.setOnClickListener {
                 val oldPosition = selectedPosition
-                selectedPosition = adapterPosition
+                selectedPosition = bindingAdapterPosition
+                if (selectedPosition == RecyclerView.NO_POSITION) return@setOnClickListener
                 notifyItemChanged(oldPosition)
                 notifyItemChanged(selectedPosition)
                 onCategoryClick(category)
