@@ -13,6 +13,8 @@ import com.example.trennex.ui.category.adapter.ApplianceAdapter.Companion.TYPE_B
 import com.example.trennex.ui.category.adapter.ApplianceAdapter.Companion.TYPE_HEADER
 import com.example.trennex.ui.category.adapter.ApplianceAdapter.Companion.TYPE_ITEM
 import com.example.trennex.ui.category.model.ApplianceCategoryModel
+import com.example.trennex.ui.category.onTileTap
+import com.example.trennex.ui.category.openCategoryProducts
 
 class ApplianceFragment : Fragment(R.layout.fragment_appliance) {
     private var _binding : FragmentApplianceBinding? = null
@@ -38,6 +40,11 @@ class ApplianceFragment : Fragment(R.layout.fragment_appliance) {
         }
         binding.rvAppliance.layoutManager = grid
         binding.rvAppliance.adapter = ApplianceAdapter(list)
+        binding.rvAppliance.onTileTap { position ->
+            list[position].takeIf { it.Type == TYPE_ITEM }?.title?.let { tile ->
+                openCategoryProducts("appliances", "Appliances", tile.replace("\n", " "))
+            }
+        }
     }
 
     private fun bundleList(): List<ApplianceCategoryModel>{
