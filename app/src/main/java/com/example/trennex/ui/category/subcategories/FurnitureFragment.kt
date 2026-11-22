@@ -15,6 +15,8 @@ import com.example.trennex.ui.category.adapter.FurnitureCategoryAdapter.Companio
 import com.example.trennex.ui.category.adapter.FurnitureCategoryAdapter.Companion.TYPE_FURNITURE_HEADER
 import com.example.trennex.ui.category.adapter.FurnitureCategoryAdapter.Companion.TYPE_FURNITURE_ITEM
 import com.example.trennex.ui.category.model.FurnitureCategoryModel
+import com.example.trennex.ui.category.onTileTap
+import com.example.trennex.ui.category.openCategoryProducts
 
 class FurnitureFragment : Fragment(R.layout.fragment_furniture) {
     private var _binding : FragmentFurnitureBinding? = null
@@ -40,6 +42,11 @@ class FurnitureFragment : Fragment(R.layout.fragment_furniture) {
         binding.rvFurniture.apply {
             adapter = FurnitureCategoryAdapter(list)
             layoutManager = grid
+            onTileTap { position ->
+                list[position].takeIf { it.Type == TYPE_FURNITURE_ITEM }?.title?.let { tile ->
+                    openCategoryProducts("furniture", "Furniture", tile)
+                }
+            }
         }
     }
 

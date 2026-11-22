@@ -13,6 +13,8 @@ import com.example.trennex.ui.category.adapter.HomeCategoryAdapter.Companion.TYP
 import com.example.trennex.ui.category.adapter.HomeCategoryAdapter.Companion.TYPE_HOME_HEADER
 import com.example.trennex.ui.category.adapter.HomeCategoryAdapter.Companion.TYPE_HOME_ITEM
 import com.example.trennex.ui.category.model.HomeCategoryModel
+import com.example.trennex.ui.category.onTileTap
+import com.example.trennex.ui.category.openCategoryProducts
 
 
 class HomeCategoryFragment : Fragment() {
@@ -40,6 +42,11 @@ class HomeCategoryFragment : Fragment() {
         binding.rvHome.apply {
             adapter = HomeCategoryAdapter(list)
             layoutManager = grid
+            onTileTap { position ->
+                list[position].takeIf { it.Type == TYPE_HOME_ITEM }?.title?.let { tile ->
+                    openCategoryProducts("home", "Home", tile)
+                }
+            }
         }
     }
 
