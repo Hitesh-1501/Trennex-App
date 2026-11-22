@@ -15,6 +15,8 @@ import com.example.trennex.ui.category.adapter.ToysCategoryAdapter.Companion.TYP
 import com.example.trennex.ui.category.adapter.ToysCategoryAdapter.Companion.TYPE_TOYS_HEADER
 import com.example.trennex.ui.category.adapter.ToysCategoryAdapter.Companion.TYPE_TOYS_ITEM
 import com.example.trennex.ui.category.model.ToysCategoryModel
+import com.example.trennex.ui.category.onTileTap
+import com.example.trennex.ui.category.openCategoryProducts
 
 
 class ToysFragment : Fragment(R.layout.fragment_toys) {
@@ -41,6 +43,11 @@ class ToysFragment : Fragment(R.layout.fragment_toys) {
         binding.rvToys.apply {
             adapter = ToysCategoryAdapter(list)
             layoutManager = grid
+            onTileTap { position ->
+                list[position].takeIf { it.Type == TYPE_TOYS_ITEM }?.title?.let { tile ->
+                    openCategoryProducts("toys-books", "Toys & Books", tile)
+                }
+            }
         }
     }
 

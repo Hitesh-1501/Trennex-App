@@ -10,6 +10,8 @@ import com.example.trennex.R
 import com.example.trennex.databinding.FragmentTopPicksBinding
 import com.example.trennex.ui.category.adapter.TopPicksCategoryAdapter
 import com.example.trennex.ui.category.model.SubCategoryModel
+import com.example.trennex.ui.category.onTileTap
+import com.example.trennex.ui.category.openCategoryProducts
 
 class TopPicksFragment : Fragment(R.layout.fragment_top_picks) {
     private var _binding : FragmentTopPicksBinding? = null
@@ -44,6 +46,20 @@ class TopPicksFragment : Fragment(R.layout.fragment_top_picks) {
             layoutManager = GridLayoutManager(requireContext(),4)
             adapter = TopPicksCategoryAdapter(topPicks)
             setHasFixedSize(true)
+            onTileTap { position ->
+                val name = topPicks[position].name
+                val slug = when (name) {
+                    "Appliance" -> "appliances"
+                    "Toys" -> "toys-books"
+                    else -> name.lowercase()
+                }
+                openCategoryProducts(slug, name)
+            }
         }
+    }
+
+    override fun onDestroyView() {
+        _binding = null
+        super.onDestroyView()
     }
 }

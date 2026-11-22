@@ -19,6 +19,8 @@ import com.example.trennex.ui.category.adapter.ToysCategoryAdapter.Companion.TYP
 import com.example.trennex.ui.category.adapter.ToysCategoryAdapter.Companion.TYPE_TOYS_ITEM
 import com.example.trennex.ui.category.model.SportsCategoryModel
 import com.example.trennex.ui.category.model.ToysCategoryModel
+import com.example.trennex.ui.category.onTileTap
+import com.example.trennex.ui.category.openCategoryProducts
 
 class SportsFragment : Fragment(R.layout.fragment_sports){
     private var _binding : FragmentSportsBinding? = null
@@ -44,6 +46,11 @@ class SportsFragment : Fragment(R.layout.fragment_sports){
         binding.rvSports.apply {
             adapter = SportsCategoryAdapter(list)
             layoutManager = grid
+            onTileTap { position ->
+                list[position].takeIf { it.Type == TYPE_SPORTS_ITEM }?.title?.let { tile ->
+                    openCategoryProducts("sports", "Sports", tile)
+                }
+            }
         }
     }
 
