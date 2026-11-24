@@ -86,6 +86,7 @@ class ProductDetailFragment : Fragment(R.layout.fragment_product_detail), WishLi
     private var isReviewExpandable = false
     private var isWishlisted = false
     private var isCart = false
+    private var isAddingToCart = false
     private var cartItems: List<CartItemModel> = emptyList()
 
     private val cartViewModel: CartViewModel by activityViewModels()
@@ -165,6 +166,8 @@ class ProductDetailFragment : Fragment(R.layout.fragment_product_detail), WishLi
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
+        binding.addToCart.isEnabled = false
+        binding.addToCart.alpha = 0.5f
         fusedLocationClient = LocationServices.getFusedLocationProviderClient(requireContext())
         val id = args.productId
         viewModel.fetchProductDetail(id)
@@ -231,6 +234,8 @@ class ProductDetailFragment : Fragment(R.layout.fragment_product_detail), WishLi
                         configureVariantAndColorData(product,mrp)
                         setupColorVariants()
                         setUpVariants()
+                        binding.addToCart.isEnabled = !isAddingToCart
+                        binding.addToCart.alpha = if (isAddingToCart) 0.5f else 1f
                     }
                 }
             }
@@ -511,6 +516,7 @@ class ProductDetailFragment : Fragment(R.layout.fragment_product_detail), WishLi
 
     private fun setUpCart(){
         binding.addToCart.setOnClickListener {
+            if (isAddingToCart || currentProduct == null) return@setOnClickListener
             updateSelectedCatalogVariant()
             if (currentProduct?.catalogProductId != null &&
                 currentProduct?.catalogVariants?.getOrNull(selectedVariantPosition) == null) {
@@ -518,10 +524,7 @@ class ProductDetailFragment : Fragment(R.layout.fragment_product_detail), WishLi
                 return@setOnClickListener
             }
             if(!isCart) {
-                isCart = true
-                updateCartIcon()
-                CartStore.addItem(
-                    CartItemModel(
+                val item = CartItemModel(
                         id = cartProductId,
                         title = baseTitle,
                         description = baseDescription,
@@ -538,14 +541,38 @@ class ProductDetailFragment : Fragment(R.layout.fragment_product_detail), WishLi
                         variantId = currentProduct?.catalogVariants?.getOrNull(selectedVariantPosition)?.id,
                         variantName = currentProduct?.catalogVariants?.getOrNull(selectedVariantPosition)?.name,
                     )
-                )
-                val addToCartSheet = AddToCartSheet.newInstance(
-                    imageUrl = currentImages.firstOrNull(),
-                    productTitle = baseTitle
-                )
-                addToCartSheet.listener = this
-                addToCartSheet.show(parentFragmentManager, "add_to_cart_sheet")
-                Toast.makeText(requireContext(),"Added to cart", Toast.LENGTH_SHORT).show()
+                isAddingToCart = true
+                binding.addToCart.isEnabled = false
+                binding.addToCart.alpha = 0.5f
+                viewLifecycleOwner.lifecycleScope.launch {
+                    try {
+                        CartStore.addItemAndAwait(item)
+                        if (_binding == null || !isAdded) return@launch
+                        isCart = item.id == args.productId &&
+                            (item.variantId == null ||
+                                item.variantId == currentProduct?.catalogVariants?.getOrNull(selectedVariantPosition)?.id)
+                        updateCartIcon()
+                        if (parentFragmentManager.findFragmentByTag("add_to_cart_sheet") == null) {
+                            val addToCartSheet = AddToCartSheet.newInstance(
+                                imageUrl = item.imageUrl,
+                                productTitle = item.title
+                            )
+                            addToCartSheet.listener = this@ProductDetailFragment
+                            addToCartSheet.show(parentFragmentManager, "add_to_cart_sheet")
+                        }
+                        Toast.makeText(requireContext(), "Added to cart", Toast.LENGTH_SHORT).show()
+                    } catch (error: Exception) {
+                        if (_binding != null && isAdded) {
+                            Toast.makeText(requireContext(), "Could not add to cart. Try again.", Toast.LENGTH_SHORT).show()
+                        }
+                    } finally {
+                        isAddingToCart = false
+                        if (_binding != null) {
+                            binding.addToCart.isEnabled = currentProduct != null
+                            binding.addToCart.alpha = 1f
+                        }
+                    }
+                }
             }else{
                 findNavController().navigate(R.id.action_productDetailFragment_to_cartFragment)
             }
