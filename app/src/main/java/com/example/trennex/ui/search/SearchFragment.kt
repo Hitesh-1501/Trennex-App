@@ -28,6 +28,7 @@ import androidx.navigation.fragment.findNavController
 import androidx.recyclerview.widget.GridLayoutManager
 import androidx.recyclerview.widget.LinearLayoutManager
 import com.example.trennex.R
+import com.example.trennex.ui.common.NetworkStatus
 import com.example.trennex.data.local.cart.AppDatabase
 import com.example.trennex.databinding.FragmentSearchBinding
 import com.example.trennex.databinding.SheetSearchSortBinding
@@ -369,11 +370,20 @@ class SearchFragment : Fragment(R.layout.fragment_search){
                         binding.photoSearchSection.isVisible = false
                         binding.searchResultRecyclerView.isVisible = false
                         binding.noProductsContainer.isVisible = true
-                        binding.noProductsMessage.text = if (state.error == "ERROR LOADING PRODUCTS") {
-                            "Could not load products. Try again"
+                        val offline = !NetworkStatus.isOnline(requireContext())
+                        binding.noProductsMessage.text = if (state.error == "ERROR LOADING PRODUCTS" || offline) {
+                            if (!offline)
+                                "Could not load products. Tap to retry."
+                            else "No internet connection. Connect and tap to retry."
                         } else {
                             "No matching products found"
                         }
+                        val canRetry = (state.error == "ERROR LOADING PRODUCTS" || offline) &&
+                            state.query != "Photo search"
+                        binding.noProductsContainer.isClickable = canRetry
+                        binding.noProductsContainer.setOnClickListener(
+                            if (canRetry) View.OnClickListener { viewModel.searchProducts(state.query) } else null
+                        )
                         clearSearch?.isVisible = searchInput?.text?.toString()?.isNotEmpty() ?: false
                     }
                     !state.isLoading && !state.showRecommendations && !state.hasResults && searchInput?.text?.toString()?.trim()?.isEmpty() == true -> {

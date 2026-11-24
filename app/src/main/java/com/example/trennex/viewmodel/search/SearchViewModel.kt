@@ -21,6 +21,8 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.async
 import kotlinx.coroutines.awaitAll
 import kotlinx.coroutines.coroutineScope
+import kotlinx.coroutines.withTimeout
+import kotlinx.coroutines.TimeoutCancellationException
 
 class SearchViewModel: ViewModel(){
     private val repository = ProductRepository()
@@ -69,7 +71,7 @@ class SearchViewModel: ViewModel(){
                     dao.insertRecentSearch(RecentSearchEntity(query = query))
                 }
 
-                val results = repository.searchProducts(query)
+                val results = withTimeout(20_000) { repository.searchProducts(query) }
                 val isGrid = determineLayoutType(query,results)
                 if(results.isEmpty()){
                     _uiState.value = SearchUiState(
@@ -92,6 +94,11 @@ class SearchViewModel: ViewModel(){
                         showRecommendations = false
                     )
                 }
+            }catch (e: TimeoutCancellationException) {
+                _uiState.value = SearchUiState(
+                    query = query,
+                    error = "ERROR LOADING PRODUCTS"
+                )
             }catch (e: CancellationException) {
                 throw e
             }catch (e: Exception){
