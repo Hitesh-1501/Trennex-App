@@ -9,6 +9,8 @@ import com.example.trennex.ui.home.HomeUiState
 import com.example.trennex.ui.home.model.CategoryModel
 import com.example.trennex.ui.home.model.ProductModel
 import kotlinx.coroutines.async
+import kotlinx.coroutines.CancellationException
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -18,6 +20,8 @@ import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withTimeout
+import kotlinx.coroutines.TimeoutCancellationException
 
 class HomeViewModel : ViewModel() {
     private val productRepository = ProductRepository()
@@ -25,6 +29,7 @@ class HomeViewModel : ViewModel() {
 
     private val _uiState = MutableStateFlow(HomeUiState())
     val uiState: StateFlow<HomeUiState> = _uiState.asStateFlow()
+    private var catalogJob: Job? = null
 
     init {
         fetchInitialData()
@@ -32,10 +37,11 @@ class HomeViewModel : ViewModel() {
     }
 
     private fun fetchInitialData() {
-        viewModelScope.launch {
-            _uiState.update { it.copy(isLoading = true, error = null) }
+        catalogJob?.cancel()
+        _uiState.update { it.copy(isLoading = true, error = null) }
+        catalogJob = viewModelScope.launch {
             try {
-                coroutineScope {
+                withTimeout(20_000) { coroutineScope {
                     val categoriesDeferred = async { productRepository.getCategory() }
                     val homeCatalogDeferred = async { productRepository.getHomeCatalogContent() }
 
@@ -74,8 +80,9 @@ class HomeViewModel : ViewModel() {
                             )
                         }
                     }
-                }
+                } }
             } catch (exception: Exception) {
+                if (exception is CancellationException && exception !is TimeoutCancellationException) throw exception
                 _uiState.update { it.copy(isLoading = false, error = exception.localizedMessage) }
             }
         }

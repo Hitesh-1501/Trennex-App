@@ -28,6 +28,9 @@ import com.example.trennex.databinding.ToolbarCheckoutBinding
 import com.example.trennex.databinding.WishlistToolbarBinding
 import androidx.core.view.isVisible
 import androidx.lifecycle.lifecycleScope
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.repeatOnLifecycle
+import com.example.trennex.ui.common.NetworkStatus
 import com.example.trennex.databinding.ToolbarCollectionSelectionBinding
 import com.example.trennex.utils.cart.CartStore
 import kotlinx.coroutines.launch
@@ -60,6 +63,13 @@ class MainActivity : AppCompatActivity() {
         enableEdgeToEdge()
         binding = ActivityMainBinding.inflate(layoutInflater)
         setContentView(binding.root)
+        lifecycleScope.launch {
+            repeatOnLifecycle(Lifecycle.State.STARTED) {
+                NetworkStatus.observe(this@MainActivity).collect { online ->
+                    binding.offlineBanner.isVisible = !online
+                }
+            }
+        }
         
         setupWindowInsets()
         val navhostFragement =  supportFragmentManager.findFragmentById(R.id.nav_host_fragment) as NavHostFragment
