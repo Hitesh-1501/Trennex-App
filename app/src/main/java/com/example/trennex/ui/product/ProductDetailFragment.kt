@@ -14,6 +14,7 @@ import androidx.navigation.fragment.FragmentNavigatorExtras
 import androidx.navigation.fragment.findNavController
 import androidx.recyclerview.widget.LinearLayoutManager
 import com.example.trennex.R
+import com.example.trennex.ui.common.NetworkStatus
 import com.example.trennex.databinding.FragmentProductDetailBinding
 import com.example.trennex.ui.product.adapter.ColorVariantAdapter
 import com.example.trennex.ui.product.adapter.ProductImageAdapter
@@ -72,6 +73,7 @@ import android.widget.PopupWindow
 import androidx.activity.result.contract.ActivityResultContracts
 import java.util.Locale
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.flow.combine
 import kotlin.math.abs
 
 
@@ -122,6 +124,7 @@ class ProductDetailFragment : Fragment(R.layout.fragment_product_detail), WishLi
     private var selectedColorPosition = 0
     private var selectedVariantPosition = 0
     private var bannerMediator: TabLayoutMediator? = null
+    private var bannerPageCallback: ViewPager2.OnPageChangeCallback? = null
 
 
     private val viewModel : ProductDetailViewModel by viewModels()
@@ -168,9 +171,28 @@ class ProductDetailFragment : Fragment(R.layout.fragment_product_detail), WishLi
         super.onViewCreated(view, savedInstanceState)
         binding.addToCart.isEnabled = false
         binding.addToCart.alpha = 0.5f
+        binding.contentStatus.showLoading()
         fusedLocationClient = LocationServices.getFusedLocationProviderClient(requireContext())
         val id = args.productId
         viewModel.fetchProductDetail(id)
+        viewLifecycleOwner.lifecycleScope.launch {
+            viewLifecycleOwner.repeatOnLifecycle(Lifecycle.State.STARTED) {
+                combine(viewModel.products, viewModel.isLoading, viewModel.error) { product, loading, error ->
+                    Triple(product, loading, error)
+                }.collect { (product, loading, error) ->
+                    when {
+                        product != null -> binding.contentStatus.hide()
+                        loading -> binding.contentStatus.showLoading()
+                        error != null -> binding.contentStatus.showError(
+                            if (NetworkStatus.isOnline(requireContext()))
+                                "Could not load this product. Please retry."
+                            else "No internet connection. Connect and retry."
+                        ) { viewModel.fetchProductDetail(args.productId) }
+                        else -> binding.contentStatus.showEmpty("Product unavailable")
+                    }
+                }
+            }
+        }
         reviewAdapter = ReviewAdapter(emptyList())
         binding.rvReviews.isNestedScrollingEnabled = false
         binding.rvReviews.layoutManager = LinearLayoutManager(requireContext())
@@ -273,14 +295,13 @@ class ProductDetailFragment : Fragment(R.layout.fragment_product_detail), WishLi
                 .start()
         }
 
-        binding.productBanners.registerOnPageChangeCallback(
-            object: ViewPager2.OnPageChangeCallback(){
+        bannerPageCallback = object: ViewPager2.OnPageChangeCallback(){
                 override fun onPageSelected(position: Int) {
                     super.onPageSelected(position)
                     currentBannerPosition = position
                 }
             }
-        )
+        binding.productBanners.registerOnPageChangeCallback(bannerPageCallback!!)
 
         findNavController().currentBackStackEntry
             ?.savedStateHandle
@@ -932,9 +953,21 @@ class ProductDetailFragment : Fragment(R.layout.fragment_product_detail), WishLi
         }
     }
 
-    override fun onDestroy() {
-        super.onDestroy()
+    override fun onDestroyView() {
+        bannerMediator?.detach()
+        bannerMediator = null
+        bannerPageCallback?.let { binding.productBanners.unregisterOnPageChangeCallback(it) }
+        bannerPageCallback = null
+        locationBottomSheet?.dismiss()
+        locationBottomSheet = null
+        bottomSheetBinding = null
+        binding.productBanners.adapter = null
+        binding.rvReviews.adapter = null
+        binding.rvTopFeatures.adapter = null
+        binding.rvColorVariants.adapter = null
+        binding.rvVariants.adapter = null
         _binding = null
+        super.onDestroyView()
     }
 
 

@@ -10,7 +10,7 @@ TrenNex is a production-grade **portfolio and resume project**, not currently a 
 
 ## Current focus
 
-Start with roadmap **Milestone A: stability**. Reproduce and fix the add-address transition flicker, then prevent rapid cart actions during loading and establish reusable offline/loading/error/empty/retry handling. Continue one reviewable slice at a time in staging.
+Roadmap **Milestone A: stability** is in progress. The first add-address and rapid-cart guards are implemented in staging; shared connectivity, loading, error, empty, retry, and lifecycle handling is under verification. Do not start Milestone B until Milestone A passes its staging checks and the owner approves it.
 
 ## Environment gate
 

@@ -4,7 +4,6 @@ import android.os.Bundle
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
-import android.widget.Toast
 import androidx.core.widget.addTextChangedListener
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.viewModels
@@ -19,6 +18,7 @@ import com.example.trennex.ui.main.MainActivity
 import com.example.trennex.ui.main.ToolBarType
 import com.example.trennex.ui.profile.adapter.OrderAdapter
 import com.example.trennex.viewmodel.order.OrdersViewModel
+import com.example.trennex.ui.common.NetworkStatus
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.flow.combine
 
@@ -85,22 +85,23 @@ class OrdersFragment : Fragment(R.layout.fragment_orders) {
     private fun observeViewModel() {
         viewLifecycleOwner.lifecycleScope.launch {
             viewLifecycleOwner.repeatOnLifecycle(Lifecycle.State.STARTED) {
-                combine(viewModel.orders, viewModel.isLoading) { orders, loading ->
-                    orders to loading
-                }.collect { (orders, loading) ->
+                combine(viewModel.orders, viewModel.isLoading, viewModel.error) { orders, loading, error ->
+                    Triple(orders, loading, error)
+                }.collect { (orders, loading, error) ->
                     orderAdapter.submitList(orders)
-                    val isEmpty = orders.isEmpty() && !loading
-                    binding.layoutEmptyOrders.visibility = if (isEmpty) View.VISIBLE else View.GONE
-                    binding.rvOrders.visibility = if (isEmpty) View.GONE else View.VISIBLE
-                }
-            }
-        }
-
-        viewLifecycleOwner.lifecycleScope.launch {
-            viewLifecycleOwner.repeatOnLifecycle(Lifecycle.State.STARTED) {
-                viewModel.error.collect { error ->
-                    error?.let {
-                        Toast.makeText(requireContext(), "Error: $it", Toast.LENGTH_LONG).show()
+                    binding.rvOrders.visibility = if (orders.isEmpty()) View.GONE else View.VISIBLE
+                    when {
+                        orders.isNotEmpty() -> binding.contentStatus.hide()
+                        loading -> binding.contentStatus.showLoading()
+                        error != null -> binding.contentStatus.showError(
+                            if (NetworkStatus.isOnline(requireContext()))
+                                "Could not load orders. Please retry."
+                            else "No internet connection. Connect and retry."
+                        ) { viewModel.retry() }
+                        !NetworkStatus.isOnline(requireContext()) -> binding.contentStatus.showError(
+                            "No internet connection. Connect and retry."
+                        ) { viewModel.retry() }
+                        else -> binding.contentStatus.showEmpty("No orders found")
                     }
                 }
             }
