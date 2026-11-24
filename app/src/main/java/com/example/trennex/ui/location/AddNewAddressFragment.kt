@@ -206,8 +206,11 @@ class AddNewAddressFragment : Fragment(R.layout.fragment_add_new_address), OnMap
         val dialogBinding = SelectingLocationDialogBinding.inflate(layoutInflater)
         addAddressDialog = AlertDialog.Builder(requireContext())
             .setView(dialogBinding.root)
-            .setCancelable(false)
+            .setCancelable(true)
             .create()
+        addAddressDialog?.setOnCancelListener {
+            if (isAdded) findNavController().navigateUp()
+        }
         dialogBinding.farFromLocationBtn.setOnClickListener {
             addAddressDialog?.dismiss()
             binding.mainContentLayout.visibility = View.VISIBLE
