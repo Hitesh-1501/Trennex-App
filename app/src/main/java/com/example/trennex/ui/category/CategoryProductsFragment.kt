@@ -14,10 +14,15 @@ import com.example.trennex.data.model.ProductResponse
 import com.example.trennex.databinding.FragmentCategoryProductsBinding
 import com.example.trennex.databinding.SheetSearchSortBinding
 import com.example.trennex.repository.product.ProductRepository
+import com.example.trennex.ui.common.NetworkStatus
 import com.example.trennex.ui.search.SearchSortOrder
 import com.example.trennex.ui.search.adapter.SearchResultAdapter
 import com.google.android.material.bottomsheet.BottomSheetDialog
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.CancellationException
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.withTimeout
+import kotlinx.coroutines.TimeoutCancellationException
 
 class CategoryProductsFragment : Fragment(R.layout.fragment_category_products) {
     private var _binding: FragmentCategoryProductsBinding? = null
@@ -25,6 +30,7 @@ class CategoryProductsFragment : Fragment(R.layout.fragment_category_products) {
     private val repository = ProductRepository()
     private var products = emptyList<ProductResponse>()
     private var sortOrder = SearchSortOrder.RELEVANCE
+    private var loadJob: Job? = null
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
@@ -38,31 +44,39 @@ class CategoryProductsFragment : Fragment(R.layout.fragment_category_products) {
         binding.products.layoutManager = LinearLayoutManager(requireContext())
         binding.products.adapter = adapter
         binding.sortButton.setOnClickListener { showSortOptions(adapter) }
-        binding.retryButton.setOnClickListener { load(slug, tile, adapter) }
         load(slug, tile, adapter)
     }
 
     private fun load(slug: String, tile: String?, adapter: SearchResultAdapter) {
-        binding.loading.isVisible = true
+        loadJob?.cancel()
+        binding.contentStatus.showLoading()
         binding.sortButton.isVisible = false
         binding.resultCount.text = ""
-        binding.errorGroup.isVisible = false
-        binding.emptyMessage.isVisible = false
-        viewLifecycleOwner.lifecycleScope.launch {
+        loadJob = viewLifecycleOwner.lifecycleScope.launch {
             try {
-                products = CategoryProductFilter.filter(repository.getProductByCategory(slug), tile)
+                products = withTimeout(15_000) {
+                    CategoryProductFilter.filter(repository.getProductByCategory(slug), tile)
+                }
                 if (_binding == null) return@launch
-                binding.loading.isVisible = false
                 binding.sortButton.isVisible = products.isNotEmpty()
-                binding.emptyMessage.isVisible = products.isEmpty()
-                binding.emptyMessage.text = if (tile.isNullOrBlank())
-                    "No products in this category yet" else "No products for $tile yet"
+                if (products.isEmpty() && !NetworkStatus.isOnline(requireContext())) {
+                    binding.contentStatus.showError("No internet connection. Connect and retry.") {
+                        load(slug, tile, adapter)
+                    }
+                } else if (products.isEmpty()) binding.contentStatus.showEmpty(
+                    if (tile.isNullOrBlank()) "No products in this category yet"
+                    else "No products for $tile yet"
+                ) else binding.contentStatus.hide()
                 renderProducts(adapter)
-            } catch (_: Exception) {
+            } catch (error: Exception) {
+                if (error is CancellationException && error !is TimeoutCancellationException) throw error
                 if (_binding == null) return@launch
-                binding.loading.isVisible = false
                 binding.sortButton.isVisible = false
-                binding.errorGroup.isVisible = true
+                binding.contentStatus.showError(
+                    if (NetworkStatus.isOnline(requireContext()))
+                        "Could not load products. Please retry."
+                    else "No internet connection. Connect and retry."
+                ) { load(slug, tile, adapter) }
                 adapter.submitItems(emptyList(), false)
             }
         }
@@ -116,6 +130,9 @@ class CategoryProductsFragment : Fragment(R.layout.fragment_category_products) {
     }
 
     override fun onDestroyView() {
+        loadJob?.cancel()
+        loadJob = null
+        binding.products.adapter = null
         _binding = null
         super.onDestroyView()
     }

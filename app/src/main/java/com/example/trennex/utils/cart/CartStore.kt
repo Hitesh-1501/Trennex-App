@@ -59,7 +59,8 @@ object CartStore {
     suspend fun addItemAndAwait(item: CartItemModel) {
         val ownerId = AccountScope.currentOwner()
         withContext(Dispatchers.IO) {
-            repo().addItem(ownerId, item)
+            val savedItem = repo().addItemLocally(ownerId, item)
+            scope.launch { repo().syncAddedItem(ownerId, savedItem) }
         }
     }
 
