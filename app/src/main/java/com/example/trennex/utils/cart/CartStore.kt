@@ -13,6 +13,7 @@ import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 
 object CartStore {
     private val scope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
@@ -51,6 +52,13 @@ object CartStore {
     fun addItem(item: CartItemModel){
         val ownerId = AccountScope.currentOwner()
         scope.launch {
+            repo().addItem(ownerId, item)
+        }
+    }
+
+    suspend fun addItemAndAwait(item: CartItemModel) {
+        val ownerId = AccountScope.currentOwner()
+        withContext(Dispatchers.IO) {
             repo().addItem(ownerId, item)
         }
     }
