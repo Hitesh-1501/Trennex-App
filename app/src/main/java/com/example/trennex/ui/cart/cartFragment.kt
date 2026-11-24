@@ -408,8 +408,12 @@ class CartFragment : Fragment(R.layout.fragment_cart) {
         }
     }
 
-    override fun onDestroy() {
-        super.onDestroy()
+    override fun onDestroyView() {
+        locationBottomSheet?.dismiss()
+        locationBottomSheet = null
+        bottomSheetBinding = null
+        binding.CartRv.adapter = null
         _binding = null
+        super.onDestroyView()
     }
 }

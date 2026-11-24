@@ -72,6 +72,10 @@ class CartRepository(
     }
 
     suspend fun addItem(ownerId: String, item: CartItemModel) {
+        syncItemToFirestore(ownerId, addItemLocally(ownerId, item))
+    }
+
+    suspend fun addItemLocally(ownerId: String, item: CartItemModel): CartItemModel {
         val safeQuantity = item.quantity.coerceIn(1, MAX_QUANTITY)
         val existing = dao.getItemByKey(ownerId, item.cartKey)
         val updatedItem = if (existing == null) {
@@ -97,7 +101,11 @@ class CartRepository(
         }
 
         dao.upsert(updatedItem.toEntity(ownerId))
-        syncItemToFirestore(ownerId, updatedItem)
+        return updatedItem
+    }
+
+    suspend fun syncAddedItem(ownerId: String, item: CartItemModel) {
+        syncItemToFirestore(ownerId, item)
     }
 
     suspend fun toggleSelection(ownerId: String, cartKey: String, selected: Boolean) {
