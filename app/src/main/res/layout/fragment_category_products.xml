@@ -35,40 +35,9 @@
             android:id="@+id/products"
             android:layout_width="match_parent"
             android:layout_height="match_parent" />
-        <ProgressBar
-            android:id="@+id/loading"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_gravity="center" />
-        <TextView
-            android:id="@+id/emptyMessage"
+        <com.example.trennex.ui.common.ContentStatusView
+            android:id="@+id/contentStatus"
             android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_gravity="center"
-            android:gravity="center"
-            android:padding="24dp"
-            android:textColor="@color/textSecondary"
-            android:textSize="16sp"
-            android:visibility="gone" />
-        <LinearLayout
-            android:id="@+id/errorGroup"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_gravity="center"
-            android:gravity="center"
-            android:orientation="vertical"
-            android:visibility="gone">
-            <TextView
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="Could not load products"
-                android:textColor="@color/textSecondary" />
-            <com.google.android.material.button.MaterialButton
-                android:id="@+id/retryButton"
-                style="@style/Widget.MaterialComponents.Button.TextButton"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="Retry" />
-        </LinearLayout>
+            android:layout_height="match_parent" />
     </FrameLayout>
 </LinearLayout>

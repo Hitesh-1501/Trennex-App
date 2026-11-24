@@ -162,13 +162,10 @@
 
             </androidx.core.widget.NestedScrollView>
 
-            <ProgressBar
-                android:id="@+id/homeProgressBar"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:layout_gravity="center"
-                android:indeterminateTint="@color/colorPrimary"
-                android:visibility="visible" />
+            <com.example.trennex.ui.common.ContentStatusView
+                android:id="@+id/contentStatus"
+                android:layout_width="match_parent"
+                android:layout_height="match_parent" />
 
         </FrameLayout>
 
