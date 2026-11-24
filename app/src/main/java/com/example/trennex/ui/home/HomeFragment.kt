@@ -48,6 +48,7 @@ import com.example.trennex.ui.home.model.CategoryModel
 import com.example.trennex.ui.home.model.ProductModel
 import com.example.trennex.viewmodel.home.HomeViewModel
 import com.example.trennex.repository.user.AddressEntity
+import com.example.trennex.ui.common.NetworkStatus
 import com.google.android.gms.common.api.ResolvableApiException
 import com.google.android.gms.location.FusedLocationProviderClient
 import com.google.android.gms.location.LocationRequest
@@ -136,9 +137,21 @@ class HomeFragment : Fragment(R.layout.fragment_home) {
             viewLifecycleOwner.repeatOnLifecycle(Lifecycle.State.STARTED) {
                 viewModel.uiState.collect { state ->
                     val isFirstLoad = state.isLoading && state.products.isEmpty()
-                    binding.homeProgressBar.isVisible = isFirstLoad
                     binding.homeContentScrollView.isVisible = state.products.isNotEmpty()
                     binding.swipeRefreshLayout.isRefreshing = state.isLoading && !isFirstLoad
+                    when {
+                        state.products.isNotEmpty() -> binding.contentStatus.hide()
+                        state.isLoading -> binding.contentStatus.showLoading()
+                        state.error != null -> binding.contentStatus.showError(
+                            if (NetworkStatus.isOnline(requireContext()))
+                                "Could not load products. Please try again."
+                            else "No internet connection. Connect and retry."
+                        ) { viewModel.refreshData() }
+                        !NetworkStatus.isOnline(requireContext()) -> binding.contentStatus.showError(
+                            "No internet connection. Connect and retry."
+                        ) { viewModel.refreshData() }
+                        else -> binding.contentStatus.showEmpty("No products available yet")
+                    }
                     
                     setupProducts(state.products)
                     setupTopDeals(state.topDeals)

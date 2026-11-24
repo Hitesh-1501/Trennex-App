@@ -87,6 +87,15 @@
         app:layout_constraintTop_toBottomOf="@id/layoutSearchFilter"
         tools:listitem="@layout/item_order" />
 
+    <com.example.trennex.ui.common.ContentStatusView
+        android:id="@+id/contentStatus"
+        android:layout_width="0dp"
+        android:layout_height="0dp"
+        app:layout_constraintTop_toBottomOf="@id/layoutSearchFilter"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintEnd_toEndOf="parent" />
+
     <!-- Empty State -->
     <LinearLayout
         android:id="@+id/layoutEmptyOrders"
