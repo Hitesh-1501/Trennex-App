@@ -82,9 +82,9 @@ class HomeFragment : Fragment(R.layout.fragment_home) {
     
     private var bottomSheetBinding: BottomSheetSelectLocationBinding? = null
     private var locationBottomSheet: BottomSheetDialog? = null
+    private var locationPermissionDialog: AlertDialog? = null
     private lateinit var fusedLocationClient: FusedLocationProviderClient
-
-    private var shouldNavigateToAddress = false
+    private var hasShownLocationPermissionPrompt = false
 
     private val locationPermissionRequester = registerForActivityResult(
         ActivityResultContracts.RequestMultiplePermissions()
@@ -148,7 +148,8 @@ class HomeFragment : Fragment(R.layout.fragment_home) {
                     loginUserName = state.userName
                     renderSaveAddresses(state.savedAddresses, state.selectedAddress)
                     
-                    if (state.selectedAddress == null && !hasLocationPermission()) {
+                    if (state.selectedAddress == null && !hasLocationPermission() &&
+                        !hasShownLocationPermissionPrompt) {
                         showLocationPermissionDialog()
                     }
                 }
@@ -161,11 +162,14 @@ class HomeFragment : Fragment(R.layout.fragment_home) {
     }
 
     private fun showLocationPermissionDialog(){
+        if (locationPermissionDialog?.isShowing == true) return
+        hasShownLocationPermissionPrompt = true
         val dialogBinding = DialogLocationPermissionBinding.inflate(layoutInflater)
         val dialog = AlertDialog.Builder(requireContext())
             .setView(dialogBinding.root)
             .setCancelable(false)
             .create()
+        locationPermissionDialog = dialog
         dialogBinding.enableLocationBtn.setOnClickListener {
             dialog.dismiss()
             requestLocationPermissionAndFetch()
@@ -178,26 +182,22 @@ class HomeFragment : Fragment(R.layout.fragment_home) {
     }
 
     private fun showLocationBottomSheet(){
+        if (locationBottomSheet?.isShowing == true) return
         locationBottomSheet = BottomSheetDialog(requireContext())
         val sheet = locationBottomSheet!!
         val sheetBinding = BottomSheetSelectLocationBinding.inflate(layoutInflater)
         bottomSheetBinding = sheetBinding
         sheet.setContentView(sheetBinding.root)
         sheetBinding.closeBtn.setOnClickListener {
-            shouldNavigateToAddress = false
             sheet.dismiss()
         }
         sheetBinding.currentLocationRow.setOnClickListener {
-            shouldNavigateToAddress = false
             requestLocationPermissionAndFetch()
         }
         sheet.setOnDismissListener {
-            if (shouldNavigateToAddress && isAdded){
-                shouldNavigateToAddress = false
-                val navController = findNavController()
-                if (navController.currentDestination?.id == R.id.homeFragment){
-                    navController.navigate(R.id.action_homeFragment_to_addNewAddressFragment)
-                }
+            if (locationBottomSheet === sheet) {
+                locationBottomSheet = null
+                bottomSheetBinding = null
             }
         }
         sheetBinding.locationSearchInput.apply {
@@ -207,8 +207,10 @@ class HomeFragment : Fragment(R.layout.fragment_home) {
             setOnClickListener { openPlaceSearch() }
         }
         sheetBinding.addNewAddress.setOnClickListener {
-            shouldNavigateToAddress = true
-            sheet.dismiss()
+            if (findNavController().currentDestination?.id == R.id.homeFragment) {
+                findNavController().navigate(R.id.action_homeFragment_to_addNewAddressFragment)
+                sheet.dismiss()
+            }
         }
         saveAddressAdapter = SaveAddressAdapter(
            onItemClick = { item -> selectSaveAddress(item) },
@@ -569,7 +571,8 @@ class HomeFragment : Fragment(R.layout.fragment_home) {
         bannerPageCallbacks = null
         bannerMediator?.detach()
         bannerMediator = null
-        shouldNavigateToAddress = false
+        locationPermissionDialog?.dismiss()
+        locationPermissionDialog = null
         locationBottomSheet?.dismiss()
         locationBottomSheet = null
         bottomSheetBinding = null

@@ -1,6 +1,14 @@
 # TrenNex development status
 
-Updated 2026-11-22. This is the working status for the portfolio app roadmap.
+Updated 2026-11-24. This is the working status for the portfolio app roadmap.
+
+## Milestone A: stability, in progress, 2026-11-24
+
+- Added `PLAN.md` as the project vision and staging/production gate, and extended `TRENNEX_FEATURE_ROADMAP.md` to preserve all 17 owner requests while sequencing advanced catalog, payment, fulfillment, notifications, reviews, AI, admin, security, observability, CI/CD, and testing work. The roadmap marks planned features separately from completed ones.
+- Home's Add New Address action now navigates as soon as it is tapped instead of waiting for the location sheet's dismiss callback. The sheet no longer owns navigation after dismiss, duplicate sheet opening is guarded, and the location-permission prompt is guarded against repeated Home state emissions.
+- Product detail disables Add to Cart until product data loads, blocks repeat taps during a write, waits for the cart repository operation before showing success, and leaves the action available after a failure. The selection icon is tied to the variant added. The existing first Add New Address choice dialog now lets Back cancel and return to the prior screen.
+- `assembleStaging` and `testStagingUnitTest` passed after the final Back-dialog adjustment. The staging APK was installed without clearing app data on the connected Motorola. Tapping Home location, then Add New, opened the Add New Address screen and its initial dialog; Back now returned to Home. A test lipstick added from product detail appeared in the cart, then was removed; the cart returned from five items to its original four. The old dialog had ignored Back. A single screenshot cannot prove the absence of a subsecond Home flash, so that transition still needs an owner visual check.
+- This slice changed Android source and planning documents only. No Firebase project, Cloud Function, rules, Storage data, or production service was modified. Shared offline/loading/error/empty/retry behavior and broader physical-device regressions remain in Milestone A.
 
 ## Issue 5: Figma phone UI comparison, complete for this pass, 2026-11-22
 
@@ -108,12 +116,15 @@ Production catalog work is on hold at the owner's request until the app is ready
 
 ## Still to complete, in order
 
+`PLAN.md` is the entry point to the owner-approved direction. `TRENNEX_FEATURE_ROADMAP.md` now preserves all 17 requested app changes and sequences the advanced portfolio features: Razorpay test mode, simulated fulfillment, FCM, reviews, personalization, admin web, Analytics/Crashlytics, App Check, roles, CI/CD, testing, performance, and documentation. This update is planning only; none of those new integrations is implemented yet. The next implementation slice remains the staging add-address sheet/dialog flicker and rapid add-to-cart loading guard. Production remains on hold without explicit owner approval.
+
 Production readiness was audited on 2026-11-21 in `PRODUCTION_READINESS_AUDIT.md`. The production project and Android app registration were confirmed, but unauthenticated catalog reads returned HTTP 403 and the CLI could not list production functions. No production data was changed. A production inventory, approved media/content, safe dry-run migration, backup, and release validation remain prerequisites.
 
-1. Continue Issue 7 in staging: expand the owned catalog so visible subcategory tiles lead to relevant products, review their labels and media, and compare remaining Category Figma states when accessible.
-2. Later Issue 5 testing: use a dedicated low-stock staging fixture to confirm rejected checkout preserves the cart; optionally check a second account; inspect remaining Figma states when accessible; compare approved media with the design; and capture Logcat for failures.
-3. Extend assistant retrieval beyond 100 products and persist conversation history if needed after the initial staging assistant is accepted.
-4. When the app and catalog are accepted, run the read-only production catalog audit, review existing IDs, then plan a guarded migration and backup. The production project `trennex-ebbeb` has not been changed.
+1. Fix the add-address transition flicker and rapid add-to-cart loading behavior in the staging app; verify on the physical phone.
+2. Continue Issue 7 in staging: expand the owned catalog so visible subcategory tiles lead to relevant products, review their labels and media, and compare remaining Category Figma states when accessible.
+3. Continue the remaining app milestones in `TRENNEX_FEATURE_ROADMAP.md`: product images/reviews/share; order timeline, payment, and notifications; profile, addresses, Help, and assistant; shared network/error/loading states.
+4. Later Issue 5 testing: use a dedicated low-stock staging fixture to confirm rejected checkout preserves the cart; optionally check a second account; inspect remaining Figma states when accessible; compare approved media with the design; and capture Logcat for failures.
+5. When the app and catalog are accepted, revisit the read-only production inventory, then plan a guarded migration and backup. The production project `trennex-ebbeb` has not been changed.
 
 ## Verification commands
 
