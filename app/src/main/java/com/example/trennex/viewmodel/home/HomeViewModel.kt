@@ -8,15 +8,20 @@ import com.example.trennex.repository.user.UserRepository
 import com.example.trennex.ui.home.HomeUiState
 import com.example.trennex.ui.home.model.CategoryModel
 import com.example.trennex.ui.home.model.ProductModel
+import kotlinx.coroutines.async
+import kotlinx.coroutines.CancellationException
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.collectLatest
+import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.update
-import kotlinx.coroutines.async
-import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withTimeout
+import kotlinx.coroutines.TimeoutCancellationException
 
 class HomeViewModel : ViewModel() {
     private val productRepository = ProductRepository()
@@ -24,6 +29,7 @@ class HomeViewModel : ViewModel() {
 
     private val _uiState = MutableStateFlow(HomeUiState())
     val uiState: StateFlow<HomeUiState> = _uiState.asStateFlow()
+    private var catalogJob: Job? = null
 
     init {
         fetchInitialData()
@@ -31,54 +37,53 @@ class HomeViewModel : ViewModel() {
     }
 
     private fun fetchInitialData() {
-        viewModelScope.launch {
-            _uiState.update { it.copy(isLoading = true) }
+        catalogJob?.cancel()
+        _uiState.update { it.copy(isLoading = true, error = null) }
+        catalogJob = viewModelScope.launch {
             try {
-                coroutineScope {
+                withTimeout(20_000) { coroutineScope {
                     val categoriesDeferred = async { productRepository.getCategory() }
-                    val productsDeferred = async { productRepository.getProducts() }
-                    
-                    val categoryResponse = categoriesDeferred.await()
-                    val productResponse = productsDeferred.await()
-                    
-                    // Fetch top deals separately (e.g. from 30 onwards)
-                    val topDealsDeferred = async { productRepository.getProducts(limit = 10, skip = 30) }
-                    
-                    // Fetch new arrivals (e.g. from 40 onwards)
-                    val newArrivalsDeferred = async { productRepository.getProducts(limit = 10, skip = 40) }
-                    
-                    val catRes = categoriesDeferred.await()
-                    val prodRes = productsDeferred.await()
-                    val dealRes = topDealsDeferred.await()
-                    val arrivalRes = newArrivalsDeferred.await()
+                    val homeCatalogDeferred = async { productRepository.getHomeCatalogContent() }
 
-                    val categories = catRes.mapIndexed { index, cat ->
-                        CategoryModel(id = index + 1, title = cat.name, slug = cat.slug)
+                    val categories = categoriesDeferred.await().mapIndexed { index, category ->
+                        CategoryModel(id = index + 1, title = category.name, slug = category.slug)
                     }
-                    val products = prodRes.map {
-                        ProductModel(id = it.id, image = it.thumbnail, name = it.title, price = it.price)
+                    val homeCatalog = homeCatalogDeferred.await()
+
+                    if (homeCatalog != null) {
+                        _uiState.update {
+                            it.copy(
+                                categories = listOf(CategoryModel(0, "All", null)) + categories,
+                                products = homeCatalog.products.toProductModels(),
+                                topDeals = homeCatalog.featuredProducts.toProductModels(),
+                                newArrivals = homeCatalog.newArrivals.toProductModels(),
+                                banners = homeCatalog.banners,
+                                isLoading = false,
+                            )
+                        }
+                    } else {
+                        val productsDeferred = async { productRepository.getProducts() }
+                        val topDealsDeferred = async { productRepository.getProducts(limit = 10, skip = 30) }
+                        val newArrivalsDeferred = async { productRepository.getProducts(limit = 10, skip = 40) }
+
+                        val products = productsDeferred.await()
+                        val topDeals = topDealsDeferred.await()
+                        val newArrivals = newArrivalsDeferred.await()
+                        _uiState.update {
+                            it.copy(
+                                categories = listOf(CategoryModel(0, "All", null)) + categories,
+                                products = products.toProductModels(),
+                                topDeals = topDeals.toProductModels(),
+                                newArrivals = newArrivals.toProductModels(),
+                                banners = products.mapNotNull { product -> product.thumbnail.takeIf(String::isNotBlank) }.take(5),
+                                isLoading = false,
+                            )
+                        }
                     }
-                    val topDeals = dealRes.map {
-                        ProductModel(id = it.id, image = it.thumbnail, name = it.title, price = it.price)
-                    }
-                    val newArrivals = arrivalRes.map {
-                        ProductModel(id = it.id, image = it.thumbnail, name = it.title, price = it.price)
-                    }
-                    val banners = products.mapNotNull { it.image }.filter { it.isNotBlank() }.take(5)
-                    
-                    _uiState.update { 
-                        it.copy(
-                            categories = listOf(CategoryModel(0, "All", null)) + categories,
-                            products = products,
-                            topDeals = topDeals,
-                            newArrivals = newArrivals,
-                            banners = banners,
-                            isLoading = false
-                        ) 
-                    }
-                }
-            } catch (e: Exception) {
-                _uiState.update { it.copy(isLoading = false, error = e.localizedMessage) }
+                } }
+            } catch (exception: Exception) {
+                if (exception is CancellationException && exception !is TimeoutCancellationException) throw exception
+                _uiState.update { it.copy(isLoading = false, error = exception.localizedMessage) }
             }
         }
     }
@@ -86,13 +91,18 @@ class HomeViewModel : ViewModel() {
     private fun observeUserData() {
         viewModelScope.launch {
             combine(
-                userRepository.observeSavedAddresses(),
-                userRepository.observeSelectedAddressId(),
+                userRepository.observeSavedAddresses().catch {
+                    android.util.Log.w("HomeViewModel", "Address listener stopped", it)
+                    emit(emptyList())
+                },
+                userRepository.observeSelectedAddressId().catch {
+                    android.util.Log.w("HomeViewModel", "Selected-address listener stopped", it)
+                    emit(null)
+                },
                 MutableStateFlow(userRepository.getUserName())
             ) { addresses, selectedId, name ->
                 val selected = addresses.find { it.id == selectedId }
-                
-                _uiState.update { 
+                _uiState.update {
                     it.copy(
                         savedAddresses = addresses,
                         selectedAddress = selected,
@@ -115,13 +125,9 @@ class HomeViewModel : ViewModel() {
                 } else {
                     productRepository.getProductByCategory(slug)
                 }
-                _uiState.update { state ->
-                    state.copy(products = products.map {
-                        ProductModel(id = it.id, image = it.thumbnail, name = it.title, price = it.price)
-                    })
-                }
-            } catch (e: Exception) {
-                _uiState.update { it.copy(error = e.localizedMessage) }
+                _uiState.update { state -> state.copy(products = products.toProductModels()) }
+            } catch (exception: Exception) {
+                _uiState.update { it.copy(error = exception.localizedMessage) }
             }
         }
     }
@@ -159,12 +165,10 @@ class HomeViewModel : ViewModel() {
                 "addressType" to "Home",
                 "latitude" to latitude,
                 "longitude" to longitude,
-                "placeName" to (cleanedAddress.take(20) + if(cleanedAddress.length > 20) "..." else "")
+                "placeName" to (cleanedAddress.take(20) + if (cleanedAddress.length > 20) "..." else "")
             )
             val id = userRepository.saveAddress(data)
-            if (id != null) {
-                userRepository.updateSelectedAddressId(id)
-            }
+            if (id != null) userRepository.updateSelectedAddressId(id)
         }
     }
 
@@ -172,3 +176,13 @@ class HomeViewModel : ViewModel() {
         .replace(Regex("\\s+"), " ")
         .lowercase(java.util.Locale.getDefault())
 }
+
+private fun List<com.example.trennex.data.model.ProductResponse>.toProductModels(): List<ProductModel> =
+    map { product ->
+        ProductModel(
+            id = product.id,
+            image = product.thumbnail,
+            name = product.title,
+            price = product.price,
+        )
+    }

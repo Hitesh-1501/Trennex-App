@@ -37,7 +37,7 @@
             android:layout_height="0dp"
             app:defaultNavHost = "true"
             app:navGraph = "@navigation/nav_graph"
-            app:layout_constraintTop_toTopOf="parent"
+            app:layout_constraintTop_toBottomOf="@id/offlineBanner"
             app:layout_constraintBottom_toTopOf="@id/curveBottomNav"
             app:layout_constraintStart_toStartOf="parent"
             app:layout_constraintEnd_toEndOf="parent"
@@ -78,6 +78,23 @@
             android:visibility="gone"
             app:layout_constraintBottom_toBottomOf="@id/curveBottomNav"
             app:layout_constraintEnd_toEndOf="parent"/>
+
+        <TextView
+            android:id="@+id/offlineBanner"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:background="#B3261E"
+            android:elevation="16dp"
+            android:gravity="center"
+            android:paddingHorizontal="16dp"
+            android:paddingVertical="10dp"
+            android:text="No internet connection. Cached content may still be available."
+            android:textColor="@color/white"
+            android:textSize="13sp"
+            android:visibility="gone"
+            app:layout_constraintTop_toTopOf="parent"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintEnd_toEndOf="parent" />
 
     </androidx.constraintlayout.widget.ConstraintLayout>
 

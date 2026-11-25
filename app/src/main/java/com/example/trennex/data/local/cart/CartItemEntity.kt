@@ -1,10 +1,9 @@
 package com.example.trennex.data.local.cart
 
 import androidx.room.Entity
-import androidx.room.PrimaryKey
-@Entity(tableName = "cart_items")
+@Entity(tableName = "cart_items", primaryKeys = ["ownerId", "cartKey"])
 data class CartItemEntity(
-    @PrimaryKey
+    val ownerId: String,
     val id: Int,
     val title: String,
     val description : String,
@@ -17,5 +16,9 @@ data class CartItemEntity(
     val imageUrl: String?,
     val imageRes: Int?,
     val quantity : Int,
-    val isSelected: Boolean = false
+    val isSelected: Boolean = false,
+    val cartKey: String = "legacy:$id",
+    val productId: String? = null,
+    val variantId: String? = null,
+    val variantName: String? = null,
 )

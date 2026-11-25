@@ -1,0 +1,138 @@
+# TrenNex app development roadmap
+
+Updated 2026-11-25. TrenNex is a production-grade engineering portfolio application, not presently a real commercial business. This roadmap retains all 17 owner requests and adds payments, simulated fulfillment, messaging, AI, an admin dashboard, observability, security, CI/CD, and documentation. Build and verify each milestone in local emulators and `trennex-staging-ebbeb`; keep `trennex-ebbeb` unchanged without explicit owner approval. Preserve working phone sign-in, account-scoped cart and wishlist, COD checkout, orders, location selection, search, and the existing catalog shopping assistant.
+
+## Current baseline
+
+- Native Kotlin/XML Android app with Firebase Auth, Firestore, Storage, Cloud Functions, Room, and a staging build.
+- The owned staging catalog has 11 products, 15 variants, 10 root categories, and 3 banners. Category tiles now open one reusable product listing, but many legacy subcategory tiles have no matching owned products.
+- COD order creation and order history work on staging. Rich shipping events, submitted reviews, a persisted notification inbox, and real non-COD payments do not yet have complete backend flows.
+- No protected web admin dashboard, Razorpay integration, FCM inbox, Analytics/Crashlytics, or App Check enforcement is present. B1 GitHub Actions workflow files now exist; their hosted runs and staging deployment gate are pending GitHub/Google configuration. The other features remain planned.
+- Figma has a structural inventory and route mapping in `FIGMA_SCREEN_INVENTORY.md` and `FIGMA_ROUTE_MAPPING.md`. Some frames have not been visually inspected because the Figma Starter-plan MCP limit blocked further design-context calls. For every redesigned screen, retrieve its own frame context and screenshot when access is available; do not claim inaccessible states match Figma.
+
+## Work order
+
+| Milestone | Work and dependency | Owner requests | Staging acceptance criteria |
+| --- | --- | --- | --- |
+| A. Stability and shared states | Fix add-address sheet/dialog flicker; guard product/cart actions during loading; implement reusable offline, loading, empty, error, and retry states. Core implementation is complete; remaining acceptance checks are deferred to the combined A+B regression by explicit owner approval. | 2, 8, 16, 17 | Location transition no longer flashes Home or reopens; fast taps do not duplicate cart writes; network loss/recovery and failed Firebase calls have usable states and no stranded spinner. |
+| B. Engineering foundation | Add GitHub Actions for Android/Functions tests and staging-only deployment gates; Firebase Analytics and Crashlytics with environment separation; security-rule tests, admin roles, and App Check monitoring before enforcement. Follows A's core implementation under the owner-approved sequencing exception. | 17 plus advanced security/DevOps | PR checks run without production credentials; staging crash events and non-PII analytics are visible; unauthorized admin writes fail; App Check is validated on physical staging devices before enforcement. |
+| C. Protected admin foundation | Build a separate web admin app with Firebase Auth and role-checked server operations for catalog, variants, inventory, banners, and order status. Depends on B's roles/security baseline. | 3, 4, 5, 9, 12 plus admin dashboard | A non-admin cannot enter or mutate data; admin changes appear in staging Android; inventory/order actions are audited and cannot overwrite customer-owned records. |
+| D. Scalable catalog and discovery | Complete Issue 7: expand owned staging catalog and media through reviewed seed/admin workflows; paginated Home; banner routing; category/subcategory/brand listings and adaptive grids/lists against inspected Figma frames. Gradually target **500+ quality demo products, 1,000+ variants, and 20+ promotional banners**, conditional on Firebase cost and measured performance. Depends on C for ongoing content management, though existing seed data can be used while C is built. | 3, 4, 5, 9 | All ten root categories and visible tiles navigate intentionally; relevant products load in bounded pages without duplicates; banners open their declared product/category/campaign; empty categories do not show unrelated products. Horizontal and vertical sections, grids, and category-specific layouts match accessible Figma frames and adapt across phone sizes. Each catalog expansion batch passes content, cost, and performance review. |
+| E. Product detail and media | Multiple product/variant images and colors, selected image restoration, sharing, specifications, and clearly marked demo reviews with images across the catalog. Depends on D's catalog schema/media. | 6, 7 | Swiping, preview/back, variant switching, share, and review display work on staging phones; prices and stock remain catalog/server authoritative. Seed review text/images are visibly labelled demo and have valid media references. |
+| F. Checkout, test payments, and fulfillment | Preserve COD; add supported UPI, card, and other Razorpay **test-mode** methods with server-created payment/order and server-side signature/webhook verification; improve progress/success states; create database-driven simulated packing/shipping/location/delivery events and order search/filter/timeline. Include cancellation, return requests, refund simulation, and their states. Depends on B security and C admin order operations; uses D/E product data. | 12, 15 plus Razorpay and simulated shipping | A staging test payment is never treated as paid from client response alone; supported UPI/card/other test methods complete or fail correctly; retries/webhooks are idempotent; rejected checkout retains cart; admin-created demo events render in the right order and never impersonate live carrier tracking. Valid cancellation/return/refund transitions and invalid-state rejection pass backend tests. Animated tracking, delivered-state UI, and Order Details delivery notices reflect stored events. |
+| G. Notifications and verified reviews | Persist account-scoped notification inbox; add FCM push for confirmed cart reminders/order, delivery, cancellation, return, and refund events with preferences and deduplication; accept rating/text/photo reviews only after a delivered order item. Add post-delivery rating and feedback animations. Depends on F's trusted order events and C's review moderation tools. | 1, 7, 12 plus FCM/verified purchase | Inbox survives restart, separates accounts, deep-links correctly, and has read/unread state; Order Details and inbox show matching delivery notices; push denial does not hide inbox entries; one eligible purchase cannot submit duplicate reviews; demo seed reviews are labelled; rating submission and feedback animations end in a persisted state. |
+| H. AI experiences | Extend catalog assistant retrieval beyond 100 products, improve its Figma-aligned UI, add personalized recommendations based on consented in-app behavior and catalog facts, and build a separate TrenNex Help chatbot grounded in approved help content. Depends on D catalog and B Analytics/privacy controls. | 13 plus AI recommendations | Recommendations are relevant, explainable, and fall back safely; assistants do not invent prices, order state, or policy; quotas, latency, error handling, and no-match behavior pass staging tests. |
+| I. Profile and remaining flows | Verify account save and addresses; add saving/deletion animations, the Figma account-deletion illustration and confirmation information, secure account deletion, remaining Profile/help destinations, and wishlist/collections/search regressions. Depends on B server security and G notification/review data cleanup policy. | 10, 11, 13, 14 plus existing Figma flows | Profile/address changes survive relaunch and account switch; save and delete animations resolve to success or recoverable error; the inspected Figma illustration and confirmation information appear; deletion requires recent auth and cleans user-owned data according to documented policy; every visible Profile action has an intentional result. |
+| J. Full staging acceptance | Comprehensive Android, Cloud Function, Firestore/Storage rules, web admin, payment callback, AI, offline, accessibility, security, and performance tests; Figma screenshot comparisons; architecture/schema/API/runbook documentation. Prepare a professional GitHub README, architecture diagrams, application screenshots, demo video, technical documentation, and resume project description. Depends on A–I. | All plus testing/performance/docs | CI passes, device matrix passes, staging data is verified, critical flows have no open crash/data-loss bug, and documentation can reproduce the setup and tests. Portfolio artifacts accurately describe demonstrated features and label test payments, shipping, and reviews. |
+| K. Production readiness only | Inventory/backup/dry-run migration and release review **after** J and explicit owner approval. No production implementation is implied by this milestone. | Release gate | Owner approves a concrete reviewed production diff and rollout; until then, `trennex-ebbeb` remains untouched. |
+
+Milestones can be split into small, reviewable issues. A milestone is complete only after the code, staging data/functions where needed, and physical-device checks agree. Update `DEVELOPMENT_STATUS.md` after each issue with files changed, which Firebase project was touched, test results, and remaining gaps.
+**Owner-approved sequencing exception, 2026-11-25:** Milestone A core implementation is complete but its acceptance verification remains pending. The owner approved B1–B6 before those final A checks. Build B one reviewable task at a time, then run combined A+B acceptance testing and obtain explicit owner approval before starting C. No A criterion is removed or treated as passed without evidence.
+
+### Milestone B task sequence
+
+1. **B1 CI/CD:** PR and `master` checks compile staging Android with a demo Firebase configuration, run Android and Cloud Functions unit tests, Firestore/Storage rules tests, checkout emulator integration, and catalog validation. A separate manual workflow runs the same checks before a staging-only Firebase deploy; protect its `staging` GitHub environment with required reviewers and short-lived Workload Identity Federation. No production deployment workflow or credentials.
+2. **B2 Analytics:** instrument privacy-safe product, category, banner, search, cart, wishlist, checkout, and assistant events with staging/production separation.
+3. **B3 Crashlytics:** configure staging reporting, safe diagnostic context, and controlled crash/non-fatal verification.
+4. **B4 Security:** audit Firestore/Storage rules and callable authorization; add denial and account-isolation tests.
+5. **B5 Roles:** server-managed customer/admin claims, revoked-admin checks, and no client privilege escalation.
+6. **B6 App Check:** stage Android integration and legitimate device validation in monitoring mode before any enforcement.
+7. **Combined A+B acceptance:** complete every documented A pending check and regress B1–B6 on emulators and staging devices. Request owner approval before C.
+
+## Original 17 requests: detailed staging acceptance
+
+These checks supplement the milestone criteria. Each request remains open until its checks pass on staging with the relevant Figma frame inspected where accessible.
+
+| Request | Milestone | Detailed acceptance |
+| --- | --- | --- |
+| 1. Notifications | G | Cart reminders are delayed, deduplicated, and cancelled after checkout/removal; confirmed orders and each stored shipping/delivery state produce account-owned inbox entries and eligible FCM push; Order Details shows the matching delivery notice; read/unread and deep links survive restart and push denial. |
+| 2. Add-address transition | A | Home location sheet opens Add New Address directly without a visible Home flash or duplicate dialog; Back returns predictably; a saved/selected address appears immediately and remains selected after relaunch. |
+| 3. More Home products | D | Each reviewed catalog batch loads through bounded pages/sections while scrolling; no duplicate/missing products, indefinite spinner, or unrelated fallback content; cost and scrolling measurements remain acceptable. |
+| 4. Banner routing | D | A product banner opens exactly that product; category/campaign banners open a relevant populated listing; missing/retired targets show a recoverable state rather than a wrong destination. |
+| 5. Category redesign/data | D | Every Home category reaches its Figma-aligned category screen; products match catalog category/subcategory/brand data; populated and empty states, horizontal/vertical sections, and adaptive grids are verified on phone sizes. |
+| 6. Product media/variants | E | Multiple images can be swiped and previewed; preview returns to the selected index; variant color/media/price selection survives Back and view recreation; unavailable variants cannot be added. |
+| 7. Reviews/share | E, G | Staging catalog has visibly labelled demo review text and images; Share opens an Android share sheet with a valid product destination; only a delivered purchaser may submit one persisted rating/text/photo review per order item. |
+| 8. Loading actions | A | Add to Cart cannot fire before product/variant load, cannot duplicate on rapid taps, and reports write failure with Retry; loading terminates on success, error, cancellation, and recreation. |
+| 9. Category bottom navigation | D | All ten category tabs and right-side banners navigate to the matching category; subcategory/product taps narrow to relevant results in a suitable grid/list; redundant top titles are removed; Back restores the selected category. |
+| 10. Account details/deletion | I | Valid saves persist across relaunch/account switch with saving/success/error animation; deletion shows the Figma illustration and clear confirmation, requires recent authentication, and removes owned data under the documented retention policy without leaving an orphan account. |
+| 11. Addresses | I | Add, edit, delete, select, current location, and manual map flows work or show actionable errors; selected address updates Home and checkout immediately and stays account-scoped after restart. |
+| 12. Orders/tracking/reviews | F, G | Order search/filter finds the right order; animated tracking reads stored packing, shipping, location, and delivery events in order; Order Details and inbox show delivery notifications; delivered UI offers rating and animated feedback submission; cancellation, return, and demo refund states appear only after valid server transitions. |
+| 13. Help and Shopping Assistant | H | Help answers from approved TrenNex help content and is available to open at any hour with honest service limits; Shopping Assistant uses current catalog facts in an improved Figma-aligned UI, with safe no-match, offline, quota, and error responses. |
+| 14. Remaining Profile sections | I | Every visible Profile action has a tested route or explicit unavailable state; guest, signed-in, logout, and account-switch flows show only the correct user's data and do not crash. |
+| 15. Payments | F | COD remains functional; supported UPI, card, and other Razorpay test methods show test wording; the server calculates amount and verifies signature/webhook before success; failure/retry preserve cart and do not create duplicate paid orders. |
+| 16. No network | A | Disconnecting the phone produces a prompt, usable offline state where remote data is required; cached content remains visible where safe; reconnect plus Retry recovers without restart; Firebase-service failure with connectivity has distinct feedback. |
+| 17. Shared app states | A, J | Loading, empty, error, offline, and retry states are consistent across key catalog, search, product, cart, checkout, orders, and address flows; each operation exits loading on all outcomes; lifecycle navigation/recreation does not leave stale dialogs, callbacks, or duplicate requests. Full device regression closes J. |
+
+## Additional gaps to include
+
+- **Order operations:** A tracking timeline needs a trusted way for staff or a delivery integration to record packing, shipping, location, and delivery events. Build a restricted admin workflow or integration before treating those events as live.
+- **Order reversals:** Cancellation, return requests, and simulated refunds require explicit eligibility windows, server-owned transitions, inventory/payment effects, admin actions, and corresponding notifications. Never imply a test-mode refund moved real money.
+- **Wishlist, collections, and search regression:** These existing Figma flows were not in the 17-point list. Check them after the catalog grows so saved products, collection actions, search filters, voice/photo search, and account switching still work.
+- **App quality and accessibility:** Include crash reporting, performance checks, secure Firestore/Storage rules, notification preferences, readable text scaling, screen-reader labels, and small-phone layouts in the staging acceptance pass.
+- **Content and policy decisions:** Final SKU data and image rights, approved return/help content, account-deletion retention rules, and any future live-payment provider need owner decisions before their respective release work. Razorpay remains test mode for this portfolio application. These decisions do not block the first stability slice.
+
+## Behavior and data decisions
+
+### Catalog, categories, banners, and media
+
+- Use stable Firestore IDs for products, variants, categories, and banner actions. Store banner targets as data, not screen-specific hardcoded links. A banner for one product opens that product; a category or campaign banner opens a relevant filtered listing.
+- Build category listings from actual catalog category/subcategory/brand/tags and variant records. Choose grid or list presentation from product type and the inspected Figma state, while keeping one reusable listing route. Top Picks and category banners navigate to the corresponding category; subcategory tiles narrow results. Remove the temporary extra heading above Category content as part of the Category UI pass.
+- Extend Home's data query with bounded pagination and distinct sections. Show skeleton/progress and an end state. Do not load the entire future catalog just to render the first screen.
+- Grow the staging catalog in reviewed batches toward 500+ products, 1,000+ variants, and 20+ banners. Measure Firestore reads, Storage use, image bytes, query latency, and device scrolling before each batch; reduce batch size or defer the target if Firebase cost or performance is unacceptable.
+- Product photos, variant colors, descriptions, prices, stock, banners, and claims must be reviewed before commercial release. Existing generated branded images are portfolio concepts. Create/use approved original media for additional staging products; never silently represent concept images as exact commercial SKU photos.
+
+### Product detail and reviews
+
+- Store ordered product and variant image arrays, image alt text, color/size attributes, and a selected image index. Preview receives the selected image and restores it on Back or process recreation.
+- Existing catalog ratings are aggregate seed values. New review records need product/order/author references, rating, text, optional image paths, timestamp, and moderation state. Add representative review images across the staging catalog; every seeded review must be labelled **Demo review** in the UI and data. Production ratings must come from genuine reviews. Permit review submission only for an eligible delivered purchase and prevent duplicate reviews for the same order item.
+- Share opens the Android share sheet with a product link, name, and image/link preview where supported; the link must resolve to the same product in-app or on a safe landing page.
+
+### Cart, orders, payment, and notifications
+
+- Keep the Cloud Function authoritative for totals, stock, and order creation. Make add-to-cart idempotent or disable repeat taps while a write is pending; leave cart contents intact on checkout failure.
+- A payment option is actionable only when a provider and verified callback/order state exist. Until then, staging can show clearly marked prototypes, while COD remains the working method. Do not show payment success before server confirmation.
+- Persist an append-only order event log with timestamp, status, optional city/location, and actor/source. A visible timeline reads those events. The owner requested temporary timeline data: use explicit **demo** events only in staging test orders or a clearly labelled preview, never present invented shipping locations or delivery as real customer facts.
+- Keep an account-scoped notification collection and local read state. Generate notifications from confirmed cart/order/review events with a stable event ID for deduplication. A cart reminder should be delayed and rate-limited, then cancelled after checkout or cart removal; do not create a push on every tap. Order notifications should link to the correct order and respect notification permission/preferences. In-app inbox entries remain readable even if push permission is denied.
+
+### Account, addresses, help, and connectivity
+
+- Trace the add-address navigation and sheet lifecycle before changing timing. The selected address must update Home immediately and remain selected after restart. Verify add/edit/delete on staging with account isolation.
+- Account save needs explicit idle, saving, success, and error states. Account deletion needs recent reauthentication, a confirmation screen, server-owned cleanup of user data, and a documented policy for transactional order records and any legally required retention. Do not delete only the Auth user and leave private data behind.
+- Separate **Help** (TrenNex policies, orders, returns, support) from **Shopping Assistant** (catalog recommendations). Both should use approved, current app data; show availability and limits honestly. A 24-hour help entry means it can accept requests at any time, not a promise of instant human support.
+- Observe connectivity and failed requests. Show a reusable no-connection state promptly with Retry, but keep safe cached content visible where useful. A connected network does not guarantee the Firebase service is reachable, so server errors need their own recoverable state.
+
+## Advanced system design
+
+### Protected web admin and roles
+
+- Add the web dashboard as a separate application/module after choosing its framework and deployment target in Milestone C. Reuse Firebase Auth, but grant admin access through server-managed roles/custom claims, not an editable Firestore profile field.
+- Admin catalog, inventory, banner, order-event, and review-moderation changes must pass server authorization and validation. Record actor, timestamp, target ID, and before/after intent in an audit log. Keep customer accounts, carts, and orders protected from bulk catalog operations.
+- Test non-admin, signed-out, and revoked-admin access through security rules and callable/server integration tests. Apply App Check in staging observation mode first; enforce only after phone, CI, and admin flows are verified.
+
+### Razorpay test mode and simulated fulfillment
+
+- Keep Razorpay credentials only on the backend. Create a test payment order server-side using a server-calculated amount; store payment attempts separately from shopping orders. Verify the returned signature and webhook on the server, then transition the shopping order using an idempotent transaction. Cover duplicate callbacks, abandoned payment, failure, retry, and amount mismatch.
+- Use only Razorpay test keys and visible **Test payment** wording. This portfolio build must never imply that a test payment moved real money. COD stays available for staging regression.
+- Store fulfillment events in Firestore and let authorized admin actions generate simulated packing, shipping, arrival, and delivery changes. Label the order timeline **Demo shipping** for seeded/test orders. Delivery coordinates or cities are entered as demo events, never fabricated silently on the client.
+
+### FCM, reviews, analytics, and personalization
+
+- Store device FCM tokens per signed-in account and environment; remove/rotate them on logout or token change. Send push from a trusted backend event and persist its matching inbox record first. Test token invalidation, duplicate delivery, permission denial, and deep-link ownership.
+- A verified-purchase review must reference a delivered order item owned by the reviewer. Use server-side eligibility and one-review-per-item enforcement. Images live in account-scoped Storage paths and enter a moderation state. Staging seed reviews are explicitly marked **Demo review**.
+- Analytics events should describe product impressions, category/banner taps, searches, add-to-cart, checkout steps, and assistant use without phone numbers, addresses, raw chat messages, or payment details. Crashlytics uses the staging Firebase project during development.
+- Start personalization with a testable catalog-based ranking and deterministic fallback, then add AI ranking only if it improves measured relevance. Respect account boundaries, consent/preferences, quotas, and cost limits; never let generated text create product IDs or prices.
+
+### CI/CD, tests, performance, and documentation
+
+- GitHub Actions runs Android compilation/unit tests, Cloud Function tests, Firestore/Storage rules tests, catalog validation, and web-admin checks on pull requests. Staging deployment is a separate gated workflow; production credentials and production deploy steps are absent until the owner explicitly approves a release plan. Keep secrets out of commits and logs.
+- Add focused device tests for navigation, account isolation, location, product media, cart/checkout, notifications, and offline recovery. Add emulator/integration tests for payment signature/webhook states, admin role checks, review eligibility, order-event idempotency, and notification deduplication.
+- Measure startup, Home first content, catalog paging, image loading, scroll smoothness, and assistant response time on representative phones. Fix measured bottlenecks before choosing performance targets for the portfolio report.
+- Keep architecture diagrams, Firestore schema/rules, Cloud Function contracts, admin setup, emulator/staging setup, test instructions, demo-data labels, troubleshooting, and deployment/rollback runbooks current with each milestone.
+
+## First implementation slice
+
+Milestone A's core implementation includes the add-address transition, cart guards and durable sync, offline/loading/error/empty/Retry states, and offline operation guards. Its remaining checks are listed in `DEVELOPMENT_STATUS.md` and will be verified with B during combined staging acceptance. B1 is the current implementation slice.
+
+## Production gate
+
+Do not deploy code, functions, rules, Storage media, or catalog data to `trennex-ebbeb` during Milestones A–J. Staging and local Firebase emulators remain the implementation/test targets. Production preparation starts only after the owner accepts the staging app, product content, media rights, payment scope, account-deletion policy, and full device regression results. The prior read-only production audit notes in `PRODUCTION_READINESS_AUDIT.md` remain reference material, not an instruction to migrate now.

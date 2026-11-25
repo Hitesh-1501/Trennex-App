@@ -10,6 +10,7 @@ import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.lifecycleScope
 import androidx.lifecycle.repeatOnLifecycle
 import androidx.recyclerview.widget.LinearLayoutManager
+import androidx.navigation.fragment.findNavController
 import com.example.trennex.R
 import com.example.trennex.databinding.FragmentCategoryBinding
 import com.example.trennex.ui.category.adapter.CategorySideBarAdapter
@@ -50,7 +51,7 @@ class CategoryFragment : Fragment(R.layout.fragment_category) {
     private fun render(state: com.example.trennex.viewmodel.category.CategoryUiState) {
         binding.rvCategorySidebar.apply {
             if (adapter == null) {
-                adapter = CategorySideBarAdapter(state.categories) {
+                adapter = CategorySideBarAdapter(state.categories, state.selectedCategory?.id) {
                     viewModel.selectCategory(it)
                     updateSubCategoryFragment(it)
                 }
@@ -59,10 +60,20 @@ class CategoryFragment : Fragment(R.layout.fragment_category) {
         }
 
         state.selectedCategory?.let {
+            binding.shopCategoryButton.text = "Shop ${it.name} products"
+            binding.shopCategoryButton.setOnClickListener { _ ->
+                openProducts(slugFor(it.name), it.name)
+            }
             if (childFragmentManager.findFragmentById(R.id.categoryContentContainer) == null) {
                 updateSubCategoryFragment(it)
             }
         }
+    }
+
+    private fun slugFor(name: String): String = when (name) {
+        "Top Picks" -> "top-picks"
+        "Toys,Baby,Books" -> "toys-books"
+        else -> name.lowercase()
     }
 
     private fun updateSubCategoryFragment(category: CategoryModel) {
@@ -80,6 +91,15 @@ class CategoryFragment : Fragment(R.layout.fragment_category) {
             else -> TopPicksFragment()
         }
         openFragment(fragment)
+    }
+
+    fun openProducts(categorySlug: String, categoryTitle: String, tile: String? = null) {
+        if (findNavController().currentDestination?.id != R.id.categoryFragment) return
+        findNavController().navigate(R.id.categoryProductsFragment, Bundle().apply {
+            putString(CategoryProductsFragment.ARG_CATEGORY, categorySlug)
+            putString("categoryTitle", categoryTitle)
+            putString(CategoryProductsFragment.ARG_TILE, tile.orEmpty())
+        })
     }
 
     private fun openFragment(fragment: Fragment) {

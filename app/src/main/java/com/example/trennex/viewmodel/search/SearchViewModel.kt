@@ -8,15 +8,27 @@ import com.example.trennex.data.local.search.RecentSearchEntity
 import com.example.trennex.data.model.ProductResponse
 import com.example.trennex.repository.product.ProductRepository
 import com.example.trennex.ui.search.SearchUiState
+import com.example.trennex.ui.search.SearchSortOrder
+import com.example.trennex.ui.search.SearchGenderFilter
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.CancellationException
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.async
+import kotlinx.coroutines.awaitAll
+import kotlinx.coroutines.coroutineScope
+import kotlinx.coroutines.withTimeout
+import kotlinx.coroutines.TimeoutCancellationException
 
 class SearchViewModel: ViewModel(){
     private val repository = ProductRepository()
     private var recentSearchDao: RecentSearchDao? = null
+    private var recommendationsJob: Job? = null
+    private var searchJob: Job? = null
 
     private val _uiState = MutableStateFlow(SearchUiState())
     val uiState: StateFlow<SearchUiState> = _uiState.asStateFlow()
@@ -35,17 +47,23 @@ class SearchViewModel: ViewModel(){
     }
 
     fun searchProducts(query: String){
+        recommendationsJob?.cancel()
+        searchJob?.cancel()
         if(query.isBlank()){
             _uiState.value = SearchUiState()
             return
         }
-        viewModelScope.launch {
+        searchJob = viewModelScope.launch {
             try {
                 _uiState.value = _uiState.value.copy(
+                    query = query,
                     isLoading = true, 
                     error = null, 
                     hasResults = false,
-                    showRecommendations = false
+                    showRecommendations = false,
+                    allResults = emptyList(),
+                    sortOrder = SearchSortOrder.RELEVANCE,
+                    genderFilter = SearchGenderFilter.ALL
                 )
                 
                 recentSearchDao?.let { dao ->
@@ -53,11 +71,11 @@ class SearchViewModel: ViewModel(){
                     dao.insertRecentSearch(RecentSearchEntity(query = query))
                 }
 
-                val results = repository.searchProducts(query)
+                val results = withTimeout(20_000) { repository.searchProducts(query) }
                 val isGrid = determineLayoutType(query,results)
-                val shouldShowGender = shouldShowGenderFilter(query, results)
                 if(results.isEmpty()){
                     _uiState.value = SearchUiState(
+                        query = query,
                         hasResults = false,
                         error = "NO PRODUCTS FOUND",
                         isGridLayout = false,
@@ -66,16 +84,26 @@ class SearchViewModel: ViewModel(){
                     )
                 }else{
                     _uiState.value = SearchUiState(
+                        query = query,
                         isLoading = false,
                         searchResults = results,
+                        allResults = results,
                         isGridLayout = isGrid,
                         hasResults = true,
-                        showGenderFilter = shouldShowGender,
+                        showGenderFilter = results.any(::hasGenderTag),
                         showRecommendations = false
                     )
                 }
+            }catch (e: TimeoutCancellationException) {
+                _uiState.value = SearchUiState(
+                    query = query,
+                    error = "ERROR LOADING PRODUCTS"
+                )
+            }catch (e: CancellationException) {
+                throw e
             }catch (e: Exception){
                 _uiState.value = SearchUiState(
+                    query = query,
                     isLoading = false,
                     error = "ERROR LOADING PRODUCTS",
                     showRecommendations = false,
@@ -92,15 +120,121 @@ class SearchViewModel: ViewModel(){
     }
 
     fun clearSearch() {
+        recommendationsJob?.cancel()
+        searchJob?.cancel()
         _uiState.value = SearchUiState()
     }
 
-    fun loadRecommendations(query: String){
-        viewModelScope.launch {
+    fun setSortOrder(order: SearchSortOrder) {
+        _uiState.value = filteredState(_uiState.value.copy(sortOrder = order))
+    }
+
+    fun setGenderFilter(filter: SearchGenderFilter) {
+        _uiState.value = filteredState(_uiState.value.copy(genderFilter = filter))
+    }
+
+    private fun filteredState(state: SearchUiState): SearchUiState {
+        val filtered = state.allResults.filter { product ->
+            when (state.genderFilter) {
+                SearchGenderFilter.ALL -> true
+                SearchGenderFilter.MEN -> product.tags.orEmpty().any { it.lowercase() in setOf("men", "male", "mens") }
+                SearchGenderFilter.WOMEN -> product.tags.orEmpty().any { it.lowercase() in setOf("women", "female", "womens") }
+            }
+        }
+        val sorted = when (state.sortOrder) {
+            SearchSortOrder.RELEVANCE -> filtered
+            SearchSortOrder.NEWEST -> filtered.sortedByDescending { it.newArrival }
+            SearchSortOrder.PRICE_LOW -> filtered.sortedBy { it.price }
+            SearchSortOrder.PRICE_HIGH -> filtered.sortedByDescending { it.price }
+            SearchSortOrder.POPULARITY -> filtered.sortedWith(
+                compareByDescending<ProductResponse> { it.ratingCount }
+                    .thenByDescending { it.ratingAverage }
+            )
+            SearchSortOrder.DISCOUNT -> filtered.sortedByDescending { it.discountPercentage }
+            SearchSortOrder.NAME -> filtered.sortedBy { it.title.lowercase() }
+        }
+        return state.copy(searchResults = sorted)
+    }
+
+    private fun hasGenderTag(product: ProductResponse): Boolean =
+        product.tags.orEmpty().any { it.lowercase() in setOf("men", "male", "mens", "women", "female", "womens") }
+
+    fun searchByImageSignals(recognizedText: String, labels: List<String>) {
+        recommendationsJob?.cancel()
+        searchJob?.cancel()
+        searchJob = viewModelScope.launch {
+            _uiState.value = SearchUiState(query = "Photo search", isLoading = true)
             try {
-                val items = repository.searchProducts(query).take(8).map { it.title }
+                val textWords = recognizedText.lowercase().split(Regex("[^a-z0-9]+"))
+                    .filter { it.length >= 3 }.distinct()
+                val labelWords = labels.flatMap { label ->
+                    label.lowercase().split(Regex("[^a-z0-9]+"))
+                }.filter { it.length >= 4 }.distinct()
+                val rankedMatches = repository.searchProducts("", includeVariants = false).mapNotNull { product ->
+                    val title = product.title.lowercase()
+                    val brand = product.brand.orEmpty().lowercase()
+                    val category = product.category.orEmpty().lowercase()
+                    val tags = product.tags.orEmpty().joinToString(" ").lowercase()
+                    val textScore = textWords.sumOf { word ->
+                        when {
+                            title.contains(word) -> 4
+                            brand.contains(word) -> 3
+                            tags.contains(word) -> 2
+                            else -> 0
+                        }
+                    }
+                    val labelScore = labelWords.sumOf { word ->
+                        when {
+                            category.contains(word) || word.contains(category) && category.isNotBlank() -> 2
+                            tags.contains(word) || title.contains(word) -> 1
+                            else -> 0
+                        }
+                    }
+                    val score = textScore + labelScore
+                    if (score >= 2) product to score else null
+                }.sortedByDescending { it.second }.take(12).map { it.first }
+                val matches = coroutineScope {
+                    rankedMatches.map { product -> async { repository.getProductDetail(product.id) } }.awaitAll()
+                }
+                _uiState.value = if (matches.isEmpty()) {
+                    SearchUiState(query = "Photo search", error = "NO PRODUCTS FOUND")
+                } else {
+                    SearchUiState(
+                        query = "Photo search",
+                        searchResults = matches,
+                        allResults = matches,
+                        hasResults = true,
+                        showGenderFilter = matches.any(::hasGenderTag)
+                    )
+                }
+            } catch (e: CancellationException) {
+                throw e
+            } catch (e: Exception) {
+                _uiState.value = SearchUiState(query = "Photo search", error = "ERROR LOADING PRODUCTS")
+            }
+        }
+    }
+
+    fun loadRecommendations(query: String){
+        recommendationsJob?.cancel()
+        searchJob?.cancel()
+        _uiState.value = _uiState.value.copy(
+            query = query,
+            isLoading = false,
+            searchResults = emptyList(),
+            allResults = emptyList(),
+            hasResults = false,
+            error = null,
+            recommendations = emptyList(),
+            showRecommendations = false
+        )
+        recommendationsJob = viewModelScope.launch {
+            delay(250)
+            try {
+                val items = repository.searchProducts(query, includeVariants = false).take(8).map { it.title }
                 _uiState.value = if(items.isNotEmpty()){
                     _uiState.value.copy(
+                        query = query,
                         recommendations = items,
                         showRecommendations = true,
                         hasResults = false
@@ -108,11 +242,14 @@ class SearchViewModel: ViewModel(){
                     )
                 }else{
                     _uiState.value.copy(
+                        query = query,
                         recommendations = emptyList(),
                         showRecommendations = false,
                         hasResults = false
                     )
                 }
+            }catch (e: CancellationException) {
+                throw e
             }catch (e: Exception){
                 _uiState.value = _uiState.value.copy(
                     recommendations = emptyList(),
@@ -143,44 +280,6 @@ class SearchViewModel: ViewModel(){
         if(results.isNotEmpty()){
             return CategoryLayoutConfig.isGridLayout(query, results[0].category)
         }
-        return false
-    }
-    private fun shouldShowGenderFilter(query: String, results: List<ProductResponse>): Boolean{
-        val queryLower = query.lowercase()
-        
-        // Define non-clothing items to exclude early (exact or partial matches that shouldn't trigger gender)
-        val nonClothingKeywords = setOf(
-            "laptop", "phone", "mobile", "tv", "television", "computer", "pc", 
-            "camera", "watch", "smartwatch", "headphone", "earphone", "speaker",
-            "tablet", "ipad", "macbook", "desktop", "tabletop", "stop", "photoshop",
-            "fridge", "refrigerator", "ac", "conditioner", "oven", "microwave"
-        )
-        if (nonClothingKeywords.any { queryLower.contains(it) }) return false
-
-        val clothingKeywords = setOf(
-            "shirt", "dress", "cloth", "tshirt", "t-shirt", "polo", "hoodie",
-            "sweater", "jacket", "coat", "blazer", "cardigan", "pant", "pants",
-            "jeans", "shorts", "skirt", "saree", "lehenga", "top", "camisole",
-            "tank", "vest", "robe", "gown", "suit", "wear", "bottom", "apparel"
-        )
-        
-        // Split query into words to avoid partial matches like "laptop" matching "top"
-        val words = queryLower.split(Regex("[\\s,.-]+")).filter { it.isNotBlank() }
-        
-        // Check for exact word match
-        if(words.any { word -> clothingKeywords.contains(word) }){
-            return true
-        }
-        
-        // Also check result categories if available
-        if(results.isNotEmpty()){
-            val category = results[0].category?.lowercase() ?: ""
-            val clothingCategories = setOf("clothing", "apparel", "men's fashion", "women's fashion", "kids' fashion")
-            if (clothingCategories.any { category.contains(it) }) {
-                return true
-            }
-        }
-        
         return false
     }
 }

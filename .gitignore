@@ -13,3 +13,17 @@
 .externalNativeBuild
 .cxx
 local.properties
+
+# Project-specific Firebase and signing credentials
+app/google-services.json
+app/src/*/google-services.json
+gha-creds-*.json
+*.jks
+*.keystore
+node_modules/
+.firebase/
+firebase-debug.log
+firestore-debug.log
+ui-debug.log
+firebase-tests/coverage/
+keystore.properties

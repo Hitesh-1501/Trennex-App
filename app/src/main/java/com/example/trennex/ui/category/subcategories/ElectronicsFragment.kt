@@ -12,6 +12,8 @@ import com.example.trennex.databinding.FragmentElectronicsBinding
 import com.example.trennex.ui.category.adapter.ElectronicsAdapter
 import com.example.trennex.ui.category.adapter.ElectronicsAdapter.Companion.TYPE_ELECTRONICS_ITEM
 import com.example.trennex.viewmodel.category.CategoryViewModel
+import com.example.trennex.ui.category.onTileTap
+import com.example.trennex.ui.category.openCategoryProducts
 
 class ElectronicsFragment : Fragment(R.layout.fragment_electronics) {
     private var _binding: FragmentElectronicsBinding? = null
@@ -38,6 +40,11 @@ class ElectronicsFragment : Fragment(R.layout.fragment_electronics) {
         }
         binding.rvElectronics.layoutManager = grid
         binding.rvElectronics.adapter = ElectronicsAdapter(list)
+        binding.rvElectronics.onTileTap { position ->
+            list[position].takeIf { it.Type == TYPE_ELECTRONICS_ITEM }?.title?.let { tile ->
+                openCategoryProducts("electronics", "Electronics", tile)
+            }
+        }
     }
 
     override fun onDestroyView() {

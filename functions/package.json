@@ -1,0 +1,17 @@
+{
+  "name": "trennex-functions",
+  "private": true,
+  "engines": {
+    "node": "22"
+  },
+  "main": "index.js",
+  "scripts": {
+    "check": "node --check index.js",
+    "test": "node --test assistant-core.test.js",
+    "test:integration": "node integration-test.js"
+  },
+  "dependencies": {
+    "firebase-admin": "^13.0.2",
+    "firebase-functions": "^6.1.1"
+  }
+}

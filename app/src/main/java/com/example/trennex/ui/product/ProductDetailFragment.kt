@@ -14,6 +14,7 @@ import androidx.navigation.fragment.FragmentNavigatorExtras
 import androidx.navigation.fragment.findNavController
 import androidx.recyclerview.widget.LinearLayoutManager
 import com.example.trennex.R
+import com.example.trennex.ui.common.NetworkStatus
 import com.example.trennex.databinding.FragmentProductDetailBinding
 import com.example.trennex.ui.product.adapter.ColorVariantAdapter
 import com.example.trennex.ui.product.adapter.ProductImageAdapter
@@ -72,6 +73,7 @@ import android.widget.PopupWindow
 import androidx.activity.result.contract.ActivityResultContracts
 import java.util.Locale
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.flow.combine
 import kotlin.math.abs
 
 
@@ -86,6 +88,8 @@ class ProductDetailFragment : Fragment(R.layout.fragment_product_detail), WishLi
     private var isReviewExpandable = false
     private var isWishlisted = false
     private var isCart = false
+    private var isAddingToCart = false
+    private var cartItems: List<CartItemModel> = emptyList()
 
     private val cartViewModel: CartViewModel by activityViewModels()
     private var bottomSheetBinding: BottomSheetSelectLocationBinding? = null
@@ -120,6 +124,7 @@ class ProductDetailFragment : Fragment(R.layout.fragment_product_detail), WishLi
     private var selectedColorPosition = 0
     private var selectedVariantPosition = 0
     private var bannerMediator: TabLayoutMediator? = null
+    private var bannerPageCallback: ViewPager2.OnPageChangeCallback? = null
 
 
     private val viewModel : ProductDetailViewModel by viewModels()
@@ -164,9 +169,33 @@ class ProductDetailFragment : Fragment(R.layout.fragment_product_detail), WishLi
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
+        binding.addToCart.isEnabled = false
+        binding.addToCart.alpha = 0.5f
+        if (NetworkStatus.isOnline(requireContext())) binding.contentStatus.showLoading()
+        else binding.contentStatus.showOffline { viewModel.fetchProductDetail(args.productId) }
         fusedLocationClient = LocationServices.getFusedLocationProviderClient(requireContext())
         val id = args.productId
         viewModel.fetchProductDetail(id)
+        viewLifecycleOwner.lifecycleScope.launch {
+            viewLifecycleOwner.repeatOnLifecycle(Lifecycle.State.STARTED) {
+                combine(viewModel.products, viewModel.isLoading, viewModel.error,
+                    NetworkStatus.observe(requireContext())) { product, loading, error, online ->
+                    ProductContentState(product, loading, error, online)
+                }.collect { (product, loading, error, online) ->
+                    when {
+                        product != null -> binding.contentStatus.hide()
+                        !online -> binding.contentStatus.showOffline {
+                            viewModel.fetchProductDetail(args.productId)
+                        }
+                        loading -> binding.contentStatus.showLoading()
+                        error != null -> binding.contentStatus.showError(
+                            "Could not load this product. Please retry."
+                        ) { viewModel.fetchProductDetail(args.productId) }
+                        else -> binding.contentStatus.showEmpty("Product unavailable")
+                    }
+                }
+            }
+        }
         reviewAdapter = ReviewAdapter(emptyList())
         binding.rvReviews.isNestedScrollingEnabled = false
         binding.rvReviews.layoutManager = LinearLayoutManager(requireContext())
@@ -205,7 +234,6 @@ class ProductDetailFragment : Fragment(R.layout.fragment_product_detail), WishLi
                         cartProductId = product.id
                         cartPrice = price
                         cartMrp = mrp
-                        cartRatingCount = product.reviews.size
                         cartReturnPolicy = product.returnPolicy
                         cartDeliveryDetails = product.shippingInformation
                         baseTitle = product.title
@@ -231,6 +259,8 @@ class ProductDetailFragment : Fragment(R.layout.fragment_product_detail), WishLi
                         configureVariantAndColorData(product,mrp)
                         setupColorVariants()
                         setUpVariants()
+                        binding.addToCart.isEnabled = !isAddingToCart
+                        binding.addToCart.alpha = if (isAddingToCart) 0.5f else 1f
                     }
                 }
             }
@@ -268,14 +298,13 @@ class ProductDetailFragment : Fragment(R.layout.fragment_product_detail), WishLi
                 .start()
         }
 
-        binding.productBanners.registerOnPageChangeCallback(
-            object: ViewPager2.OnPageChangeCallback(){
+        bannerPageCallback = object: ViewPager2.OnPageChangeCallback(){
                 override fun onPageSelected(position: Int) {
                     super.onPageSelected(position)
                     currentBannerPosition = position
                 }
             }
-        )
+        binding.productBanners.registerOnPageChangeCallback(bannerPageCallback!!)
 
         findNavController().currentBackStackEntry
             ?.savedStateHandle
@@ -318,6 +347,7 @@ class ProductDetailFragment : Fragment(R.layout.fragment_product_detail), WishLi
                     binding.tvPrice.text = it.Price
                     binding.tvMrp.text = it.mrpPrice
                 }
+                updateSelectedCatalogVariant()
                 updateMainTitle()
             }
 
@@ -415,6 +445,10 @@ class ProductDetailFragment : Fragment(R.layout.fragment_product_detail), WishLi
             binding.tvSelectedColor.text = it }, {selected ,position->
             selectedColor = selected.modelName
             selectedColorPosition = position
+            currentProduct?.catalogVariants?.indexOfFirst { it.color == selectedColor }
+                ?.takeIf { it >= 0 }?.let { selectedVariantPosition = it }
+            updateSelectedCatalogVariant()
+            if (::variantAdapter.isInitialized) variantAdapter.setSelectedVariantPosition(selectedVariantPosition)
             updateMainTitle()
 
         })
@@ -462,13 +496,17 @@ class ProductDetailFragment : Fragment(R.layout.fragment_product_detail), WishLi
             )
         }
         Log.d("REVIEW_CHECK", "Reviews size: ${product.reviews.size}")
-        binding.tvRatings.text = "${reviewsList.size} Ratings"
+        val ratingCount = product.ratingCount.takeIf { it > 0 } ?: reviewsList.size
+        binding.tvRatings.text = "$ratingCount Ratings"
         binding.tvReviews.text = "| ${reviewsList.size} Reviews"
-        val averageRatings = if(reviewsList.isNotEmpty()){
+        val averageRatings = if (product.ratingAverage in 0.1..5.0) {
+            product.ratingAverage
+        } else if(reviewsList.isNotEmpty()){
             reviewsList.map { it.rating }.average()
         }else 0.0
         binding.totalRatings.text = String.format("%.1f", averageRatings)
         cartRating = averageRatings
+        cartRatingCount = ratingCount
         val limitedReviews = reviewsList.take(4)
         reviewAdapter.updateList(limitedReviews)
 
@@ -497,16 +535,20 @@ class ProductDetailFragment : Fragment(R.layout.fragment_product_detail), WishLi
         binding.llReview.backgroundTintList = ColorStateList.valueOf(backgroundColor)
         binding.totalRatings.backgroundTintList = ColorStateList.valueOf(backgroundColor)
         binding.averageRatings.text = String.format("%.1f", averageRatings)
-        binding.ratings.text = "| ${reviewsList.size}"
+        binding.ratings.text = "| $ratingCount"
     }
 
     private fun setUpCart(){
         binding.addToCart.setOnClickListener {
+            if (isAddingToCart || currentProduct == null) return@setOnClickListener
+            updateSelectedCatalogVariant()
+            if (currentProduct?.catalogProductId != null &&
+                currentProduct?.catalogVariants?.getOrNull(selectedVariantPosition) == null) {
+                Toast.makeText(requireContext(), "This option is unavailable", Toast.LENGTH_SHORT).show()
+                return@setOnClickListener
+            }
             if(!isCart) {
-                isCart = true
-                updateCartIcon()
-                CartStore.addItem(
-                    CartItemModel(
+                val item = CartItemModel(
                         id = cartProductId,
                         title = baseTitle,
                         description = baseDescription,
@@ -518,16 +560,43 @@ class ProductDetailFragment : Fragment(R.layout.fragment_product_detail), WishLi
                         deliveryDetails = cartDeliveryDetails,
                         imageUrl = currentImages.firstOrNull(),
                         quantity = 1,
-                        isSelected = true
+                        isSelected = true,
+                        productId = currentProduct?.catalogProductId,
+                        variantId = currentProduct?.catalogVariants?.getOrNull(selectedVariantPosition)?.id,
+                        variantName = currentProduct?.catalogVariants?.getOrNull(selectedVariantPosition)?.name,
                     )
-                )
-                val addToCartSheet = AddToCartSheet.newInstance(
-                    imageUrl = currentImages.firstOrNull(),
-                    productTitle = baseTitle
-                )
-                addToCartSheet.listener = this
-                addToCartSheet.show(parentFragmentManager, "add_to_cart_sheet")
-                Toast.makeText(requireContext(),"Added to cart", Toast.LENGTH_SHORT).show()
+                isAddingToCart = true
+                binding.addToCart.isEnabled = false
+                binding.addToCart.alpha = 0.5f
+                viewLifecycleOwner.lifecycleScope.launch {
+                    try {
+                        CartStore.addItemAndAwait(item)
+                        if (_binding == null || !isAdded) return@launch
+                        isCart = item.id == args.productId &&
+                            (item.variantId == null ||
+                                item.variantId == currentProduct?.catalogVariants?.getOrNull(selectedVariantPosition)?.id)
+                        updateCartIcon()
+                        if (parentFragmentManager.findFragmentByTag("add_to_cart_sheet") == null) {
+                            val addToCartSheet = AddToCartSheet.newInstance(
+                                imageUrl = item.imageUrl,
+                                productTitle = item.title
+                            )
+                            addToCartSheet.listener = this@ProductDetailFragment
+                            addToCartSheet.show(parentFragmentManager, "add_to_cart_sheet")
+                        }
+                        Toast.makeText(requireContext(), "Added to cart", Toast.LENGTH_SHORT).show()
+                    } catch (error: Exception) {
+                        if (_binding != null && isAdded) {
+                            Toast.makeText(requireContext(), "Could not add to cart. Try again.", Toast.LENGTH_SHORT).show()
+                        }
+                    } finally {
+                        isAddingToCart = false
+                        if (_binding != null) {
+                            binding.addToCart.isEnabled = currentProduct != null
+                            binding.addToCart.alpha = 1f
+                        }
+                    }
+                }
             }else{
                 findNavController().navigate(R.id.action_productDetailFragment_to_cartFragment)
             }
@@ -541,7 +610,8 @@ class ProductDetailFragment : Fragment(R.layout.fragment_product_detail), WishLi
         viewLifecycleOwner.lifecycleScope.launch {
             viewLifecycleOwner.repeatOnLifecycle(androidx.lifecycle.Lifecycle.State.STARTED){
                 CartStore.items.collect {items->
-                    isCart = items.any{it.id == args.productId}
+                    cartItems = items
+                    updateSelectedCatalogVariant()
                     updateCartIcon()
                 }
             }
@@ -561,9 +631,11 @@ class ProductDetailFragment : Fragment(R.layout.fragment_product_detail), WishLi
             updateMainTitle()
         },{ variant , position ->
             binding.tvVariant.text = variant.variant
+            selectedVariant = variant.variant
             selectedVariantPosition = position
             binding.tvPrice.text = variant.Price
             binding.tvMrp.text = variant.mrpPrice
+            updateSelectedCatalogVariant()
         })
         binding.rvVariants.apply {
             layoutManager = LinearLayoutManager(requireContext(), LinearLayoutManager.HORIZONTAL,false)
@@ -575,15 +647,38 @@ class ProductDetailFragment : Fragment(R.layout.fragment_product_detail), WishLi
 
     }
 
+    private fun updateSelectedCatalogVariant() {
+        val product = currentProduct
+        val option = product?.catalogVariants?.getOrNull(selectedVariantPosition)
+        if (option != null) {
+            cartPrice = option.price
+            cartMrp = option.mrp
+            binding.tvPrice.text = CurrencyFormator.formatInr(option.price)
+            binding.tvMrp.text = CurrencyFormator.formatInr(option.mrp)
+            binding.tvPriceDetails.text = CurrencyFormator.formatInr(option.price)
+            selectedVariant = option.name
+            option.color?.let { color ->
+                selectedColor = color
+                selectedColorPosition = currentColorOptions.indexOfFirst { it.modelName == color }
+                    .coerceAtLeast(0)
+                binding.tvSelectedColor.text = color
+                if (::colorAdapter.isInitialized) colorAdapter.setSelectedColorPosition(selectedColorPosition)
+            }
+        }
+        isCart = cartItems.any { it.id == args.productId &&
+            (option == null || it.variantId == option.id) }
+        updateCartIcon()
+    }
+
     private fun updateMainTitle(){
         val selectedInfo = listOfNotNull(
-            selectedColor.takeIf { it.isNotBlank() },
+            selectedColor.takeIf { it.isNotBlank() && !selectedVariant.contains(it, ignoreCase = true) },
             selectedVariant.takeIf { it.isNotBlank() }
         )
         val description = if(selectedInfo.isEmpty()){
             baseDescription
         }else{
-            "$baseDescription (${selectedInfo.joinToString {", "}})"
+            "$baseDescription (${selectedInfo.joinToString(", ")})"
         }
         binding.tvDescription.text = description
         binding.tvTitle.text = baseTitle
@@ -606,8 +701,8 @@ class ProductDetailFragment : Fragment(R.layout.fragment_product_detail), WishLi
                 VariantModel(
                     id = index + 1,
                     variant = variantName,
-                    Price = CurrencyFormator.formatInr(product.price),
-                    mrpPrice = CurrencyFormator.formatInr(mrp)
+                    Price = CurrencyFormator.formatInr(product.catalogVariants.orEmpty().getOrNull(index)?.price ?: product.price),
+                    mrpPrice = CurrencyFormator.formatInr(product.catalogVariants.orEmpty().getOrNull(index)?.mrp ?: mrp)
                 )
             }
         val hasColors = currentColorOptions.isNotEmpty()
@@ -632,6 +727,7 @@ class ProductDetailFragment : Fragment(R.layout.fragment_product_detail), WishLi
             binding.tvVariant.text = selectedVariantModel.variant
             binding.tvPrice.text = selectedVariantModel.Price
             binding.tvMrp.text = selectedVariantModel.mrpPrice
+            updateSelectedCatalogVariant()
         } else {
             selectedVariant = ""
             selectedVariantPosition = 0
@@ -860,10 +956,29 @@ class ProductDetailFragment : Fragment(R.layout.fragment_product_detail), WishLi
         }
     }
 
-    override fun onDestroy() {
-        super.onDestroy()
+    override fun onDestroyView() {
+        bannerMediator?.detach()
+        bannerMediator = null
+        bannerPageCallback?.let { binding.productBanners.unregisterOnPageChangeCallback(it) }
+        bannerPageCallback = null
+        locationBottomSheet?.dismiss()
+        locationBottomSheet = null
+        bottomSheetBinding = null
+        binding.productBanners.adapter = null
+        binding.rvReviews.adapter = null
+        binding.rvTopFeatures.adapter = null
+        binding.rvColorVariants.adapter = null
+        binding.rvVariants.adapter = null
         _binding = null
+        super.onDestroyView()
     }
+
+    private data class ProductContentState(
+        val product: ProductResponse?,
+        val loading: Boolean,
+        val error: String?,
+        val online: Boolean,
+    )
 
 
 }

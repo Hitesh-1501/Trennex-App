@@ -9,9 +9,14 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.CancellationException
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.delay
 
 class OrdersViewModel : ViewModel() {
     private val userRepository = UserRepository()
+    private var allOrders: List<OrderModel> = emptyList()
+    private var searchQuery: String = ""
 
     private val _orders = MutableStateFlow<List<OrderModel>>(emptyList())
     val orders: StateFlow<List<OrderModel>> = _orders.asStateFlow()
@@ -21,26 +26,57 @@ class OrdersViewModel : ViewModel() {
 
     private val _error = MutableStateFlow<String?>(null)
     val error: StateFlow<String?> = _error.asStateFlow()
+    private var observeJob: Job? = null
+    private var firstResultTimeout: Job? = null
 
     init {
         fetchOrders()
     }
 
+    fun retry() {
+        observeJob?.cancel()
+        firstResultTimeout?.cancel()
+        _error.value = null
+        _isLoading.value = true
+        fetchOrders()
+    }
+
     private fun fetchOrders() {
-        viewModelScope.launch {
+        firstResultTimeout = viewModelScope.launch {
+            delay(15_000)
+            if (_isLoading.value) {
+                _error.value = "Order loading timed out"
+                _isLoading.value = false
+            }
+        }
+        observeJob = viewModelScope.launch {
             userRepository.observeOrders()
                 .catch { e ->
+                    if (e is CancellationException) throw e
                     _error.value = e.message
                     _isLoading.value = false
+                    firstResultTimeout?.cancel()
                 }
                 .collect { orderList ->
-                    _orders.value = orderList
+                    firstResultTimeout?.cancel()
+                    allOrders = orderList
+                    applyFilter()
+                    _error.value = null
                     _isLoading.value = false
                 }
         }
     }
     
     fun filterOrders(query: String) {
-        // Implement filtering if needed
+        searchQuery = query.trim()
+        applyFilter()
+    }
+
+    private fun applyFilter() {
+        _orders.value = if (searchQuery.isBlank()) allOrders else allOrders.filter { order ->
+            order.id.contains(searchQuery, ignoreCase = true) ||
+                order.title.contains(searchQuery, ignoreCase = true) ||
+                order.status.contains(searchQuery, ignoreCase = true)
+        }
     }
 }

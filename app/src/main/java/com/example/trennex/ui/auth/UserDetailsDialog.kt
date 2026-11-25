@@ -3,6 +3,8 @@ package com.example.trennex.ui.auth
 import android.graphics.Color
 import android.graphics.drawable.ColorDrawable
 import android.view.LayoutInflater
+import android.os.Handler
+import android.os.Looper
 import android.view.View
 import android.view.WindowManager
 import android.widget.Toast
@@ -67,6 +69,7 @@ object UserDetailsDialog {
                 setSoftInputMode(WindowManager.LayoutParams.SOFT_INPUT_ADJUST_RESIZE)
             }
 
+            var saveAttempt = 0
             binding.btnSave.setOnClickListener {
                 val name = binding.etName.text?.toString().orEmpty().trim()
                 val email = binding.etEmail.text?.toString().orEmpty().trim()
@@ -77,28 +80,46 @@ object UserDetailsDialog {
                 binding.nameInputLayout.error = null
                 binding.saveProgress.visibility = View.VISIBLE
                 binding.btnSave.isEnabled = false
+                saveAttempt += 1
+                val currentAttempt = saveAttempt
                 val userDetails =  mapOf(
                     NAME_FIELD to name,
                     EMAIL_FIELD to email,
                     PHONE_FIELD to phoneNumber
                 )
-                FirebaseFirestore.getInstance()
+                val timeoutHandler = Handler(Looper.getMainLooper())
+                val timeoutRunnable = Runnable {
+                    if (!dialog.isShowing || currentAttempt != saveAttempt) return@Runnable
+                    binding.saveProgress.visibility = View.GONE
+                    binding.btnSave.isEnabled = true
+                    Toast.makeText(
+                        fragment.requireContext(),
+                        "Saving is taking too long. Check your connection and try again.",
+                        Toast.LENGTH_SHORT
+                    ).show()
+                }
+                val saveTask = FirebaseFirestore.getInstance()
                     .collection(USER_COLLECTION)
                     .document(uid)
                     .set(userDetails, SetOptions.merge())
-                    .addOnSuccessListener {
+                saveTask.addOnCompleteListener { result ->
+                    if (currentAttempt != saveAttempt) return@addOnCompleteListener
+                    timeoutHandler.removeCallbacks(timeoutRunnable)
+                    if (result.isSuccessful) {
                         dialog.dismiss()
                         onComplete()
-                    }
-                    .addOnFailureListener { exception ->
+                    } else {
                         binding.saveProgress.visibility = View.GONE
                         binding.btnSave.isEnabled = true
                         Toast.makeText(
                             fragment.requireContext(),
-                            exception.localizedMessage ?: "Could not save details. Please try again.",
+                            result.exception?.localizedMessage
+                                ?: "Could not save details. Please try again.",
                             Toast.LENGTH_SHORT
                         ).show()
                     }
+                }
+                timeoutHandler.postDelayed(timeoutRunnable, SAVE_TIMEOUT_MILLIS)
             }
         }
         dialog.show()
@@ -107,4 +128,6 @@ object UserDetailsDialog {
             setSoftInputMode(WindowManager.LayoutParams.SOFT_INPUT_ADJUST_RESIZE)
         }
     }
+
+    private const val SAVE_TIMEOUT_MILLIS = 15_000L
 }

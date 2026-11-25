@@ -1,6 +1,7 @@
 package com.example.trennex.utils.wishlist
 
 import android.content.Context
+import com.example.trennex.data.local.AccountScope
 import com.example.trennex.data.local.cart.AppDatabase
 import com.example.trennex.repository.wishlist.CollectionRepository
 import com.example.trennex.ui.wishlist.model.CollectionModel
@@ -34,6 +35,7 @@ object CollectionStore {
 
 
     fun createCollection(name: String,items: List<WishlistItemsModel>){
+        val ownerId = AccountScope.currentOwner()
         val trimmedName = name.trim().ifBlank { "New Collection" }
         val model = CollectionModel(
             id = System.currentTimeMillis(),
@@ -41,33 +43,36 @@ object CollectionStore {
             items = items
         )
         scope.launch {
-            repo().addOrUpdate(model)
+            repo().addOrUpdate(ownerId, model)
         }
     }
 
     fun renameCollection(id: Long,newName: String){
+        val ownerId = AccountScope.currentOwner()
         val updateName = newName.trim().ifBlank { "New Collection" }
         scope.launch {
-            val latestCollections = repo().observeCollections().first()
+            val latestCollections = repo().observeCollections(ownerId).first()
             val target = latestCollections.firstOrNull(){it.id == id}?: return@launch
-            repo().addOrUpdate(target.copy(name = updateName))
+            repo().addOrUpdate(ownerId, target.copy(name = updateName))
         }
     }
     fun removeCollection(id: Long){
+        val ownerId = AccountScope.currentOwner()
         scope.launch {
-            repo().removeCollection(id)
+            repo().removeCollection(ownerId, id)
         }
     }
     fun removeItemsFromCollection(collectionId: Long,itemIds: List<Int>){
         if(itemIds.isEmpty()) return
+        val ownerId = AccountScope.currentOwner()
         scope.launch {
-            val latestCollections = repo().observeCollections().first()
+            val latestCollections = repo().observeCollections(ownerId).first()
             val target = latestCollections.firstOrNull(){it.id == collectionId}?: return@launch
             val updateItems = target.items.filterNot { it.id in itemIds.toSet() }
             if(updateItems.isEmpty()){
-                repo().removeCollection(collectionId)
+                repo().removeCollection(ownerId, collectionId)
             }else{
-                repo().addOrUpdate(target.copy(items = updateItems))
+                repo().addOrUpdate(ownerId, target.copy(items = updateItems))
             }
         }
     }

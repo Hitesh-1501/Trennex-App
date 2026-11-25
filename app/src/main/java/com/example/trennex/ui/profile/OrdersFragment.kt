@@ -4,7 +4,6 @@ import android.os.Bundle
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
-import android.widget.Toast
 import androidx.core.widget.addTextChangedListener
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.viewModels
@@ -19,7 +18,10 @@ import com.example.trennex.ui.main.MainActivity
 import com.example.trennex.ui.main.ToolBarType
 import com.example.trennex.ui.profile.adapter.OrderAdapter
 import com.example.trennex.viewmodel.order.OrdersViewModel
+import com.example.trennex.ui.profile.model.OrderModel
+import com.example.trennex.ui.common.NetworkStatus
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.flow.combine
 
 class OrdersFragment : Fragment(R.layout.fragment_orders) {
 
@@ -36,7 +38,12 @@ class OrdersFragment : Fragment(R.layout.fragment_orders) {
                 imageUrl = order.imageUrl,
                 price = order.price.toFloat(),
                 quantity = order.quantity,
-                status = order.status
+                status = order.status,
+                listingPrice = order.listingPrice.toFloat(),
+                paymentMethod = order.paymentMethod,
+                deliveryAddress = order.deliveryAddress,
+                recipientName = order.recipientName,
+                recipientPhone = order.recipientPhone
             )
             findNavController().navigate(action)
         }
@@ -79,20 +86,20 @@ class OrdersFragment : Fragment(R.layout.fragment_orders) {
     private fun observeViewModel() {
         viewLifecycleOwner.lifecycleScope.launch {
             viewLifecycleOwner.repeatOnLifecycle(Lifecycle.State.STARTED) {
-                viewModel.orders.collect { orders ->
+                combine(viewModel.orders, viewModel.isLoading, viewModel.error,
+                    NetworkStatus.observe(requireContext())) { orders, loading, error, online ->
+                    OrdersContentState(orders, loading, error, online)
+                }.collect { (orders, loading, error, online) ->
                     orderAdapter.submitList(orders)
-                    val isEmpty = orders.isEmpty() && !viewModel.isLoading.value
-                    binding.layoutEmptyOrders.visibility = if (isEmpty) View.VISIBLE else View.GONE
-                    binding.rvOrders.visibility = if (isEmpty) View.GONE else View.VISIBLE
-                }
-            }
-        }
-
-        viewLifecycleOwner.lifecycleScope.launch {
-            viewLifecycleOwner.repeatOnLifecycle(Lifecycle.State.STARTED) {
-                viewModel.error.collect { error ->
-                    error?.let {
-                        Toast.makeText(requireContext(), "Error: $it", Toast.LENGTH_LONG).show()
+                    binding.rvOrders.visibility = if (orders.isEmpty()) View.GONE else View.VISIBLE
+                    when {
+                        orders.isNotEmpty() -> binding.contentStatus.hide()
+                        !online -> binding.contentStatus.showOffline { viewModel.retry() }
+                        loading -> binding.contentStatus.showLoading()
+                        error != null -> binding.contentStatus.showError(
+                            "Could not load orders. Please retry."
+                        ) { viewModel.retry() }
+                        else -> binding.contentStatus.showEmpty("No orders found")
                     }
                 }
             }
@@ -103,4 +110,11 @@ class OrdersFragment : Fragment(R.layout.fragment_orders) {
         super.onDestroyView()
         _binding = null
     }
+
+    private data class OrdersContentState(
+        val orders: List<OrderModel>,
+        val loading: Boolean,
+        val error: String?,
+        val online: Boolean,
+    )
 }

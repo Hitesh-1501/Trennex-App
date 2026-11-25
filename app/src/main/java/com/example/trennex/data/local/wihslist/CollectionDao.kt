@@ -8,13 +8,13 @@ import kotlinx.coroutines.flow.Flow
 
 @Dao
 interface CollectionDao {
-    @Query("SELECT * FROM collections ORDER BY id DESC")
-    fun observeCollections(): Flow<List<CollectionEntity>>
+    @Query("SELECT * FROM collections WHERE ownerId = :ownerId ORDER BY id DESC")
+    fun observeCollections(ownerId: String): Flow<List<CollectionEntity>>
 
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun upsert(collection: CollectionEntity)
 
-    @Query("DELETE FROM collections WHERE id = :collectionId")
-    suspend fun removeCollection(collectionId: Long)
+    @Query("DELETE FROM collections WHERE ownerId = :ownerId AND id = :collectionId")
+    suspend fun removeCollection(ownerId: String, collectionId: Long)
         
 }

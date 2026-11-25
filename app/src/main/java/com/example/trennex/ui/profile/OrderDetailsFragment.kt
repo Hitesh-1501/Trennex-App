@@ -67,17 +67,36 @@ class OrderDetailsFragment : Fragment(R.layout.fragment_order_details) {
 
         val unitPrice = args.price.toDouble()
         val totalPrice = unitPrice * args.quantity
-        val estimatedMrp = totalPrice * 1.4
-
-        binding.tvListingPrice.text = CurrencyFormator.formatInr(estimatedMrp)
+        binding.tvListingPrice.text = CurrencyFormator.formatInr(
+            args.listingPrice.toDouble().takeIf { it > 0.0 } ?: totalPrice
+        )
         binding.tvSpecialPrice.text = CurrencyFormator.formatInr(totalPrice)
         binding.tvTotalAmount.text = CurrencyFormator.formatInr(totalPrice)
+        binding.tvPaymentMethod.text = when (args.paymentMethod.uppercase()) {
+            "COD" -> "Cash on Delivery"
+            "CARD" -> "Card"
+            "UPI" -> "UPI"
+            else -> args.paymentMethod.ifBlank { "Unavailable" }
+        }
+        if (args.paymentMethod.equals("COD", ignoreCase = true)) {
+            binding.ivPaymentMethod.setImageResource(R.drawable.ic_payment_cod)
+        } else if (args.paymentMethod.isBlank()) {
+            binding.ivPaymentMethod.visibility = View.GONE
+        }
+        if (args.deliveryAddress.isNotBlank()) {
+            binding.tvDeliveryAddress.text = args.deliveryAddress
+        }
+        if (args.recipientName.isNotBlank() || args.recipientPhone.isNotBlank()) {
+            binding.tvUserContact.text = listOf(args.recipientName, args.recipientPhone)
+                .filter { it.isNotBlank() }.joinToString("  ")
+        }
     }
 
     private fun observeUserData() {
         viewLifecycleOwner.lifecycleScope.launch {
             viewLifecycleOwner.repeatOnLifecycle(Lifecycle.State.STARTED) {
                 viewModel.uiState.collect { state ->
+                    if (args.deliveryAddress.isNotBlank()) return@collect
                     state.selectedAddress?.let {
                         binding.tvDeliveryAddress.text = it.displayAddress
                         val phone = state.userPhone.ifBlank { it.mobile }
@@ -114,8 +133,10 @@ class OrderDetailsFragment : Fragment(R.layout.fragment_order_details) {
             Toast.makeText(requireContext(), "Redirecting to Help Center...", Toast.LENGTH_SHORT).show()
         }
         
-        binding.tvDeliveryAddress.setOnClickListener { showDeliveryAddressDialog() }
-        binding.tvUserContact.setOnClickListener { showUserDetailsDialog() }
+        if (args.deliveryAddress.isBlank()) {
+            binding.tvDeliveryAddress.setOnClickListener { showDeliveryAddressDialog() }
+            binding.tvUserContact.setOnClickListener { showUserDetailsDialog() }
+        }
     }
 
     private fun showDeliveryAddressDialog() {

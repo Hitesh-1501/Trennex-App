@@ -15,9 +15,9 @@ import com.example.trennex.utils.CurrencyFormator
 import kotlin.math.roundToInt
 
 class CartAdapter(
-    private val onItemSelectionChanged:(itemId: Int,selected: Boolean) -> Unit,
-    private val onQuantitySelected:(itemId: Int,quantity: Int) -> Unit,
-    private val onItemRemoveClicked: (itemId: Int) -> Unit,
+    private val onItemSelectionChanged:(cartKey: String,selected: Boolean) -> Unit,
+    private val onQuantitySelected:(cartKey: String,quantity: Int) -> Unit,
+    private val onItemRemoveClicked: (cartKey: String) -> Unit,
     private val onItemClicked: (item: CartItemModel) -> Unit
 ): RecyclerView.Adapter<CartAdapter.CartViewHolder>(){
 
@@ -56,7 +56,8 @@ class CartAdapter(
                 imgProduct.setImageResource(item.imageRes ?: R.drawable.placeholder)
             }
             tvTitle.text = item.title
-            tvDescription.text = item.description
+            tvDescription.text = listOfNotNull(item.description, item.variantName?.takeIf { it.isNotBlank() })
+                .joinToString(" · ")
             tvRating.text = "${buildStars(item.rating)} ${String.format("%.1f", item.rating)} (${item.ratingCount})"
             tvMrp.paintFlags = tvMrp.paintFlags or Paint.STRIKE_THRU_TEXT_FLAG
             tvMrp.text = CurrencyFormator.formatInr(item.mrp)
@@ -68,10 +69,10 @@ class CartAdapter(
             checkItem.setOnCheckedChangeListener(null)
             checkItem.isChecked = item.isSelected
             checkItem.setOnCheckedChangeListener { _,isChecked ->
-                onItemSelectionChanged(item.id,isChecked)
+                onItemSelectionChanged(item.cartKey,isChecked)
             }
             ivClose.setOnClickListener {
-                onItemRemoveClicked(item.id)
+                onItemRemoveClicked(item.cartKey)
             }
 
             tvQty.setOnClickListener {
@@ -83,7 +84,7 @@ class CartAdapter(
                     popupMenu.menu.add(0,qty,qty,"Qty: $qty")
                 }
                 popupMenu.setOnMenuItemClickListener { menuItem ->
-                    onQuantitySelected(item.id,menuItem.itemId)
+                    onQuantitySelected(item.cartKey,menuItem.itemId)
                     true
                 }
                 popupMenu.show()

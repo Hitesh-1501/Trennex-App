@@ -35,6 +35,7 @@ import com.example.trennex.ui.checkout.adapter.CheckoutItemsAdapter
 import com.example.trennex.ui.home.adapters.SaveAddressAdapter
 import com.example.trennex.ui.main.MainActivity
 import com.example.trennex.ui.main.ToolBarType
+import com.example.trennex.ui.common.NetworkStatus
 import com.example.trennex.viewmodel.cart.CartViewModel
 import com.google.android.gms.common.api.ResolvableApiException
 import com.google.android.gms.location.FusedLocationProviderClient
@@ -111,6 +112,10 @@ class CheckoutFragment : Fragment(R.layout.fragment_checkout) {
             showLocationBottomSheet()
         }
         binding.btnContinue.setOnClickListener {
+            if (!NetworkStatus.isOnline(requireContext())) {
+                Toast.makeText(requireContext(), "Connect to the internet to continue checkout.", Toast.LENGTH_LONG).show()
+                return@setOnClickListener
+            }
             findNavController().navigate(R.id.action_checkoutFragment_to_paymentFragment)
         }
     }

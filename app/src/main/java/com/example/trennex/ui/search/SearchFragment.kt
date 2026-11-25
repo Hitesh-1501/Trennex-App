@@ -1,7 +1,11 @@
 package com.example.trennex.ui.search
 
 import android.content.Context
+import android.content.ActivityNotFoundException
+import android.content.Intent
+import android.graphics.Bitmap
 import android.os.Bundle
+import android.speech.RecognizerIntent
 import android.view.KeyEvent
 import android.view.inputmethod.InputMethodManager
 import androidx.fragment.app.Fragment
@@ -10,10 +14,13 @@ import android.view.View
 import android.view.ViewGroup
 import android.widget.EditText
 import android.widget.ImageView
+import android.widget.TextView
 import android.widget.Toast
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.core.view.ViewCompat
 import androidx.core.view.WindowInsetsCompat
 import androidx.core.view.isVisible
+import androidx.core.content.ContextCompat
 import androidx.core.widget.doAfterTextChanged
 import androidx.fragment.app.viewModels
 import androidx.lifecycle.lifecycleScope
@@ -21,14 +28,28 @@ import androidx.navigation.fragment.findNavController
 import androidx.recyclerview.widget.GridLayoutManager
 import androidx.recyclerview.widget.LinearLayoutManager
 import com.example.trennex.R
+import com.example.trennex.ui.common.NetworkStatus
+import kotlinx.coroutines.flow.combine
 import com.example.trennex.data.local.cart.AppDatabase
 import com.example.trennex.databinding.FragmentSearchBinding
+import com.example.trennex.databinding.SheetSearchSortBinding
 import com.example.trennex.ui.main.MainActivity
 import com.example.trennex.ui.search.adapter.SearchOptionAdapter
 import com.example.trennex.ui.search.adapter.SearchResultAdapter
 import com.example.trennex.viewmodel.search.SearchViewModel
+import com.google.android.material.dialog.MaterialAlertDialogBuilder
+import com.google.android.material.bottomsheet.BottomSheetDialog
+import com.google.mlkit.vision.common.InputImage
+import com.google.mlkit.vision.label.ImageLabeling
+import com.google.mlkit.vision.label.defaults.ImageLabelerOptions
+import com.google.mlkit.vision.text.TextRecognition
+import com.google.mlkit.vision.text.latin.TextRecognizerOptions
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.tasks.await
+import kotlinx.coroutines.withContext
+import java.util.Locale
 
 class SearchFragment : Fragment(R.layout.fragment_search){
     private var _binding: FragmentSearchBinding? = null
@@ -41,6 +62,22 @@ class SearchFragment : Fragment(R.layout.fragment_search){
     private var searchInput: EditText? = null
     private var clearSearch: ImageView? = null
     private var micSearch: ImageView? = null
+    private var suppressTextChanges = false
+
+    private val photoPicker = registerForActivityResult(ActivityResultContracts.GetContent()) { uri ->
+        if (uri != null) processPhoto {
+            withContext(Dispatchers.IO) { InputImage.fromFilePath(requireContext(), uri) }
+        }
+    }
+    private val cameraCapture = registerForActivityResult(ActivityResultContracts.TakePicturePreview()) { bitmap: Bitmap? ->
+        if (bitmap != null) processPhoto { InputImage.fromBitmap(bitmap, 0) }
+    }
+    private val speechInput = registerForActivityResult(ActivityResultContracts.StartActivityForResult()) { result ->
+        if (result.resultCode == android.app.Activity.RESULT_OK) {
+            result.data?.getStringArrayListExtra(RecognizerIntent.EXTRA_RESULTS)
+                ?.firstOrNull()?.takeIf { it.isNotBlank() }?.let(::performSearch)
+        }
+    }
 
     override fun onCreateView(
         inflater: LayoutInflater, container: ViewGroup?,
@@ -54,16 +91,20 @@ class SearchFragment : Fragment(R.layout.fragment_search){
         super.onViewCreated(view, savedInstanceState)
         viewModel.initDao(AppDatabase.getInstance(requireContext()).recentSearchDao())
         setupAdapters()
-        setupToolbar()
         setupRecyclerViews()
-        setupListeners()
+        setupSearchActions()
         observeViewModel()
         setupWindowInsets()
-        
-        // Focus search input and show keyboard
-        searchInput?.requestFocus()
-        val imm = requireContext().getSystemService(Context.INPUT_METHOD_SERVICE) as InputMethodManager
-        imm.showSoftInput(searchInput, InputMethodManager.SHOW_IMPLICIT)
+        binding.root.post {
+            if (_binding == null || !isAdded) return@post
+            setupToolbar()
+            setupListeners()
+            searchInput?.takeIf { viewModel.uiState.value.query.isEmpty() }?.let { input ->
+                input.requestFocus()
+                val imm = requireContext().getSystemService(Context.INPUT_METHOD_SERVICE) as InputMethodManager
+                imm.showSoftInput(input, InputMethodManager.SHOW_IMPLICIT)
+            }
+        }
     }
 
     private fun setupWindowInsets() {
@@ -102,7 +143,13 @@ class SearchFragment : Fragment(R.layout.fragment_search){
         clearSearch = mainActivity.findViewById(R.id.clearSearch)
         micSearch = mainActivity.findViewById(R.id.micSearch)
 
-        clearSearch?.isVisible = false
+        viewModel.uiState.value.query.takeIf { it.isNotEmpty() }?.let { query ->
+            searchInput?.setText(query)
+            searchInput?.setSelection(query.length)
+        }
+
+        clearSearch?.isVisible = !searchInput?.text.isNullOrEmpty()
+        micSearch?.isVisible = searchInput?.text.isNullOrEmpty()
 
         clearSearch?.setOnClickListener {
             searchInput?.text?.clear()
@@ -110,7 +157,103 @@ class SearchFragment : Fragment(R.layout.fragment_search){
         }
         
         micSearch?.setOnClickListener {
-            Toast.makeText(requireContext(), "Voice Search coming soon", Toast.LENGTH_SHORT).show()
+            val intent = Intent(RecognizerIntent.ACTION_RECOGNIZE_SPEECH).apply {
+                putExtra(RecognizerIntent.EXTRA_LANGUAGE_MODEL, RecognizerIntent.LANGUAGE_MODEL_FREE_FORM)
+                putExtra(RecognizerIntent.EXTRA_LANGUAGE, Locale.getDefault())
+                putExtra(RecognizerIntent.EXTRA_PROMPT, "Search TrenNex products")
+            }
+            try {
+                speechInput.launch(intent)
+            } catch (_: ActivityNotFoundException) {
+                Toast.makeText(requireContext(), "Voice search is unavailable on this device", Toast.LENGTH_SHORT).show()
+            }
+        }
+    }
+    private fun setupSearchActions() {
+        binding.btnSearchWithCamera.setOnClickListener { cameraCapture.launch(null) }
+        binding.btnSelectPhoto.setOnClickListener { photoPicker.launch("image/*") }
+        binding.sortContainer.setOnClickListener {
+            showSortSheet()
+        }
+        binding.optionSecondary.setOnClickListener {
+            val options = arrayOf("All", "Men", "Women")
+            val values = SearchGenderFilter.entries
+            MaterialAlertDialogBuilder(requireContext(), R.style.ThemeOverlay_TrenNex_SearchDialog)
+                .setTitle("Filter by gender")
+                .setSingleChoiceItems(options, values.indexOf(viewModel.uiState.value.genderFilter)) { dialog, index ->
+                    viewModel.setGenderFilter(values[index])
+                    dialog.dismiss()
+                }
+                .setNegativeButton("Cancel", null)
+                .show()
+        }
+    }
+
+    private fun showSortSheet() {
+        val sheet = SheetSearchSortBinding.inflate(layoutInflater)
+        val dialog = BottomSheetDialog(requireContext())
+        val choices = listOf(
+            SearchSortOrder.NEWEST to "What's new",
+            SearchSortOrder.PRICE_HIGH to "Price - high to low",
+            SearchSortOrder.POPULARITY to "Popularity",
+            SearchSortOrder.DISCOUNT to "Discount",
+            SearchSortOrder.PRICE_LOW to "Price - low to high",
+            SearchSortOrder.RELEVANCE to "Recommended",
+            SearchSortOrder.NAME to "Name - A to Z",
+        )
+        choices.forEach { (order, label) ->
+            val row = layoutInflater.inflate(R.layout.item_search_sort_option,
+                sheet.sortOptions, false) as TextView
+            row.text = label
+            if (viewModel.uiState.value.sortOrder == order) {
+                row.setTextColor(ContextCompat.getColor(requireContext(), R.color.colorPrimary))
+                row.contentDescription = "$label, selected"
+            }
+            row.setOnClickListener {
+                viewModel.setSortOrder(order)
+                dialog.dismiss()
+            }
+            sheet.sortOptions.addView(row)
+        }
+        dialog.setContentView(sheet.root)
+        dialog.show()
+    }
+
+    private fun processPhoto(createImage: suspend () -> InputImage) {
+        viewLifecycleOwner.lifecycleScope.launch {
+            binding.searchProgressBar.isVisible = true
+            binding.btnSearchWithCamera.isEnabled = false
+            binding.btnSelectPhoto.isEnabled = false
+            val recognizer = TextRecognition.getClient(TextRecognizerOptions.DEFAULT_OPTIONS)
+            val labeler = ImageLabeling.getClient(ImageLabelerOptions.DEFAULT_OPTIONS)
+            try {
+                val image = createImage()
+                val text = recognizer.process(image).await().text
+                val labels = labeler.process(image).await()
+                    .filter { it.confidence >= 0.55f }.map { it.text }
+                if (text.isBlank() && labels.isEmpty()) {
+                    Toast.makeText(requireContext(), "No product clues found. Try a clearer photo", Toast.LENGTH_LONG).show()
+                } else {
+                    suppressTextChanges = true
+                    searchInput?.setText("Photo search")
+                    suppressTextChanges = false
+                    clearSearch?.isVisible = true
+                    micSearch?.isVisible = false
+                    viewModel.searchByImageSignals(text, labels)
+                }
+            } catch (error: Exception) {
+                if (error is kotlinx.coroutines.CancellationException) throw error
+                Toast.makeText(requireContext(), "Could not read the photo. Try another image", Toast.LENGTH_LONG).show()
+            } finally {
+                suppressTextChanges = false
+                recognizer.close()
+                labeler.close()
+                _binding?.let {
+                    it.searchProgressBar.isVisible = viewModel.uiState.value.isLoading
+                    it.btnSearchWithCamera.isEnabled = true
+                    it.btnSelectPhoto.isEnabled = true
+                }
+            }
         }
     }
     private fun setupRecyclerViews() {
@@ -120,6 +263,7 @@ class SearchFragment : Fragment(R.layout.fragment_search){
     }
     private fun setupListeners(){
         searchInput?.doAfterTextChanged { query ->
+            if (suppressTextChanges) return@doAfterTextChanged
             val q = query?.toString()?.trim().orEmpty()
             clearSearch?.isVisible = q.isNotEmpty()
             micSearch?.isVisible = q.isEmpty()
@@ -127,6 +271,7 @@ class SearchFragment : Fragment(R.layout.fragment_search){
             when{
                 q.isEmpty() -> {
                     viewModel.clearSearch()
+                    renderRecentSearches(viewModel.recentSearches.value)
                 }
                 q.length >= 1 ->{
                     viewModel.loadRecommendations(q)
@@ -146,21 +291,25 @@ class SearchFragment : Fragment(R.layout.fragment_search){
             viewModel.recentSearches.collectLatest { searches ->
                 val query = searchInput?.text?.toString()?.trim().orEmpty()
                 if (query.isEmpty()) {
-                    if (searches.isNotEmpty()) {
-                        binding.listTitle.text = "RECENT SEARCHES"
-                        binding.listTitle.isVisible = true
-                        searchOptionAdapter.submitItems(searches, isRecommendation = false)
-                    } else {
-                        binding.listTitle.isVisible = false
-                        searchOptionAdapter.submitItems(emptyList(), isRecommendation = false)
-                    }
-                    showSuggestions(hasQuery = false)
+                    renderRecentSearches(searches)
                 }
             }
         }
 
         viewLifecycleOwner.lifecycleScope.launch {
-            viewModel.uiState.collectLatest { state ->
+            combine(viewModel.uiState, NetworkStatus.observe(requireContext())) { state, online ->
+                state to online
+            }.collectLatest { (state, online) ->
+                when {
+                    state.searchResults.isNotEmpty() -> binding.contentStatus.hide()
+                    !online && state.query.isNotBlank() -> binding.contentStatus.showOffline {
+                        viewModel.searchProducts(state.query)
+                    }
+                    state.error == "ERROR LOADING PRODUCTS" -> binding.contentStatus.showError(
+                        "Could not load products. Please retry."
+                    ) { viewModel.searchProducts(state.query) }
+                    else -> binding.contentStatus.hide()
+                }
                 binding.searchProgressBar.isVisible = state.isLoading
                 
                 when{
@@ -190,7 +339,7 @@ class SearchFragment : Fragment(R.layout.fragment_search){
                         
                         if (binding.searchRecyclerView.isVisible) {
                             binding.searchResultRecyclerView.alpha = 0f
-                            binding.searchResultRecyclerView.isVisible = true
+                            binding.searchResultRecyclerView.isVisible = state.searchResults.isNotEmpty()
                             binding.searchResultRecyclerView.animate().alpha(1f).setDuration(300).start()
                             
                             binding.searchRecyclerView.animate().alpha(0f).setDuration(200).withEndAction {
@@ -198,17 +347,32 @@ class SearchFragment : Fragment(R.layout.fragment_search){
                                 binding.searchRecyclerView.alpha = 1f
                             }.start()
                         } else {
-                            binding.searchResultRecyclerView.isVisible = true
+                            binding.searchResultRecyclerView.isVisible = state.searchResults.isNotEmpty()
                             binding.searchRecyclerView.isVisible = false
                         }
 
                         binding.listTitle.isVisible = false
                         binding.photoSearchSection.isVisible = false
-                        binding.noProductsContainer.isVisible = false
+                        binding.noProductsContainer.isVisible = state.searchResults.isEmpty()
+                        binding.noProductsMessage.text = "No products match this filter"
                         binding.bottomOptions.isVisible = true
 
                         binding.optionSecondary.isVisible = state.showGenderFilter
                         binding.optionDivider.isVisible = state.showGenderFilter
+                        binding.optionSort.text = when (state.sortOrder) {
+                            SearchSortOrder.RELEVANCE -> "SORT"
+                            SearchSortOrder.NEWEST -> "NEW"
+                            SearchSortOrder.PRICE_LOW -> "PRICE: LOW"
+                            SearchSortOrder.PRICE_HIGH -> "PRICE: HIGH"
+                            SearchSortOrder.POPULARITY -> "POPULAR"
+                            SearchSortOrder.DISCOUNT -> "DISCOUNT"
+                            SearchSortOrder.NAME -> "NAME"
+                        }
+                        binding.optionSecondary.text = when (state.genderFilter) {
+                            SearchGenderFilter.ALL -> "GENDER"
+                            SearchGenderFilter.MEN -> "MEN"
+                            SearchGenderFilter.WOMEN -> "WOMEN"
+                        }
 
                         clearSearch?.isVisible = searchInput?.text?.toString()?.isNotEmpty() ?: false
                     }
@@ -219,10 +383,29 @@ class SearchFragment : Fragment(R.layout.fragment_search){
                         binding.photoSearchSection.isVisible = false
                         binding.searchResultRecyclerView.isVisible = false
                         binding.noProductsContainer.isVisible = true
+                        val offline = !NetworkStatus.isOnline(requireContext())
+                        binding.noProductsMessage.text = if (state.error == "ERROR LOADING PRODUCTS" || offline) {
+                            if (!offline)
+                                "Could not load products. Tap to retry."
+                            else "No internet connection. Connect and tap to retry."
+                        } else {
+                            "No matching products found"
+                        }
+                        val canRetry = (state.error == "ERROR LOADING PRODUCTS" || offline) &&
+                            state.query != "Photo search"
+                        binding.noProductsContainer.isClickable = canRetry
+                        binding.noProductsContainer.setOnClickListener(
+                            if (canRetry) View.OnClickListener { viewModel.searchProducts(state.query) } else null
+                        )
                         clearSearch?.isVisible = searchInput?.text?.toString()?.isNotEmpty() ?: false
                     }
                     !state.isLoading && !state.showRecommendations && !state.hasResults && searchInput?.text?.toString()?.trim()?.isEmpty() == true -> {
-                        // Handled by recent searches observer
+                        renderRecentSearches(viewModel.recentSearches.value)
+                    }
+                    !state.isLoading && !state.showRecommendations && !state.hasResults -> {
+                        binding.listTitle.isVisible = false
+                        searchOptionAdapter.submitItems(emptyList(), isRecommendation = true)
+                        showSuggestions(hasQuery = true)
                     }
                 }
             }
@@ -241,6 +424,12 @@ class SearchFragment : Fragment(R.layout.fragment_search){
             searchInput?.setSelection(query.length)
         }
         viewModel.searchProducts(query)
+    }
+    private fun renderRecentSearches(searches: List<String>) {
+        binding.listTitle.text = "RECENT SEARCHES"
+        binding.listTitle.isVisible = searches.isNotEmpty()
+        searchOptionAdapter.submitItems(searches, isRecommendation = false)
+        showSuggestions(hasQuery = false)
     }
     private fun showSuggestions(hasQuery: Boolean){
         binding.searchResultRecyclerView.isVisible = false

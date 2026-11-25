@@ -1,5 +1,7 @@
 package com.example.trennex.ui.cart.model
 
+import com.google.firebase.firestore.Exclude
+
 data class CartItemModel(
     val id: Int,
     val title: String,
@@ -13,5 +15,11 @@ data class CartItemModel(
     val imageUrl: String? = null,
     val imageRes: Int? = null,
     val quantity : Int = 1,
-    val isSelected: Boolean = false
-)
+    val isSelected: Boolean = false,
+    val productId: String? = null,
+    val variantId: String? = null,
+    val variantName: String? = null,
+) {
+    @get:Exclude
+    val cartKey: String get() = variantId ?: "legacy:$id"
+}

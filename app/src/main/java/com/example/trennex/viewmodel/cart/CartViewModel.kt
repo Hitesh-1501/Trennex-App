@@ -4,25 +4,40 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.trennex.repository.user.AddressEntity
 import com.example.trennex.repository.user.UserRepository
+import com.example.trennex.data.local.AccountScope
 import com.example.trennex.ui.cart.CartUiState
-import com.example.trennex.ui.profile.model.OrderModel
-import com.example.trennex.utils.DateUtils
 import com.example.trennex.utils.cart.CartStore
-import com.google.firebase.Timestamp
+import com.google.firebase.functions.FirebaseFunctionsException
 import kotlinx.coroutines.flow.SharingStarted
+import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 
+data class CheckoutState(
+    val isSubmitting: Boolean = false,
+    val isSuccess: Boolean = false,
+    val errorMessage: String? = null,
+)
+
 class CartViewModel: ViewModel() {
     private val userRepository = UserRepository()
+    private val _checkoutState = MutableStateFlow(CheckoutState())
+    val checkoutState: StateFlow<CheckoutState> = _checkoutState
 
     val uiState: StateFlow<CartUiState> = combine(
         CartStore.items,
-        userRepository.observeSavedAddresses(),
-        userRepository.observeSelectedAddressId(),
+        userRepository.observeSavedAddresses().catch {
+            android.util.Log.w("CartViewModel", "Address listener stopped", it)
+            emit(emptyList())
+        },
+        userRepository.observeSelectedAddressId().catch {
+            android.util.Log.w("CartViewModel", "Selected-address listener stopped", it)
+            emit(null)
+        },
         flow { emit(userRepository.getUserDetails()) }
     ) { items, addresses, selectedId, userDetails ->
         val selected = addresses.find { it.id == selectedId }
@@ -40,38 +55,72 @@ class CartViewModel: ViewModel() {
     )
 
     fun toggleAll(selected: Boolean) = CartStore.toggleSelectAll(selected)
-    fun toggleItem(itemId: Int, selected: Boolean) = CartStore.toggleSelection(itemId, selected)
-    fun updateQuantity(itemId: Int, quantity: Int) = CartStore.updateQuantity(itemId, quantity)
-    fun removeItem(itemId: Int) = CartStore.removeItem(itemId)
+    fun toggleItem(cartKey: String, selected: Boolean) = CartStore.toggleSelection(cartKey, selected)
+    fun updateQuantity(cartKey: String, quantity: Int) = CartStore.updateQuantity(cartKey, quantity)
+    fun removeItem(cartKey: String) = CartStore.removeItem(cartKey)
 
     fun deleteSelectedItems() = CartStore.deleteSelectedItems()
 
-    fun placeOrder() {
+    fun resetCheckoutState() {
+        if (!_checkoutState.value.isSubmitting) _checkoutState.value = CheckoutState()
+    }
+
+    fun placeOrder(isOnline: Boolean) {
+        if (_checkoutState.value.isSubmitting || _checkoutState.value.isSuccess) return
+        if (!isOnline) {
+            _checkoutState.value = CheckoutState(errorMessage = "Connect to the internet before placing your order.")
+            return
+        }
         val selectedItems = uiState.value.items.filter { it.isSelected }
         android.util.Log.d("CartViewModel", "placeOrder: items count = ${selectedItems.size}")
-        if (selectedItems.isEmpty()) return
+        if (selectedItems.isEmpty()) {
+            _checkoutState.value = CheckoutState(errorMessage = "Your cart has no selected items.")
+            return
+        }
 
+        val checkoutOwner = AccountScope.currentOwner()
         viewModelScope.launch {
+            _checkoutState.value = CheckoutState(isSubmitting = true)
             try {
-                selectedItems.forEach { item ->
-                    val expectedDate = DateUtils.calculateExpectedDeliveryDate(item.deliveryDetails)
-                    val order = OrderModel(
-                        title = item.title,
-                        description = item.description,
-                        imageUrl = item.imageUrl,
-                        imageRes = item.imageRes,
-                        price = item.price,
-                        quantity = item.quantity,
-                        status = "PENDING",
-                        orderDate = Timestamp.now(),
-                        expectedDeliveryDate = expectedDate
-                    )
-                    userRepository.saveOrder(order)
-                }
-                android.util.Log.d("CartViewModel", "placeOrder: all items saved, deleting from cart")
-                CartStore.deleteSelectedItems()
+                val address = uiState.value.selectedAddress
+                    ?: throw IllegalStateException("Please select a delivery address")
+                val requestId = userRepository.submitOrderRequest(
+                    items = selectedItems.map { item ->
+                        buildMap<String, Any> {
+                            if (item.productId != null && item.variantId != null) {
+                                put("productId", item.productId)
+                                put("variantId", item.variantId)
+                            } else put("legacyId", item.id)
+                            put("quantity", item.quantity.coerceIn(1, 10))
+                        }
+                    },
+                    shippingAddress = mapOf(
+                        "address" to address.address,
+                        "flatNo" to address.flatNo,
+                        "placeName" to address.placeName,
+                        "addressType" to address.addressType,
+                        "latitude" to address.latitude,
+                        "longitude" to address.longitude,
+                    ),
+                    recipient = mapOf(
+                        "name" to uiState.value.userName,
+                        "phone" to uiState.value.userPhone,
+                    ),
+                    paymentMethod = "COD",
+                )
+                android.util.Log.d("CartViewModel", "order request accepted: $requestId")
+                CartStore.deleteSelectedItems(checkoutOwner)
+                _checkoutState.value = CheckoutState(isSuccess = true)
             } catch (e: Exception) {
-                android.util.Log.e("CartViewModel", "placeOrder failed", e)
+                android.util.Log.e("CartViewModel", "order request failed; cart was preserved", e)
+                _checkoutState.value = CheckoutState(
+                    errorMessage = (if (e is FirebaseFunctionsException &&
+                        e.code == FirebaseFunctionsException.Code.NOT_FOUND
+                    ) {
+                        "Order service is unavailable. Please try again later."
+                    } else e.message)?.takeIf { it.isNotBlank() }
+                        ?: "We could not place your order. Please try again.",
+                )
             }
         }
     }

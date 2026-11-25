@@ -1,0 +1,19 @@
+{
+  "name": "catalog/banners/bnr_mobile_launch.jpg",
+  "bucket": "demo-trennex.appspot.com",
+  "metageneration": 1,
+  "generation": 1794989900927,
+  "contentType": "image/jpeg",
+  "storageClass": "STANDARD",
+  "cacheControl": "public,max-age=3600",
+  "downloadTokens": [],
+  "etag": "MbmYTFNrD+2dhkdIENmLjPYofAQ",
+  "customMetadata": {
+    "seededBy": "trennex-local-catalog-v1"
+  },
+  "timeCreated": "2026-11-18T08:18:20.927Z",
+  "updated": "2026-11-18T08:18:20.927Z",
+  "size": 93524,
+  "md5Hash": "gVJhKKCIS179AtmTVaaBjQ==",
+  "crc32c": "551390555"
+}

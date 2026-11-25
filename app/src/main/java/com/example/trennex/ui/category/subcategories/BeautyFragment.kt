@@ -13,6 +13,8 @@ import com.example.trennex.ui.category.adapter.BeautyCategoryAdapter.Companion.T
 import com.example.trennex.ui.category.adapter.BeautyCategoryAdapter.Companion.TYPE_BEAUTY_HEADER
 import com.example.trennex.ui.category.adapter.BeautyCategoryAdapter.Companion.TYPE_BEAUTY_ITEM
 import com.example.trennex.ui.category.model.BeautyCategoryModel
+import com.example.trennex.ui.category.onTileTap
+import com.example.trennex.ui.category.openCategoryProducts
 
 
 class BeautyFragment : Fragment() {
@@ -39,6 +41,11 @@ class BeautyFragment : Fragment() {
         binding.rvBeauty.apply {
             adapter = BeautyCategoryAdapter(list)
             layoutManager = grid
+            onTileTap { position ->
+                list[position].takeIf { it.Type == TYPE_BEAUTY_ITEM }?.title?.let { tile ->
+                    openCategoryProducts("beauty", "Beauty", tile)
+                }
+            }
         }
     }
 

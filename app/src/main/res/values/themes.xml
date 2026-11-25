@@ -30,6 +30,15 @@
 
     <style name="Theme.TrenNex" parent="Base.Theme.TrenNex" />
 
+    <style name="ThemeOverlay.TrenNex.SearchDialog" parent="ThemeOverlay.MaterialComponents.MaterialAlertDialog">
+        <item name="colorSurface">@color/white</item>
+        <item name="colorOnSurface">@color/textPrimary</item>
+        <item name="colorPrimary">@color/colorPrimary</item>
+        <item name="android:textColorPrimary">@color/textPrimary</item>
+        <item name="android:textColorSecondary">@color/textPrimary</item>
+        <item name="colorControlActivated">@color/colorPrimary</item>
+    </style>
+
     <style name="Theme.TrenNex.Splash" parent="Theme.Material3.DayNight.NoActionBar">
         <item name="android:windowBackground">@color/white</item>
     </style>

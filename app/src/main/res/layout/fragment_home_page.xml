@@ -12,9 +12,8 @@
     <ImageView
         android:id="@+id/page_banner"
         android:layout_width="match_parent"
-        android:layout_height="180dp"
-        android:adjustViewBounds="true"
-        android:scaleType="fitCenter"
+        android:layout_height="239dp"
+        android:scaleType="centerCrop"
         android:src="@drawable/samsung_banner"
         android:background="@drawable/banner_drawable"/>
 

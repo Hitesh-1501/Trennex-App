@@ -7,6 +7,7 @@ import com.example.trennex.repository.user.UserRepository
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.launch
 
 class SavedAddressesViewModel : ViewModel() {
@@ -27,7 +28,10 @@ class SavedAddressesViewModel : ViewModel() {
             val userDetails = userRepository.getUserDetails()
             val userPhone = userDetails?.get("phone").orEmpty()
 
-            userRepository.observeSavedAddresses().collect { list ->
+            userRepository.observeSavedAddresses().catch {
+                android.util.Log.w("SavedAddressesViewModel", "Address listener stopped", it)
+                emit(emptyList())
+            }.collect { list ->
                 val updatedList = list.map { address ->
                     if (userPhone.isNotBlank()) {
                         address.copy(mobile = userPhone)

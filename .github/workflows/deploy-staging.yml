@@ -1,0 +1,49 @@
+name: Deploy Firebase staging
+
+on:
+  workflow_dispatch:
+    inputs:
+      confirm_project:
+        description: Type trennex-staging-ebbeb to confirm the only deployment target
+        required: true
+        type: string
+
+permissions:
+  contents: read
+
+concurrency:
+  group: firebase-staging-deploy
+  cancel-in-progress: false
+
+jobs:
+  checks:
+    uses: ./.github/workflows/pr-validation.yml
+
+  deploy:
+    needs: checks
+    if: github.ref == 'refs/heads/master' && inputs.confirm_project == 'trennex-staging-ebbeb'
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    environment: staging
+    permissions:
+      contents: read
+      id-token: write
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@v7
+        with:
+          node-version: '22'
+          cache: npm
+          cache-dependency-path: firebase-tests/package-lock.json
+      - run: npm ci --prefix firebase-tests
+      - run: npm ci --prefix functions
+      - name: Authenticate to staging with short-lived credentials
+        uses: google-github-actions/auth@v3
+        with:
+          project_id: trennex-staging-ebbeb
+          workload_identity_provider: ${{ vars.STAGING_WIF_PROVIDER }}
+          service_account: ${{ vars.STAGING_DEPLOY_SERVICE_ACCOUNT }}
+      - name: Deploy Functions, Firestore rules and indexes, and Storage rules
+        run: ./firebase-tests/node_modules/.bin/firebase deploy --config firebase.json --project trennex-staging-ebbeb --only functions,firestore,storage --non-interactive

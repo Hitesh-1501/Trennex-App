@@ -1,3 +1,5 @@
+import java.util.Properties
+
 plugins {
     alias(libs.plugins.android.application)
     alias(libs.plugins.kotlin.android)
@@ -5,6 +7,29 @@ plugins {
     alias(libs.plugins.kotlin.kapt)
     alias(libs.plugins.google.gms.google.services)
 }
+
+val localProperties = Properties().apply {
+    val localPropertiesFile = rootProject.file("local.properties")
+    if (localPropertiesFile.exists()) {
+        localPropertiesFile.inputStream().use(::load)
+    }
+}
+
+val mapsApiKey = localProperties.getProperty("MAPS_API_KEY")
+    ?: System.getenv("MAPS_API_KEY")
+    ?: ""
+
+val firebaseEmulatorHost = localProperties.getProperty("FIREBASE_EMULATOR_HOST")
+    ?: System.getenv("FIREBASE_EMULATOR_HOST_ANDROID")
+    ?: "10.0.2.2"
+
+val useFirebaseAuthEmulator = localProperties.getProperty("USE_FIREBASE_AUTH_EMULATOR")
+    ?.toBooleanStrictOrNull()
+    ?: false
+
+val useFirebaseEmulators = localProperties.getProperty("USE_FIREBASE_EMULATORS")
+    ?.toBooleanStrictOrNull()
+    ?: false
 
 android {
     namespace = "com.example.trennex"
@@ -17,12 +42,30 @@ android {
         versionCode = 1
         versionName = "1.0"
 
+        resValue("string", "MAP_API_KEY", mapsApiKey)
+
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
 
     buildTypes {
+        debug {
+            buildConfigField("boolean", "USE_OWN_CATALOG_ONLY", "false")
+            buildConfigField("boolean", "USE_FIREBASE_EMULATORS", useFirebaseEmulators.toString())
+            buildConfigField("boolean", "USE_FIREBASE_AUTH_EMULATOR", useFirebaseAuthEmulator.toString())
+            buildConfigField("String", "FIREBASE_EMULATOR_HOST", "\"$firebaseEmulatorHost\"")
+        }
+        create("staging") {
+            initWith(getByName("debug"))
+            buildConfigField("boolean", "USE_OWN_CATALOG_ONLY", "true")
+            matchingFallbacks += listOf("debug")
+            versionNameSuffix = "-staging"
+        }
         release {
+            buildConfigField("boolean", "USE_OWN_CATALOG_ONLY", "false")
             isMinifyEnabled = false
+            buildConfigField("boolean", "USE_FIREBASE_EMULATORS", "false")
+            buildConfigField("boolean", "USE_FIREBASE_AUTH_EMULATOR", "false")
+            buildConfigField("String", "FIREBASE_EMULATOR_HOST", "\"\"")
             @Suppress("UnstableApiUsage")
             proguardFiles(
                 getDefaultProguardFile("proguard-android-optimize.txt"),
@@ -30,6 +73,7 @@ android {
             )
         }
     }
+    testBuildType = "staging"
     compileOptions {
         sourceCompatibility = JavaVersion.VERSION_11
         targetCompatibility = JavaVersion.VERSION_11
@@ -40,6 +84,7 @@ android {
     @Suppress("UnstableApiUsage")
     buildFeatures {
         viewBinding = true
+        buildConfig = true
     }
 }
 
@@ -53,6 +98,8 @@ dependencies {
     implementation(libs.firebase.auth)
     implementation(platform(libs.firebase.bom))
     implementation(libs.firebase.firestore)
+    implementation(libs.firebase.functions)
+    implementation(libs.firebase.storage)
     testImplementation(libs.junit)
     androidTestImplementation(libs.androidx.junit)
     androidTestImplementation(libs.androidx.espresso.core)
@@ -84,6 +131,7 @@ dependencies {
 
     implementation(libs.androidx.room.runtime)
     implementation(libs.androidx.room.ktx)
+    implementation(libs.androidx.work.runtime)
     kapt(libs.androidx.room.compiler)
 
 
@@ -91,5 +139,7 @@ dependencies {
     implementation(libs.play.services.location)
     implementation(libs.play.services.maps)
     implementation(libs.places)
+    implementation("com.google.mlkit:text-recognition:16.0.1")
+    implementation("com.google.mlkit:image-labeling:17.0.9")
 
 }

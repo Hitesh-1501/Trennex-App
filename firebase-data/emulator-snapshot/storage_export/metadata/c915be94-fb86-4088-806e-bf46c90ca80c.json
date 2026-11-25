@@ -1,0 +1,19 @@
+{
+  "name": "catalog/categories/top-picks.png",
+  "bucket": "demo-trennex.appspot.com",
+  "metageneration": 1,
+  "generation": 1794989900679,
+  "contentType": "image/png",
+  "storageClass": "STANDARD",
+  "cacheControl": "public,max-age=3600",
+  "downloadTokens": [],
+  "etag": "gCflOxurK718nn85whemTCm4PNo",
+  "customMetadata": {
+    "seededBy": "trennex-local-catalog-v1"
+  },
+  "timeCreated": "2026-11-18T08:18:20.679Z",
+  "updated": "2026-11-18T08:18:20.679Z",
+  "size": 2783,
+  "md5Hash": "2FNDZmxoPc8jKWAD/bh0TQ==",
+  "crc32c": "3159091324"
+}

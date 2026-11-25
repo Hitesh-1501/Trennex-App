@@ -3,18 +3,22 @@ package com.example.trennex.repository.user
 import com.example.trennex.ui.profile.model.OrderModel
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.firestore.FieldValue
+import com.google.firebase.firestore.DocumentSnapshot
 import com.google.firebase.firestore.FirebaseFirestore
 import com.google.firebase.firestore.ListenerRegistration
 import com.google.firebase.firestore.Query
 import com.google.firebase.firestore.SetOptions
+import com.google.firebase.functions.FirebaseFunctions
 import kotlinx.coroutines.channels.awaitClose
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.callbackFlow
+import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.tasks.await
 
 class UserRepository {
     private val firestore = FirebaseFirestore.getInstance()
     private val auth = FirebaseAuth.getInstance()
+    private val functions = FirebaseFunctions.getInstance("asia-south1")
 
     fun getUserId(): String? = auth.currentUser?.uid
 
@@ -205,22 +209,101 @@ class UserRepository {
     }
 
     suspend fun saveOrder(order: OrderModel) {
-        val uid = getUserId() ?: return
-        firestore.collection("users")
-            .document(uid)
-            .collection("orders")
-            .add(order)
-            .await()
+        throw UnsupportedOperationException(
+            "Direct client order writes are disabled. Submit an order request instead."
+        )
     }
 
-    fun observeOrders(): Flow<List<OrderModel>> = callbackFlow {
+    suspend fun submitOrderRequest(
+        items: List<Map<String, Any>>,
+        shippingAddress: Map<String, Any>,
+        recipient: Map<String, Any>,
+        paymentMethod: String,
+    ): String {
+        val uid = getUserId() ?: throw IllegalStateException("User is not authenticated")
+        val request = mapOf(
+            "schemaVersion" to 1,
+            "status" to "PENDING",
+            "items" to items,
+            "itemCount" to items.sumOf { (it["quantity"] as? Int ?: 1) },
+            "shippingAddress" to shippingAddress,
+            "recipient" to recipient,
+            "payment" to mapOf("method" to paymentMethod),
+            "createdAt" to FieldValue.serverTimestamp(),
+        )
+        val requestId = firestore.collection("users")
+            .document(uid)
+            .collection("orderRequests")
+            .add(request)
+            .await()
+            .id
+        functions
+            .getHttpsCallable("createOrder")
+            .call(mapOf("requestId" to requestId))
+            .await()
+        return requestId
+    }
+
+    fun observeOrders(): Flow<List<OrderModel>> = combine(
+        observeCurrentOrders(), observeLegacyOrders()
+    ) { current, legacy ->
+        (current + legacy).sortedByDescending { it.orderDate.toDate().time }
+    }
+
+    private fun observeCurrentOrders(): Flow<List<OrderModel>> = callbackFlow {
         val uid = getUserId()
         if (uid == null) {
             trySend(emptyList())
             close()
             return@callbackFlow
         }
+        val listener = firestore.collection("orders")
+            .whereEqualTo("userId", uid)
+            .orderBy("placedAt", Query.Direction.DESCENDING)
+            .addSnapshotListener { snapshot, error ->
+                if (error != null) {
+                    close(error)
+                    return@addSnapshotListener
+                }
+                trySend(snapshot?.documents?.map { it.toCurrentOrder() } ?: emptyList())
+            }
+        awaitClose { listener.remove() }
+    }
 
+    private fun DocumentSnapshot.toCurrentOrder(): OrderModel {
+        val preview = get("preview") as? Map<*, *>
+        val payment = get("payment") as? Map<*, *>
+        val shippingAddress = get("shippingAddress") as? Map<*, *>
+        val recipient = get("recipient") as? Map<*, *>
+        val itemCount = (getLong("itemCount") ?: 1L).toInt().coerceAtLeast(1)
+        return OrderModel(
+            id = id,
+            title = preview?.get("title") as? String ?: "Order",
+            description = if (itemCount > 1) "$itemCount items" else "",
+            imageUrl = preview?.get("imageUrl") as? String,
+            price = (getLong("totalMinor") ?: 0L).toDouble() / 100 / itemCount,
+            quantity = itemCount,
+            status = getString("status") ?: "CONFIRMED",
+            orderDate = getTimestamp("placedAt") ?: com.google.firebase.Timestamp.now(),
+            expectedDeliveryDate = getTimestamp("expectedDeliveryAt"),
+            listingPrice = ((getLong("subtotalMinor") ?: 0L) + (getLong("discountMinor") ?: 0L)).toDouble() / 100,
+            paymentMethod = payment?.get("method") as? String ?: "",
+            deliveryAddress = listOfNotNull(
+                (shippingAddress?.get("flatNo") as? String)?.takeIf { it.isNotBlank() },
+                (shippingAddress?.get("address") as? String)?.takeIf { it.isNotBlank() },
+            ).joinToString(", "),
+            recipientName = recipient?.get("name") as? String ?: "",
+            recipientPhone = recipient?.get("phone") as? String ?: "",
+        )
+    }
+
+    private fun observeLegacyOrders(): Flow<List<OrderModel>> = callbackFlow {
+        val uid = getUserId()
+        if (uid == null) {
+            trySend(emptyList())
+            close()
+            return@callbackFlow
+        }
         val listener = firestore.collection("users")
             .document(uid)
             .collection("orders")

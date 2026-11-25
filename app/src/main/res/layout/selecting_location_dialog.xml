@@ -41,7 +41,7 @@
             android:layout_height="52dp"
             android:layout_marginTop="30dp"
             android:fontFamily="@font/poppins_medium"
-            android:text="Far From My location"
+            android:text="@string/choose_address_on_map"
             android:textAllCaps="false"
             android:textColor="@android:color/white"
             app:backgroundTint="@color/colorPrimary"

@@ -28,6 +28,9 @@ import com.example.trennex.databinding.ToolbarCheckoutBinding
 import com.example.trennex.databinding.WishlistToolbarBinding
 import androidx.core.view.isVisible
 import androidx.lifecycle.lifecycleScope
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.repeatOnLifecycle
+import com.example.trennex.ui.common.NetworkStatus
 import com.example.trennex.databinding.ToolbarCollectionSelectionBinding
 import com.example.trennex.utils.cart.CartStore
 import kotlinx.coroutines.launch
@@ -35,6 +38,7 @@ import kotlinx.coroutines.launch
 
 import androidx.activity.viewModels
 import com.example.trennex.viewmodel.main.MainViewModel
+import com.example.trennex.ui.home.HomeFragment
 import android.widget.TextView
 import kotlinx.coroutines.flow.collectLatest
 
@@ -59,6 +63,13 @@ class MainActivity : AppCompatActivity() {
         enableEdgeToEdge()
         binding = ActivityMainBinding.inflate(layoutInflater)
         setContentView(binding.root)
+        lifecycleScope.launch {
+            repeatOnLifecycle(Lifecycle.State.STARTED) {
+                NetworkStatus.observe(this@MainActivity).collect { online ->
+                    binding.offlineBanner.isVisible = !online
+                }
+            }
+        }
         
         setupWindowInsets()
         val navhostFragement =  supportFragmentManager.findFragmentById(R.id.nav_host_fragment) as NavHostFragment
@@ -112,6 +123,11 @@ class MainActivity : AppCompatActivity() {
                     setLightStatusBar(true)
                     binding.curveBottomNav.visibility = View.VISIBLE
                 }
+                R.id.shoppingAssistantFragment -> {
+                    showToolBar(ToolBarType.TITLE, "Shopping Assistant")
+                    setLightStatusBar(true)
+                    binding.curveBottomNav.visibility = View.GONE
+                }
                 R.id.accountDetailsFragment -> {
                     showToolBar(ToolBarType.TITLE,"Manage Your Account")
                     setLightStatusBar(true)
@@ -127,6 +143,14 @@ class MainActivity : AppCompatActivity() {
                     setLightStatusBar(true)
                     binding.curveBottomNav.visibility = View.VISIBLE
                 }
+                 R.id.categoryProductsFragment -> {
+                     showToolBar(ToolBarType.TITLE, navController.currentBackStackEntry
+                         ?.arguments?.getString("tileName")?.takeIf { it.isNotBlank() }
+                         ?: navController.currentBackStackEntry?.arguments?.getString("categoryTitle")
+                         ?: "Products")
+                     setLightStatusBar(true)
+                     binding.curveBottomNav.visibility = View.GONE
+                 }
                 R.id.productSpecFragment -> {
                     showToolBar(ToolBarType.TITLE,"All Details")
                     setLightStatusBar(true)
@@ -260,6 +284,13 @@ class MainActivity : AppCompatActivity() {
                 toolbarBinding.searchBar.setOnClickListener {
                     if(navController.currentDestination?.id == R.id.homeFragment){
                         navController.navigate(R.id.searchFragment)
+                    }
+                }
+                toolbarBinding.locationBar.setOnClickListener {
+                    if (navController.currentDestination?.id == R.id.homeFragment) {
+                        val host = supportFragmentManager.findFragmentById(R.id.nav_host_fragment) as? NavHostFragment
+                        (host?.childFragmentManager?.primaryNavigationFragment as? HomeFragment)
+                            ?.showLocationSelector()
                     }
                 }
             }
