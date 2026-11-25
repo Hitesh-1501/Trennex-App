@@ -65,8 +65,12 @@ class CartViewModel: ViewModel() {
         if (!_checkoutState.value.isSubmitting) _checkoutState.value = CheckoutState()
     }
 
-    fun placeOrder() {
+    fun placeOrder(isOnline: Boolean) {
         if (_checkoutState.value.isSubmitting || _checkoutState.value.isSuccess) return
+        if (!isOnline) {
+            _checkoutState.value = CheckoutState(errorMessage = "Connect to the internet before placing your order.")
+            return
+        }
         val selectedItems = uiState.value.items.filter { it.isSelected }
         android.util.Log.d("CartViewModel", "placeOrder: items count = ${selectedItems.size}")
         if (selectedItems.isEmpty()) {

@@ -18,6 +18,8 @@ class ContentStatusView @JvmOverloads constructor(
 
     fun showLoading() {
         isVisible = true
+        binding.offlineIllustration.isVisible = false
+        binding.title.isVisible = false
         binding.progress.isVisible = true
         binding.message.isVisible = false
         binding.retry.isVisible = false
@@ -25,6 +27,8 @@ class ContentStatusView @JvmOverloads constructor(
 
     fun showEmpty(message: String) {
         isVisible = true
+        binding.offlineIllustration.isVisible = false
+        binding.title.isVisible = false
         binding.progress.isVisible = false
         binding.message.text = message
         binding.message.isVisible = true
@@ -33,8 +37,22 @@ class ContentStatusView @JvmOverloads constructor(
 
     fun showError(message: String, retry: () -> Unit) {
         isVisible = true
+        binding.offlineIllustration.isVisible = false
+        binding.title.isVisible = false
         binding.progress.isVisible = false
         binding.message.text = message
+        binding.message.isVisible = true
+        binding.retry.isVisible = true
+        binding.retry.setOnClickListener { retry() }
+    }
+
+    fun showOffline(retry: () -> Unit) {
+        isVisible = true
+        binding.progress.isVisible = false
+        binding.offlineIllustration.isVisible = true
+        binding.title.text = "You're offline"
+        binding.title.isVisible = true
+        binding.message.text = "Connect to the internet to load this page."
         binding.message.isVisible = true
         binding.retry.isVisible = true
         binding.retry.setOnClickListener { retry() }

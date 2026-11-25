@@ -7,6 +7,8 @@ import androidx.core.content.ContextCompat
 import androidx.core.view.isVisible
 import androidx.fragment.app.Fragment
 import androidx.lifecycle.lifecycleScope
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.repeatOnLifecycle
 import androidx.navigation.fragment.findNavController
 import androidx.recyclerview.widget.LinearLayoutManager
 import com.example.trennex.R
@@ -44,14 +46,25 @@ class CategoryProductsFragment : Fragment(R.layout.fragment_category_products) {
         binding.products.layoutManager = LinearLayoutManager(requireContext())
         binding.products.adapter = adapter
         binding.sortButton.setOnClickListener { showSortOptions(adapter) }
+        viewLifecycleOwner.lifecycleScope.launch {
+            viewLifecycleOwner.repeatOnLifecycle(Lifecycle.State.STARTED) {
+                NetworkStatus.observe(requireContext()).collect { online ->
+                    if (!online && products.isEmpty()) binding.contentStatus.showOffline { load(slug, tile, adapter) }
+                }
+            }
+        }
         load(slug, tile, adapter)
     }
 
     private fun load(slug: String, tile: String?, adapter: SearchResultAdapter) {
         loadJob?.cancel()
-        binding.contentStatus.showLoading()
-        binding.sortButton.isVisible = false
-        binding.resultCount.text = ""
+        if (products.isEmpty()) {
+            if (NetworkStatus.isOnline(requireContext())) binding.contentStatus.showLoading()
+            else binding.contentStatus.showOffline { load(slug, tile, adapter) }
+            binding.sortButton.isVisible = false
+            binding.resultCount.text = ""
+        }
+        if (!NetworkStatus.isOnline(requireContext())) return
         loadJob = viewLifecycleOwner.lifecycleScope.launch {
             try {
                 products = withTimeout(15_000) {
@@ -60,7 +73,7 @@ class CategoryProductsFragment : Fragment(R.layout.fragment_category_products) {
                 if (_binding == null) return@launch
                 binding.sortButton.isVisible = products.isNotEmpty()
                 if (products.isEmpty() && !NetworkStatus.isOnline(requireContext())) {
-                    binding.contentStatus.showError("No internet connection. Connect and retry.") {
+                    binding.contentStatus.showOffline {
                         load(slug, tile, adapter)
                     }
                 } else if (products.isEmpty()) binding.contentStatus.showEmpty(
@@ -71,13 +84,16 @@ class CategoryProductsFragment : Fragment(R.layout.fragment_category_products) {
             } catch (error: Exception) {
                 if (error is CancellationException && error !is TimeoutCancellationException) throw error
                 if (_binding == null) return@launch
-                binding.sortButton.isVisible = false
-                binding.contentStatus.showError(
+                if (products.isNotEmpty()) {
+                    binding.contentStatus.hide()
+                    renderProducts(adapter)
+                } else {
+                    binding.sortButton.isVisible = false
                     if (NetworkStatus.isOnline(requireContext()))
-                        "Could not load products. Please retry."
-                    else "No internet connection. Connect and retry."
-                ) { load(slug, tile, adapter) }
-                adapter.submitItems(emptyList(), false)
+                        binding.contentStatus.showError("Could not load products. Please retry.") { load(slug, tile, adapter) }
+                    else binding.contentStatus.showOffline { load(slug, tile, adapter) }
+                    adapter.submitItems(emptyList(), false)
+                }
             }
         }
     }
