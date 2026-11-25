@@ -13,7 +13,7 @@ import com.example.trennex.data.local.wihslist.CollectionEntity
 import com.example.trennex.data.local.wihslist.WishlistDao
 import com.example.trennex.data.local.wihslist.WishlistItemEntity
 
-@Database(entities = [CartItemEntity::class, WishlistItemEntity::class, CollectionEntity::class, RecentSearchEntity::class], version = 8, exportSchema = false)
+@Database(entities = [CartItemEntity::class, PendingCartSyncEntity::class, WishlistItemEntity::class, CollectionEntity::class, RecentSearchEntity::class], version = 9, exportSchema = false)
 abstract class AppDatabase: RoomDatabase(){
     abstract fun cartDao():CartDao
     abstract fun wishlistDao(): WishlistDao
@@ -30,7 +30,7 @@ abstract class AppDatabase: RoomDatabase(){
                     context.applicationContext,
                     AppDatabase::class.java,
                     "app_database"
-                ).addMigrations(MIGRATION_6_7, MIGRATION_7_8).fallbackToDestructiveMigration().build().also { INSTANCE = it }
+                ).addMigrations(MIGRATION_6_7, MIGRATION_7_8, MIGRATION_8_9).fallbackToDestructiveMigration().build().also { INSTANCE = it }
             }
         }
 
@@ -60,6 +60,12 @@ abstract class AppDatabase: RoomDatabase(){
                 db.execSQL("""INSERT INTO cart_items_new SELECT ownerId, id, title, description, mrp, price, rating, ratingCount, returnPolicy, deliveryDetails, imageUrl, imageRes, quantity, isSelected, 'legacy:' || id, NULL, NULL, NULL FROM cart_items""")
                 db.execSQL("DROP TABLE cart_items")
                 db.execSQL("ALTER TABLE cart_items_new RENAME TO cart_items")
+            }
+        }
+
+        internal val MIGRATION_8_9 = object : Migration(8, 9) {
+            override fun migrate(db: SupportSQLiteDatabase) {
+                db.execSQL("""CREATE TABLE IF NOT EXISTS pending_cart_sync (ownerId TEXT NOT NULL, cartKey TEXT NOT NULL, legacyId INTEGER NOT NULL, variantId TEXT, operation TEXT NOT NULL, generation TEXT NOT NULL, PRIMARY KEY(ownerId, cartKey))""")
             }
         }
     }

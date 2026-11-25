@@ -6,6 +6,12 @@ import androidx.test.platform.app.InstrumentationRegistry
 import com.example.trennex.data.local.cart.AppDatabase
 import com.example.trennex.data.local.AccountScope
 import com.example.trennex.data.local.cart.CartItemEntity
+import com.example.trennex.data.local.cart.PendingCartSyncEntity
+import com.example.trennex.repository.cart.CartRepository
+import com.example.trennex.ui.cart.model.CartItemModel
+import kotlinx.coroutines.async
+import kotlinx.coroutines.awaitAll
+import kotlinx.coroutines.coroutineScope
 import com.example.trennex.data.local.wihslist.CollectionEntity
 import com.example.trennex.data.local.wihslist.WishlistItemEntity
 import kotlinx.coroutines.flow.first
@@ -31,7 +37,7 @@ class AccountScopedDatabaseTest {
         old.close()
 
         val database = Room.databaseBuilder(context, AppDatabase::class.java, name)
-            .addMigrations(AppDatabase.MIGRATION_7_8).build()
+            .addMigrations(AppDatabase.MIGRATION_7_8, AppDatabase.MIGRATION_8_9).build()
         try {
             val item = database.cartDao().getItemByKey("user:account-a", "legacy:7")
             assertEquals("Existing cart", item?.title)
@@ -59,7 +65,7 @@ class AccountScopedDatabaseTest {
         oldDatabase.close()
 
         val database = Room.databaseBuilder(context, AppDatabase::class.java, name)
-            .addMigrations(AppDatabase.MIGRATION_6_7, AppDatabase.MIGRATION_7_8).build()
+            .addMigrations(AppDatabase.MIGRATION_6_7, AppDatabase.MIGRATION_7_8, AppDatabase.MIGRATION_8_9).build()
         try {
             assertEquals("Old cart", database.cartDao().getItemByKey(AccountScope.LEGACY_UNASSIGNED, "legacy:7")?.title)
             assertEquals(emptyList<CartItemEntity>(), database.cartDao().observeCartItems("user:account-a").first())
@@ -135,6 +141,69 @@ class AccountScopedDatabaseTest {
             assertEquals(2, items.size)
             assertEquals(2, items.single { it.variantId == "small" }.quantity)
             assertEquals(1, items.single { it.variantId == "medium" }.quantity)
+        } finally {
+            database.close()
+        }
+    }
+
+    @Test
+    fun pendingSyncSurvivesReopenAndOldGenerationCannotClearNewChange() = runBlocking {
+        val context = InstrumentationRegistry.getInstrumentation().targetContext
+        val name = "pending-cart-sync-test"
+        context.deleteDatabase(name)
+        val first = Room.databaseBuilder(context, AppDatabase::class.java, name).build()
+        val old = PendingCartSyncEntity("user:account-a", "red", 7, "red", "UPSERT", "generation-1")
+        try {
+            first.cartDao().upsertPending(old)
+        } finally {
+            first.close()
+        }
+        val reopened = Room.databaseBuilder(context, AppDatabase::class.java, name).build()
+        try {
+            assertEquals(old, reopened.cartDao().pendingSync().single())
+            val updated = old.copy(operation = "DELETE", generation = "generation-2")
+            reopened.cartDao().upsertPending(updated)
+            reopened.cartDao().clearPending(old.ownerId, old.cartKey, old.generation)
+            assertEquals(updated, reopened.cartDao().pendingForKey(old.ownerId, old.cartKey))
+            reopened.cartDao().clearPending(updated.ownerId, updated.cartKey, updated.generation)
+            assertEquals(emptyList<PendingCartSyncEntity>(), reopened.cartDao().pendingSync())
+        } finally {
+            reopened.close()
+            context.deleteDatabase(name)
+        }
+    }
+
+    @Test
+    fun pendingKeysAreIsolatedByAccount() = runBlocking {
+        val context = InstrumentationRegistry.getInstrumentation().targetContext
+        val database = Room.inMemoryDatabaseBuilder(context, AppDatabase::class.java).build()
+        try {
+            val a = PendingCartSyncEntity("user:account-a", "red", 7, "red", "UPSERT", "a")
+            val b = a.copy(ownerId = "user:account-b", generation = "b")
+            database.cartDao().upsertPending(a)
+            database.cartDao().upsertPending(b)
+            database.cartDao().clearPending(a.ownerId, a.cartKey, a.generation)
+            assertEquals(b, database.cartDao().pendingSync().single())
+        } finally {
+            database.close()
+        }
+    }
+
+    @Test
+    fun concurrentCartAddsKeepOneRowAndOnePendingAbsoluteWrite() = runBlocking {
+        val context = InstrumentationRegistry.getInstrumentation().targetContext
+        val database = Room.inMemoryDatabaseBuilder(context, AppDatabase::class.java).build()
+        try {
+            val repo = CartRepository(database)
+            val item = CartItemModel(id = 7, title = "Tee", description = "", mrp = 100.0,
+                price = 80.0, quantity = 1, productId = "tee", variantId = "red")
+            coroutineScope {
+                (1..10).map { async { repo.addItemLocally("user:account-a", item) } }.awaitAll()
+            }
+            assertEquals(10, database.cartDao().getItemByKey("user:account-a", "red")?.quantity)
+            val pending = database.cartDao().pendingSync()
+            assertEquals(1, pending.size)
+            assertEquals("UPSERT", pending.single().operation)
         } finally {
             database.close()
         }
