@@ -2,6 +2,13 @@
 
 Updated 2026-11-25. This is the working status for the portfolio app roadmap.
 
+## B1 PR validation follow-up, 2026-11-25
+
+- The owner reported the first GitHub Actions PR run: `catalog`, `firebase-emulators`, and `functions` passed; `android-staging` failed before Gradle started with `./gradlew: Permission denied` (exit 126). This is reported CI evidence, not a successful Android CI result.
+- Investigation found `gradlew` tracked as Git mode `100644`. Its committed blob had LF line endings and a `#!/usr/bin/env sh` header; Windows `core.autocrlf=true` had produced a CRLF working copy. The fix sets Git mode `100755`, pins `gradlew` to LF in `.gitattributes`, and adds `chmod +x gradlew` before compilation in the PR workflow. The same PR workflow is reused by the staging deployment gate.
+- Changed files for this follow-up: `gradlew` (Git executable mode and local LF normalization), `.gitattributes`, `.github/workflows/pr-validation.yml`, and this status document. The Android CI rerun remains unverified until GitHub processes the pushed fix. No Firebase deployment or production change was made.
+- Local verification: `git ls-files --stage gradlew` reports `100755`; `git ls-files --eol gradlew` reports index and working-tree LF with `text eol=lf`; Git Bash `bash -n gradlew` passed; parsed workflow steps place `chmod +x gradlew` before `./gradlew`; staged and working diffs pass `git diff --check`. These checks establish wrapper compatibility, not a successful GitHub Android job.
+
 ## Owner sequencing decision and B1 CI/CD, 2026-11-25
 
 The owner approved starting Milestone B before all Milestone A acceptance checks are finished. **A core implementation is complete; A acceptance verification is pending.** The outstanding checks remain listed below and will be run together with B1–B6 regression before any request to start C. The 11-milestone roadmap, original 17 requirements, and production gate remain intact.

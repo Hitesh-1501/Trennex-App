@@ -31,6 +31,8 @@ jobs:
         run: sdkmanager 'platforms;android-36' 'build-tools;36.0.0'
       - name: Generate demo Firebase config for compilation
         run: node scripts/create-ci-firebase-config.mjs
+      - name: Ensure Gradle wrapper is executable
+        run: chmod +x gradlew
       - name: Build staging APK and run unit tests
         run: ./gradlew --no-daemon assembleStaging testStagingUnitTest
 
