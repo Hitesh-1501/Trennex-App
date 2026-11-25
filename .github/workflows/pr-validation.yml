@@ -1,0 +1,93 @@
+name: PR validation
+
+on:
+  pull_request:
+  push:
+    branches: [master]
+  workflow_call:
+
+permissions:
+  contents: read
+
+jobs:
+  android-staging:
+    runs-on: ubuntu-latest
+    timeout-minutes: 35
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          persist-credentials: false
+      - uses: actions/setup-java@v6
+        with:
+          distribution: temurin
+          java-version: '17'
+          cache: gradle
+      - uses: actions/setup-node@v7
+        with:
+          node-version: '22'
+          package-manager-cache: false
+      - uses: android-actions/setup-android@v4
+      - name: Install Android platform
+        run: sdkmanager 'platforms;android-36' 'build-tools;36.0.0'
+      - name: Generate demo Firebase config for compilation
+        run: node scripts/create-ci-firebase-config.mjs
+      - name: Build staging APK and run unit tests
+        run: ./gradlew --no-daemon assembleStaging testStagingUnitTest
+
+  functions:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    defaults:
+      run:
+        working-directory: functions
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@v7
+        with:
+          node-version: '22'
+          cache: npm
+          cache-dependency-path: functions/package-lock.json
+      - run: npm ci
+      - run: npm run check
+      - run: npm test
+
+  firebase-emulators:
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    defaults:
+      run:
+        working-directory: firebase-tests
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          persist-credentials: false
+      - uses: actions/setup-java@v6
+        with:
+          distribution: temurin
+          java-version: '21'
+      - uses: actions/setup-node@v7
+        with:
+          node-version: '22'
+          cache: npm
+          cache-dependency-path: firebase-tests/package-lock.json
+      - run: npm ci
+      - run: npm ci --prefix ../functions
+      - name: Firestore and Storage security rules
+        run: npm test
+      - name: Checkout Cloud Function integration
+        run: npx firebase emulators:exec --config ../firebase.json --project demo-trennex --only auth,firestore,functions 'node ../functions/integration-test.js'
+
+  catalog:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@v7
+        with:
+          node-version: '22'
+          package-manager-cache: false
+      - run: node firebase-tests/scripts/validate-catalog.mjs

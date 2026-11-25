@@ -10,7 +10,7 @@ TrenNex is a production-grade **portfolio and resume project**, not currently a 
 
 ## Current focus
 
-Roadmap **Milestone A: stability** is in progress. The first add-address and rapid-cart guards are implemented in staging; shared connectivity, loading, error, empty, retry, and lifecycle handling is under verification. Do not start Milestone B until Milestone A passes its staging checks and the owner approves it.
+Roadmap **Milestone A: stability** has its core implementation complete, with acceptance verification pending. On 2026-11-25 the owner explicitly approved a sequencing exception: proceed with **Milestone B: Engineering Foundation** before closing A's remaining checks. Implement B incrementally, starting with B1 GitHub Actions CI/CD. After B, run combined A+B staging regression tests and request the owner's approval before starting C. Keep every unfinished A check in `DEVELOPMENT_STATUS.md`; this exception does not waive acceptance.
 
 ## Environment gate
 

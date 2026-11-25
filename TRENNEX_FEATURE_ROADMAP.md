@@ -1,21 +1,21 @@
 # TrenNex app development roadmap
 
-Updated 2026-11-24. TrenNex is a production-grade engineering portfolio application, not presently a real commercial business. This roadmap retains all 17 owner requests and adds payments, simulated fulfillment, messaging, AI, an admin dashboard, observability, security, CI/CD, and documentation. Build and verify each milestone in local emulators and `trennex-staging-ebbeb`; keep `trennex-ebbeb` unchanged without explicit owner approval. Preserve working phone sign-in, account-scoped cart and wishlist, COD checkout, orders, location selection, search, and the existing catalog shopping assistant.
+Updated 2026-11-25. TrenNex is a production-grade engineering portfolio application, not presently a real commercial business. This roadmap retains all 17 owner requests and adds payments, simulated fulfillment, messaging, AI, an admin dashboard, observability, security, CI/CD, and documentation. Build and verify each milestone in local emulators and `trennex-staging-ebbeb`; keep `trennex-ebbeb` unchanged without explicit owner approval. Preserve working phone sign-in, account-scoped cart and wishlist, COD checkout, orders, location selection, search, and the existing catalog shopping assistant.
 
 ## Current baseline
 
 - Native Kotlin/XML Android app with Firebase Auth, Firestore, Storage, Cloud Functions, Room, and a staging build.
 - The owned staging catalog has 11 products, 15 variants, 10 root categories, and 3 banners. Category tiles now open one reusable product listing, but many legacy subcategory tiles have no matching owned products.
 - COD order creation and order history work on staging. Rich shipping events, submitted reviews, a persisted notification inbox, and real non-COD payments do not yet have complete backend flows.
-- No protected web admin dashboard, Razorpay integration, FCM inbox, Analytics/Crashlytics, App Check enforcement, or GitHub Actions pipeline is present in the current application baseline. These are planned work, not completed features.
+- No protected web admin dashboard, Razorpay integration, FCM inbox, Analytics/Crashlytics, or App Check enforcement is present. B1 GitHub Actions workflow files now exist; their hosted runs and staging deployment gate are pending GitHub/Google configuration. The other features remain planned.
 - Figma has a structural inventory and route mapping in `FIGMA_SCREEN_INVENTORY.md` and `FIGMA_ROUTE_MAPPING.md`. Some frames have not been visually inspected because the Figma Starter-plan MCP limit blocked further design-context calls. For every redesigned screen, retrieve its own frame context and screenshot when access is available; do not claim inaccessible states match Figma.
 
 ## Work order
 
 | Milestone | Work and dependency | Owner requests | Staging acceptance criteria |
 | --- | --- | --- | --- |
-| A. Stability and shared states | Fix add-address sheet/dialog flicker; guard product/cart actions during loading; implement reusable offline, loading, empty, error, and retry states. No advanced feature depends on this being perfect, but complete it first to make later device testing trustworthy. | 2, 8, 16, 17 | Location transition no longer flashes Home or reopens; fast taps do not duplicate cart writes; network loss/recovery and failed Firebase calls have usable states and no stranded spinner. |
-| B. Engineering foundation | Add GitHub Actions for Android/Functions tests and staging-only deployment gates; Firebase Analytics and Crashlytics with environment separation; security-rule tests, admin roles, and App Check monitoring before enforcement. Depends on A's stable flows. | 17 plus advanced security/DevOps | PR checks run without production credentials; staging crash events and non-PII analytics are visible; unauthorized admin writes fail; App Check is validated on physical staging devices before enforcement. |
+| A. Stability and shared states | Fix add-address sheet/dialog flicker; guard product/cart actions during loading; implement reusable offline, loading, empty, error, and retry states. Core implementation is complete; remaining acceptance checks are deferred to the combined A+B regression by explicit owner approval. | 2, 8, 16, 17 | Location transition no longer flashes Home or reopens; fast taps do not duplicate cart writes; network loss/recovery and failed Firebase calls have usable states and no stranded spinner. |
+| B. Engineering foundation | Add GitHub Actions for Android/Functions tests and staging-only deployment gates; Firebase Analytics and Crashlytics with environment separation; security-rule tests, admin roles, and App Check monitoring before enforcement. Follows A's core implementation under the owner-approved sequencing exception. | 17 plus advanced security/DevOps | PR checks run without production credentials; staging crash events and non-PII analytics are visible; unauthorized admin writes fail; App Check is validated on physical staging devices before enforcement. |
 | C. Protected admin foundation | Build a separate web admin app with Firebase Auth and role-checked server operations for catalog, variants, inventory, banners, and order status. Depends on B's roles/security baseline. | 3, 4, 5, 9, 12 plus admin dashboard | A non-admin cannot enter or mutate data; admin changes appear in staging Android; inventory/order actions are audited and cannot overwrite customer-owned records. |
 | D. Scalable catalog and discovery | Complete Issue 7: expand owned staging catalog and media through reviewed seed/admin workflows; paginated Home; banner routing; category/subcategory/brand listings and adaptive grids/lists against inspected Figma frames. Gradually target **500+ quality demo products, 1,000+ variants, and 20+ promotional banners**, conditional on Firebase cost and measured performance. Depends on C for ongoing content management, though existing seed data can be used while C is built. | 3, 4, 5, 9 | All ten root categories and visible tiles navigate intentionally; relevant products load in bounded pages without duplicates; banners open their declared product/category/campaign; empty categories do not show unrelated products. Horizontal and vertical sections, grids, and category-specific layouts match accessible Figma frames and adapt across phone sizes. Each catalog expansion batch passes content, cost, and performance review. |
 | E. Product detail and media | Multiple product/variant images and colors, selected image restoration, sharing, specifications, and clearly marked demo reviews with images across the catalog. Depends on D's catalog schema/media. | 6, 7 | Swiping, preview/back, variant switching, share, and review display work on staging phones; prices and stock remain catalog/server authoritative. Seed review text/images are visibly labelled demo and have valid media references. |
@@ -27,7 +27,17 @@ Updated 2026-11-24. TrenNex is a production-grade engineering portfolio applicat
 | K. Production readiness only | Inventory/backup/dry-run migration and release review **after** J and explicit owner approval. No production implementation is implied by this milestone. | Release gate | Owner approves a concrete reviewed production diff and rollout; until then, `trennex-ebbeb` remains untouched. |
 
 Milestones can be split into small, reviewable issues. A milestone is complete only after the code, staging data/functions where needed, and physical-device checks agree. Update `DEVELOPMENT_STATUS.md` after each issue with files changed, which Firebase project was touched, test results, and remaining gaps.
-**Milestone B is gated:** do not start it until all Milestone A acceptance checks have been verified in staging and the owner explicitly approves completion of A.
+**Owner-approved sequencing exception, 2026-11-25:** Milestone A core implementation is complete but its acceptance verification remains pending. The owner approved B1–B6 before those final A checks. Build B one reviewable task at a time, then run combined A+B acceptance testing and obtain explicit owner approval before starting C. No A criterion is removed or treated as passed without evidence.
+
+### Milestone B task sequence
+
+1. **B1 CI/CD:** PR and `master` checks compile staging Android with a demo Firebase configuration, run Android and Cloud Functions unit tests, Firestore/Storage rules tests, checkout emulator integration, and catalog validation. A separate manual workflow runs the same checks before a staging-only Firebase deploy; protect its `staging` GitHub environment with required reviewers and short-lived Workload Identity Federation. No production deployment workflow or credentials.
+2. **B2 Analytics:** instrument privacy-safe product, category, banner, search, cart, wishlist, checkout, and assistant events with staging/production separation.
+3. **B3 Crashlytics:** configure staging reporting, safe diagnostic context, and controlled crash/non-fatal verification.
+4. **B4 Security:** audit Firestore/Storage rules and callable authorization; add denial and account-isolation tests.
+5. **B5 Roles:** server-managed customer/admin claims, revoked-admin checks, and no client privilege escalation.
+6. **B6 App Check:** stage Android integration and legitimate device validation in monitoring mode before any enforcement.
+7. **Combined A+B acceptance:** complete every documented A pending check and regress B1–B6 on emulators and staging devices. Request owner approval before C.
 
 ## Original 17 requests: detailed staging acceptance
 
@@ -121,7 +131,7 @@ These checks supplement the milestone criteria. Each request remains open until 
 
 ## First implementation slice
 
-The first Milestone A slice implemented the add-address transition and Back-dialog fix plus the product-detail add-to-cart loading guard. Continue with shared network, loading, error, empty, retry, and lifecycle states, then verify the entire milestone on staging before requesting owner approval to move to B.
+Milestone A's core implementation includes the add-address transition, cart guards and durable sync, offline/loading/error/empty/Retry states, and offline operation guards. Its remaining checks are listed in `DEVELOPMENT_STATUS.md` and will be verified with B during combined staging acceptance. B1 is the current implementation slice.
 
 ## Production gate
 
