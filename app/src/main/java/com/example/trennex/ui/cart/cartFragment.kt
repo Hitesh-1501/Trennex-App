@@ -39,6 +39,8 @@ import com.example.trennex.ui.home.adapters.SaveAddressAdapter
 import com.example.trennex.ui.main.MainActivity
 import com.example.trennex.ui.main.ToolBarType
 import com.example.trennex.utils.CurrencyFormator
+import com.example.trennex.utils.cart.CartStore
+import com.example.trennex.ui.common.NetworkStatus
 import com.example.trennex.viewmodel.cart.CartViewModel
 import com.google.android.gms.common.api.ResolvableApiException
 import com.google.android.gms.location.FusedLocationProviderClient
@@ -52,6 +54,7 @@ import com.google.android.libraries.places.widget.model.AutocompleteActivityMode
 import com.google.android.material.bottomsheet.BottomSheetBehavior
 import com.google.android.material.bottomsheet.BottomSheetDialog
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.flow.combine
 import java.util.Locale
 
 class CartFragment : Fragment(R.layout.fragment_cart) {
@@ -64,6 +67,7 @@ class CartFragment : Fragment(R.layout.fragment_cart) {
     private var locationBottomSheet: BottomSheetDialog? = null
     private lateinit var fusedLocationClient: FusedLocationProviderClient
     private lateinit var saveAddressAdapter: SaveAddressAdapter
+    private var wasOffline = false
 
     private val cartAdapter by lazy {
         CartAdapter(
@@ -147,18 +151,33 @@ class CartFragment : Fragment(R.layout.fragment_cart) {
 
         viewLifecycleOwner.lifecycleScope.launch {
             viewLifecycleOwner.repeatOnLifecycle(Lifecycle.State.STARTED){
-                viewModel.uiState.collect(::render)
+                combine(viewModel.uiState, NetworkStatus.observe(requireContext()),
+                    CartStore.remoteStatus) { state, online, remoteStatus ->
+                    Triple(state, online, remoteStatus)
+                }.collect { (state, online, remoteStatus) -> render(state, online, remoteStatus) }
             }
         }
 
     }
 
 
-    private fun render(state: CartUiState){
+    private fun render(state: CartUiState, online: Boolean, remoteStatus: CartStore.RemoteStatus){
+        if (online && wasOffline) CartStore.refreshRemote()
+        wasOffline = !online
         val hasItems = state.totalItems > 0
-        binding.layoutEmptyCart.root.visibility = if (hasItems) View.GONE else View.VISIBLE
+        binding.layoutEmptyCart.root.visibility = if (hasItems || !online || remoteStatus != CartStore.RemoteStatus.READY)
+            View.GONE else View.VISIBLE
         binding.cartScrollView.visibility = if (hasItems) View.VISIBLE else View.GONE
         binding.bottomCheckoutLayout.visibility = if (hasItems) View.VISIBLE else View.GONE
+        if (hasItems) binding.contentStatus.hide()
+        else if (!online) binding.contentStatus.showOffline { CartStore.refreshRemote() }
+        else when (remoteStatus) {
+            CartStore.RemoteStatus.LOADING -> binding.contentStatus.showLoading()
+            CartStore.RemoteStatus.ERROR -> binding.contentStatus.showError(
+                "Could not load your cart. Please retry."
+            ) { CartStore.refreshRemote() }
+            CartStore.RemoteStatus.READY -> binding.contentStatus.hide()
+        }
 
         (activity as? MainActivity)?.toggleCartProgress(hasItems)
         if(hasItems){

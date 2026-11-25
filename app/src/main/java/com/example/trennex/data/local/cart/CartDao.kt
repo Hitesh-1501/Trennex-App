@@ -9,6 +9,18 @@ import kotlinx.coroutines.flow.Flow
 
 @Dao
 interface CartDao {
+    @Query("SELECT * FROM pending_cart_sync ORDER BY ownerId, cartKey")
+    suspend fun pendingSync(): List<PendingCartSyncEntity>
+
+    @Query("SELECT * FROM pending_cart_sync WHERE ownerId = :ownerId AND cartKey = :cartKey LIMIT 1")
+    suspend fun pendingForKey(ownerId: String, cartKey: String): PendingCartSyncEntity?
+
+    @Insert(onConflict = OnConflictStrategy.REPLACE)
+    suspend fun upsertPending(item: PendingCartSyncEntity)
+
+    @Query("DELETE FROM pending_cart_sync WHERE ownerId = :ownerId AND cartKey = :cartKey AND generation = :generation")
+    suspend fun clearPending(ownerId: String, cartKey: String, generation: String)
+
     @Query("SELECT * FROM cart_items WHERE ownerId = :ownerId ORDER BY id DESC")
     fun observeCartItems(ownerId: String): Flow<List<CartItemEntity>>
 

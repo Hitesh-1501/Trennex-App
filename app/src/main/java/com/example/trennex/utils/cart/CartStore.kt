@@ -12,14 +12,20 @@ import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.collectLatest
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 
 object CartStore {
+    enum class RemoteStatus { LOADING, READY, ERROR }
+    private val mutableRemoteStatus = MutableStateFlow(RemoteStatus.LOADING)
+    val remoteStatus: StateFlow<RemoteStatus> = mutableRemoteStatus
     private val scope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
 
     @Volatile
     private var cartRepository: CartRepository? = null
+    private var appContext: Context? = null
 
     private fun repo(): CartRepository {
         return  requireNotNull(cartRepository){
@@ -30,11 +36,17 @@ object CartStore {
         if(cartRepository != null) return
         synchronized(this){
             if(cartRepository == null) {
+                appContext = context.applicationContext
                 cartRepository =
-                    CartRepository(AppDatabase.Companion.getInstance(context).cartDao())
+                    CartRepository(AppDatabase.getInstance(context))
                 scope.launch {
                     AccountScope.owner.collectLatest { ownerId ->
-                        cartRepository?.fetchAndSyncRemoteCart(ownerId)
+                        mutableRemoteStatus.value = RemoteStatus.LOADING
+                        CartSyncWorker.schedule(context.applicationContext)
+                        val loaded = cartRepository?.fetchAndSyncRemoteCart(ownerId) == true
+                        if (AccountScope.currentOwner() == ownerId) {
+                            mutableRemoteStatus.value = if (loaded) RemoteStatus.READY else RemoteStatus.ERROR
+                        }
                     }
                 }
             }
@@ -53,14 +65,15 @@ object CartStore {
         val ownerId = AccountScope.currentOwner()
         scope.launch {
             repo().addItem(ownerId, item)
+            scheduleSync()
         }
     }
 
     suspend fun addItemAndAwait(item: CartItemModel) {
         val ownerId = AccountScope.currentOwner()
         withContext(Dispatchers.IO) {
-            val savedItem = repo().addItemLocally(ownerId, item)
-            scope.launch { repo().syncAddedItem(ownerId, savedItem) }
+            repo().addItemLocally(ownerId, item)
+            scheduleSync()
         }
     }
 
@@ -69,24 +82,28 @@ object CartStore {
         val ownerId = AccountScope.currentOwner()
         scope.launch {
             repo().toggleSelection(ownerId, cartKey,selected)
+            scheduleSync()
         }
     }
     fun toggleSelectAll(selected: Boolean){
        val ownerId = AccountScope.currentOwner()
        scope.launch {
            repo().toggleAllSelection(ownerId, selected)
+           scheduleSync()
        }
     }
     fun updateQuantity(cartKey: String, quantity: Int) {
        val ownerId = AccountScope.currentOwner()
        scope.launch {
            repo().updateQuantity(ownerId, cartKey,quantity)
+           scheduleSync()
        }
     }
     fun removeItem(cartKey: String){
         val ownerId = AccountScope.currentOwner()
         scope.launch {
             repo().removeItem(ownerId, cartKey)
+            scheduleSync()
         }
     }
 
@@ -97,6 +114,23 @@ object CartStore {
     fun deleteSelectedItems(ownerId: String){
         scope.launch {
             repo().deleteSelectedItems(ownerId)
+            scheduleSync()
         }
+    }
+
+    fun refreshRemote() {
+        val ownerId = AccountScope.currentOwner()
+        mutableRemoteStatus.value = RemoteStatus.LOADING
+        scope.launch {
+            val loaded = repo().fetchAndSyncRemoteCart(ownerId)
+            if (AccountScope.currentOwner() == ownerId) {
+                mutableRemoteStatus.value = if (loaded) RemoteStatus.READY else RemoteStatus.ERROR
+            }
+            scheduleSync()
+        }
+    }
+
+    private fun scheduleSync() {
+        appContext?.let(CartSyncWorker::schedule)
     }
 }
