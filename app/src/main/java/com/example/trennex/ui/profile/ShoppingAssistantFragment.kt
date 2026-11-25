@@ -17,6 +17,7 @@ import androidx.lifecycle.ViewModel
 import androidx.navigation.fragment.findNavController
 import com.bumptech.glide.Glide
 import com.example.trennex.R
+import com.example.trennex.ui.common.NetworkStatus
 import com.example.trennex.databinding.FragmentShoppingAssistantBinding
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.functions.FirebaseFunctions
@@ -56,6 +57,10 @@ class ShoppingAssistantFragment : Fragment(R.layout.fragment_shopping_assistant)
     private fun sendQuestion() {
         val ui = binding ?: return
         if (sending) return
+        if (!NetworkStatus.isOnline(requireContext())) {
+            addMessage("You're offline. Connect to the internet, then try your question again.", false)
+            return
+        }
         if (FirebaseAuth.getInstance().currentUser == null) {
             addMessage("Sign in to use shopping help. Tap here to sign in.", false, signIn = true)
             return

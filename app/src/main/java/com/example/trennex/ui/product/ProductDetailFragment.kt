@@ -171,22 +171,25 @@ class ProductDetailFragment : Fragment(R.layout.fragment_product_detail), WishLi
         super.onViewCreated(view, savedInstanceState)
         binding.addToCart.isEnabled = false
         binding.addToCart.alpha = 0.5f
-        binding.contentStatus.showLoading()
+        if (NetworkStatus.isOnline(requireContext())) binding.contentStatus.showLoading()
+        else binding.contentStatus.showOffline { viewModel.fetchProductDetail(args.productId) }
         fusedLocationClient = LocationServices.getFusedLocationProviderClient(requireContext())
         val id = args.productId
         viewModel.fetchProductDetail(id)
         viewLifecycleOwner.lifecycleScope.launch {
             viewLifecycleOwner.repeatOnLifecycle(Lifecycle.State.STARTED) {
-                combine(viewModel.products, viewModel.isLoading, viewModel.error) { product, loading, error ->
-                    Triple(product, loading, error)
-                }.collect { (product, loading, error) ->
+                combine(viewModel.products, viewModel.isLoading, viewModel.error,
+                    NetworkStatus.observe(requireContext())) { product, loading, error, online ->
+                    ProductContentState(product, loading, error, online)
+                }.collect { (product, loading, error, online) ->
                     when {
                         product != null -> binding.contentStatus.hide()
+                        !online -> binding.contentStatus.showOffline {
+                            viewModel.fetchProductDetail(args.productId)
+                        }
                         loading -> binding.contentStatus.showLoading()
                         error != null -> binding.contentStatus.showError(
-                            if (NetworkStatus.isOnline(requireContext()))
-                                "Could not load this product. Please retry."
-                            else "No internet connection. Connect and retry."
+                            "Could not load this product. Please retry."
                         ) { viewModel.fetchProductDetail(args.productId) }
                         else -> binding.contentStatus.showEmpty("Product unavailable")
                     }
@@ -969,6 +972,13 @@ class ProductDetailFragment : Fragment(R.layout.fragment_product_detail), WishLi
         _binding = null
         super.onDestroyView()
     }
+
+    private data class ProductContentState(
+        val product: ProductResponse?,
+        val loading: Boolean,
+        val error: String?,
+        val online: Boolean,
+    )
 
 
 }

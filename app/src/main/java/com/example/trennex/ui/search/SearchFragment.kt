@@ -29,6 +29,7 @@ import androidx.recyclerview.widget.GridLayoutManager
 import androidx.recyclerview.widget.LinearLayoutManager
 import com.example.trennex.R
 import com.example.trennex.ui.common.NetworkStatus
+import kotlinx.coroutines.flow.combine
 import com.example.trennex.data.local.cart.AppDatabase
 import com.example.trennex.databinding.FragmentSearchBinding
 import com.example.trennex.databinding.SheetSearchSortBinding
@@ -296,7 +297,19 @@ class SearchFragment : Fragment(R.layout.fragment_search){
         }
 
         viewLifecycleOwner.lifecycleScope.launch {
-            viewModel.uiState.collectLatest { state ->
+            combine(viewModel.uiState, NetworkStatus.observe(requireContext())) { state, online ->
+                state to online
+            }.collectLatest { (state, online) ->
+                when {
+                    state.searchResults.isNotEmpty() -> binding.contentStatus.hide()
+                    !online && state.query.isNotBlank() -> binding.contentStatus.showOffline {
+                        viewModel.searchProducts(state.query)
+                    }
+                    state.error == "ERROR LOADING PRODUCTS" -> binding.contentStatus.showError(
+                        "Could not load products. Please retry."
+                    ) { viewModel.searchProducts(state.query) }
+                    else -> binding.contentStatus.hide()
+                }
                 binding.searchProgressBar.isVisible = state.isLoading
                 
                 when{
