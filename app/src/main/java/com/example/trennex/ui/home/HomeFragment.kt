@@ -64,6 +64,7 @@ import com.google.android.material.tabs.TabLayoutMediator
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.distinctUntilChanged
+import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.launch
 import java.util.Locale
@@ -83,6 +84,7 @@ class HomeFragment : Fragment(R.layout.fragment_home) {
     
     private var bottomSheetBinding: BottomSheetSelectLocationBinding? = null
     private var locationBottomSheet: BottomSheetDialog? = null
+    private var addressTransitionSheet: BottomSheetDialog? = null
     private var locationPermissionDialog: AlertDialog? = null
     private lateinit var fusedLocationClient: FusedLocationProviderClient
     private var hasShownLocationPermissionPrompt = false
@@ -135,20 +137,18 @@ class HomeFragment : Fragment(R.layout.fragment_home) {
     private fun observeViewModel() {
         viewLifecycleOwner.lifecycleScope.launch {
             viewLifecycleOwner.repeatOnLifecycle(Lifecycle.State.STARTED) {
-                viewModel.uiState.collect { state ->
+                combine(viewModel.uiState, NetworkStatus.observe(requireContext())) { state, online ->
+                    state to online
+                }.collect { (state, online) ->
                     val isFirstLoad = state.isLoading && state.products.isEmpty()
                     binding.homeContentScrollView.isVisible = state.products.isNotEmpty()
                     binding.swipeRefreshLayout.isRefreshing = state.isLoading && !isFirstLoad
                     when {
                         state.products.isNotEmpty() -> binding.contentStatus.hide()
+                        !online -> binding.contentStatus.showOffline { viewModel.refreshData() }
                         state.isLoading -> binding.contentStatus.showLoading()
                         state.error != null -> binding.contentStatus.showError(
-                            if (NetworkStatus.isOnline(requireContext()))
-                                "Could not load products. Please try again."
-                            else "No internet connection. Connect and retry."
-                        ) { viewModel.refreshData() }
-                        !NetworkStatus.isOnline(requireContext()) -> binding.contentStatus.showError(
-                            "No internet connection. Connect and retry."
+                            "Could not load products. Please try again."
                         ) { viewModel.refreshData() }
                         else -> binding.contentStatus.showEmpty("No products available yet")
                     }
@@ -221,8 +221,13 @@ class HomeFragment : Fragment(R.layout.fragment_home) {
         }
         sheetBinding.addNewAddress.setOnClickListener {
             if (findNavController().currentDestination?.id == R.id.homeFragment) {
+                addressTransitionSheet = sheet
                 findNavController().navigate(R.id.action_homeFragment_to_addNewAddressFragment)
-                sheet.dismiss()
+                // Keep the sheet over the outgoing Home frame until the destination dialog is drawn.
+                Handler(Looper.getMainLooper()).postDelayed({
+                    sheet.dismiss()
+                    if (addressTransitionSheet === sheet) addressTransitionSheet = null
+                }, 350)
             }
         }
         saveAddressAdapter = SaveAddressAdapter(
@@ -586,7 +591,7 @@ class HomeFragment : Fragment(R.layout.fragment_home) {
         bannerMediator = null
         locationPermissionDialog?.dismiss()
         locationPermissionDialog = null
-        locationBottomSheet?.dismiss()
+        if (locationBottomSheet !== addressTransitionSheet) locationBottomSheet?.dismiss()
         locationBottomSheet = null
         bottomSheetBinding = null
         

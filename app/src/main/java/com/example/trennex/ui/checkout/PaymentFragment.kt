@@ -19,6 +19,7 @@ import com.example.trennex.databinding.FragmentPaymentBinding
 import com.example.trennex.ui.cart.CartUiState
 import com.example.trennex.ui.main.MainActivity
 import com.example.trennex.ui.main.ToolBarType
+import com.example.trennex.ui.common.NetworkStatus
 import com.example.trennex.utils.CurrencyFormator
 import com.example.trennex.viewmodel.cart.CartViewModel
 import kotlinx.coroutines.launch
@@ -56,7 +57,11 @@ class PaymentFragment : Fragment(R.layout.fragment_payment) {
         }
         binding.optionCod.setOnClickListener { toggleAccordion(5) }
         binding.root.findViewById<View>(R.id.btnPlaceOrderCod)?.setOnClickListener {
-            viewModel.placeOrder()
+            if (!NetworkStatus.isOnline(requireContext())) {
+                Toast.makeText(requireContext(), "Connect to the internet before placing your order.", Toast.LENGTH_LONG).show()
+                return@setOnClickListener
+            }
+            viewModel.placeOrder(isOnline = true)
         }
         toggleAccordion(5)
     }

@@ -18,6 +18,7 @@ import com.example.trennex.ui.main.MainActivity
 import com.example.trennex.ui.main.ToolBarType
 import com.example.trennex.ui.profile.adapter.OrderAdapter
 import com.example.trennex.viewmodel.order.OrdersViewModel
+import com.example.trennex.ui.profile.model.OrderModel
 import com.example.trennex.ui.common.NetworkStatus
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.flow.combine
@@ -85,21 +86,18 @@ class OrdersFragment : Fragment(R.layout.fragment_orders) {
     private fun observeViewModel() {
         viewLifecycleOwner.lifecycleScope.launch {
             viewLifecycleOwner.repeatOnLifecycle(Lifecycle.State.STARTED) {
-                combine(viewModel.orders, viewModel.isLoading, viewModel.error) { orders, loading, error ->
-                    Triple(orders, loading, error)
-                }.collect { (orders, loading, error) ->
+                combine(viewModel.orders, viewModel.isLoading, viewModel.error,
+                    NetworkStatus.observe(requireContext())) { orders, loading, error, online ->
+                    OrdersContentState(orders, loading, error, online)
+                }.collect { (orders, loading, error, online) ->
                     orderAdapter.submitList(orders)
                     binding.rvOrders.visibility = if (orders.isEmpty()) View.GONE else View.VISIBLE
                     when {
                         orders.isNotEmpty() -> binding.contentStatus.hide()
+                        !online -> binding.contentStatus.showOffline { viewModel.retry() }
                         loading -> binding.contentStatus.showLoading()
                         error != null -> binding.contentStatus.showError(
-                            if (NetworkStatus.isOnline(requireContext()))
-                                "Could not load orders. Please retry."
-                            else "No internet connection. Connect and retry."
-                        ) { viewModel.retry() }
-                        !NetworkStatus.isOnline(requireContext()) -> binding.contentStatus.showError(
-                            "No internet connection. Connect and retry."
+                            "Could not load orders. Please retry."
                         ) { viewModel.retry() }
                         else -> binding.contentStatus.showEmpty("No orders found")
                     }
@@ -112,4 +110,11 @@ class OrdersFragment : Fragment(R.layout.fragment_orders) {
         super.onDestroyView()
         _binding = null
     }
+
+    private data class OrdersContentState(
+        val orders: List<OrderModel>,
+        val loading: Boolean,
+        val error: String?,
+        val online: Boolean,
+    )
 }
