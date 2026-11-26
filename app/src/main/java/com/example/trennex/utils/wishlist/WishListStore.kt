@@ -1,6 +1,10 @@
 package com.example.trennex.utils.wishlist
 
 import android.content.Context
+import com.example.trennex.analytics.AppAnalytics
+import com.example.trennex.analytics.AnalyticsEvents
+import com.example.trennex.analytics.AnalyticsItem
+import com.example.trennex.analytics.AnalyticsNames
 import com.example.trennex.data.local.AccountScope
 import com.example.trennex.data.local.cart.AppDatabase
 import com.example.trennex.repository.wishlist.WishlistRepository
@@ -48,6 +52,8 @@ object WishListStore {
         val ownerId = AccountScope.currentOwner()
         scope.launch {
             repo().addOrUpdate(ownerId, item)
+            AppAnalytics.get().track(AnalyticsEvents.commerce(AnalyticsNames.ADD_TO_WISHLIST,
+                listOf(AnalyticsItem("legacy:${item.id}", price = item.price))))
         }
     }
     fun removeItem(itemId: Int){

@@ -1,12 +1,14 @@
 package com.example.trennex.repository.user
 
 import com.example.trennex.ui.profile.model.OrderModel
+import com.example.trennex.analytics.AnalyticsItem
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.firestore.FieldValue
 import com.google.firebase.firestore.DocumentSnapshot
 import com.google.firebase.firestore.FirebaseFirestore
 import com.google.firebase.firestore.ListenerRegistration
 import com.google.firebase.firestore.Query
+import com.google.firebase.firestore.Source
 import com.google.firebase.firestore.SetOptions
 import com.google.firebase.functions.FirebaseFunctions
 import kotlinx.coroutines.channels.awaitClose
@@ -237,11 +239,37 @@ class UserRepository {
             .add(request)
             .await()
             .id
-        functions
+        val result = functions
             .getHttpsCallable("createOrder")
             .call(mapOf("requestId" to requestId))
             .await()
-        return requestId
+        return ((result.data as? Map<*, *>)?.get("orderId") as? String)
+            ?.takeIf { it.isNotBlank() }
+            ?: throw IllegalStateException("Order service did not confirm an order ID")
+    }
+
+    /** Read only authoritative order fields; never include shipping or recipient data in analytics. */
+    suspend fun getConfirmedCodOrderAnalytics(orderId: String): Pair<Long, List<AnalyticsItem>> {
+        val uid = getUserId() ?: throw IllegalStateException("Signed out")
+        val orderRef = firestore.collection("orders").document(orderId)
+        val order = orderRef.get(Source.SERVER).await()
+        require(order.getString("userId") == uid && order.getString("status") == "CONFIRMED" &&
+            order.getString("currency") == "INR" &&
+            (order.get("payment") as? Map<*, *>)?.get("method") == "COD") {
+            "Order is not a confirmed COD order"
+        }
+        val totalMinor = order.getLong("totalMinor") ?: error("Order total missing")
+        require(totalMinor >= 0) { "Invalid order total" }
+        val items = orderRef.collection("items").get(Source.SERVER).await().documents.map { item ->
+            AnalyticsItem(
+                id = item.getString("productId") ?: error("Product ID missing"),
+                variantId = item.getString("variantId"),
+                price = (item.getLong("unitPriceMinor") ?: error("Price missing")) / 100.0,
+                quantity = (item.getLong("quantity") ?: error("Quantity missing")).toInt(),
+            )
+        }
+        require(items.isNotEmpty()) { "Order items missing" }
+        return totalMinor to items
     }
 
     fun observeOrders(): Flow<List<OrderModel>> = combine(

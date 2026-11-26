@@ -2,6 +2,7 @@ package com.example.trennex
 
 import android.app.Application
 import android.util.Log
+import com.example.trennex.analytics.AppAnalytics
 import com.example.trennex.data.local.AccountScope
 import com.example.trennex.utils.cart.CartStore
 import com.example.trennex.utils.wishlist.CollectionStore
@@ -20,6 +21,7 @@ class TrenNexApp: Application(){
     override fun onCreate() {
         super.onCreate()
         configureFirebaseEmulators()
+        AppAnalytics.initialize(this)
         AccountScope.initialize()
         CartStore.initialize(this)
         WishListStore.initialize(this)
