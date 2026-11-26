@@ -3,6 +3,7 @@ package com.example.trennex.ui.profile
 import android.graphics.Color
 import android.graphics.drawable.GradientDrawable
 import android.os.Bundle
+import android.os.SystemClock
 import android.view.Gravity
 import android.view.View
 import android.widget.ImageView
@@ -17,6 +18,10 @@ import androidx.lifecycle.ViewModel
 import androidx.navigation.fragment.findNavController
 import com.bumptech.glide.Glide
 import com.example.trennex.R
+import com.example.trennex.analytics.AppAnalytics
+import com.example.trennex.analytics.AnalyticsEvent
+import com.example.trennex.analytics.AnalyticsNames
+import com.example.trennex.analytics.AnalyticsParams
 import com.example.trennex.ui.common.NetworkStatus
 import com.example.trennex.databinding.FragmentShoppingAssistantBinding
 import com.google.firebase.auth.FirebaseAuth
@@ -73,6 +78,8 @@ class ShoppingAssistantFragment : Fragment(R.layout.fragment_shopping_assistant)
         addMessage(question, true)
         ui.assistantQuestion.text.clear()
         sending = true
+        val startedAt = SystemClock.elapsedRealtime()
+        AppAnalytics.get().track(AnalyticsEvent(AnalyticsNames.ASSISTANT_REQUEST))
         ui.assistantSend.isEnabled = false
         ui.assistantProgress.visibility = View.VISIBLE
 
@@ -86,10 +93,18 @@ class ShoppingAssistantFragment : Fragment(R.layout.fragment_shopping_assistant)
                 (data["products"] as? List<*>)?.forEach { raw ->
                     (raw as? Map<*, *>)?.let(::addProduct)
                 }
+                AppAnalytics.get().track(AnalyticsEvent(AnalyticsNames.ASSISTANT_RESPONSE,
+                    mapOf(AnalyticsParams.RESPONSE_LATENCY_MS to
+                        (SystemClock.elapsedRealtime() - startedAt),
+                        AnalyticsParams.RECOMMENDATION_COUNT to
+                            ((data["products"] as? List<*>)?.size ?: 0))))
                 (data["remainingToday"] as? Number)?.let { remaining ->
                     addMessage("${remaining.toInt()} questions left today", false)
                 }
             } catch (error: Exception) {
+                AppAnalytics.get().track(AnalyticsEvent(AnalyticsNames.ASSISTANT_ERROR,
+                    mapOf(AnalyticsParams.ERROR_CODE to
+                        ((error as? FirebaseFunctionsException)?.code?.name ?: "unknown"))))
                 val message = when ((error as? FirebaseFunctionsException)?.code) {
                     FirebaseFunctionsException.Code.RESOURCE_EXHAUSTED ->
                         "Today's shopping help limit has been reached. Please try tomorrow."
@@ -153,6 +168,8 @@ class ShoppingAssistantFragment : Fragment(R.layout.fragment_shopping_assistant)
             setPadding(dp(10), dp(10), dp(10), dp(10))
             background = rounded(Color.WHITE)
             setOnClickListener {
+                AppAnalytics.get().track(AnalyticsEvent(AnalyticsNames.ASSISTANT_SELECT_ITEM,
+                    mapOf(AnalyticsParams.ITEM_ID to "legacy:${entry.legacyId}")))
                 findNavController().navigate(R.id.productDetailFragment,
                     Bundle().apply { putInt("productId", entry.legacyId) })
             }

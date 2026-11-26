@@ -13,6 +13,7 @@ import androidx.lifecycle.repeatOnLifecycle
 import androidx.navigation.fragment.findNavController
 import androidx.recyclerview.widget.GridLayoutManager
 import com.example.trennex.R
+import com.example.trennex.analytics.AppAnalytics
 import com.example.trennex.databinding.FragmentProfileBinding
 import com.example.trennex.ui.profile.adapter.ProfileGridAdapter
 import com.example.trennex.ui.profile.model.ProfileGridItem
@@ -38,6 +39,10 @@ class ProfileFragment : Fragment(R.layout.fragment_profile) {
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
         setupUi()
+        binding.analyticsConsent.isChecked = AppAnalytics.get().isCollectionEnabled
+        binding.analyticsConsent.setOnCheckedChangeListener { _, checked ->
+            AppAnalytics.get().setCollectionEnabled(checked)
+        }
         observeViewModel()
 
         binding.btnLogout.setOnClickListener {

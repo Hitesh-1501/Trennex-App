@@ -28,6 +28,10 @@ import androidx.navigation.fragment.findNavController
 import androidx.recyclerview.widget.GridLayoutManager
 import androidx.recyclerview.widget.LinearLayoutManager
 import com.example.trennex.R
+import com.example.trennex.analytics.AppAnalytics
+import com.example.trennex.analytics.AnalyticsEvents
+import com.example.trennex.analytics.AnalyticsNames
+import com.example.trennex.analytics.AnalyticsParams
 import com.example.trennex.ui.common.NetworkStatus
 import kotlinx.coroutines.flow.combine
 import com.example.trennex.data.local.cart.AppDatabase
@@ -63,6 +67,8 @@ class SearchFragment : Fragment(R.layout.fragment_search){
     private var clearSearch: ImageView? = null
     private var micSearch: ImageView? = null
     private var suppressTextChanges = false
+    private var lastTrackedSearch: String? = null
+    private var nextSearchSource = "text"
 
     private val photoPicker = registerForActivityResult(ActivityResultContracts.GetContent()) { uri ->
         if (uri != null) processPhoto {
@@ -75,7 +81,10 @@ class SearchFragment : Fragment(R.layout.fragment_search){
     private val speechInput = registerForActivityResult(ActivityResultContracts.StartActivityForResult()) { result ->
         if (result.resultCode == android.app.Activity.RESULT_OK) {
             result.data?.getStringArrayListExtra(RecognizerIntent.EXTRA_RESULTS)
-                ?.firstOrNull()?.takeIf { it.isNotBlank() }?.let(::performSearch)
+                ?.firstOrNull()?.takeIf { it.isNotBlank() }?.let {
+                    nextSearchSource = "voice"
+                    performSearch(it)
+                }
         }
     }
 
@@ -129,6 +138,9 @@ class SearchFragment : Fragment(R.layout.fragment_search){
             }
         )
         searchResultAdapter = SearchResultAdapter{product ->
+            AppAnalytics.get().track(AnalyticsEvents.commerce(AnalyticsNames.SELECT_ITEM,
+                listOf(AnalyticsEvents.item(product)),
+                extra = mapOf(AnalyticsParams.ITEM_LIST_ID to "search_results")))
             if(findNavController().currentDestination?.id == R.id.searchFragment){
                 val bundle = Bundle().apply {
                     putInt("productId",product.id)
@@ -240,6 +252,7 @@ class SearchFragment : Fragment(R.layout.fragment_search){
                     clearSearch?.isVisible = true
                     micSearch?.isVisible = false
                     viewModel.searchByImageSignals(text, labels)
+                    nextSearchSource = "photo"
                 }
             } catch (error: Exception) {
                 if (error is kotlinx.coroutines.CancellationException) throw error
@@ -320,6 +333,16 @@ class SearchFragment : Fragment(R.layout.fragment_search){
                         showSuggestions(hasQuery = true)
                     }
                     state.hasResults ->{
+                        if (!state.isLoading && lastTrackedSearch != state.query) {
+                            lastTrackedSearch = state.query
+                            AppAnalytics.get().track(AnalyticsEvents.search(
+                                nextSearchSource, state.searchResults.size))
+                            if (state.searchResults.isNotEmpty()) AppAnalytics.get().track(
+                                AnalyticsEvents.commerce(AnalyticsNames.VIEW_ITEM_LIST,
+                                    state.searchResults.take(20).map(AnalyticsEvents::item),
+                                    extra = mapOf(AnalyticsParams.ITEM_LIST_ID to "search_results")))
+                            nextSearchSource = "text"
+                        }
                         val currentLM = binding.searchResultRecyclerView.layoutManager
                         val needsNewLM = if (state.isGridLayout) {
                             currentLM !is GridLayoutManager
