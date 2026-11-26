@@ -1,6 +1,9 @@
 package com.example.trennex.utils.cart
 
 import android.content.Context
+import com.example.trennex.analytics.AppAnalytics
+import com.example.trennex.analytics.AnalyticsEvents
+import com.example.trennex.analytics.AnalyticsNames
 import com.example.trennex.data.local.AccountScope
 import com.example.trennex.data.local.cart.AppDatabase
 import com.example.trennex.repository.cart.CartRepository
@@ -65,6 +68,8 @@ object CartStore {
         val ownerId = AccountScope.currentOwner()
         scope.launch {
             repo().addItem(ownerId, item)
+            AppAnalytics.get().track(AnalyticsEvents.commerce(AnalyticsNames.ADD_TO_CART,
+                listOf(AnalyticsEvents.item(item)), value = item.price * item.quantity))
             scheduleSync()
         }
     }
@@ -73,6 +78,8 @@ object CartStore {
         val ownerId = AccountScope.currentOwner()
         withContext(Dispatchers.IO) {
             repo().addItemLocally(ownerId, item)
+            AppAnalytics.get().track(AnalyticsEvents.commerce(AnalyticsNames.ADD_TO_CART,
+                listOf(AnalyticsEvents.item(item)), value = item.price * item.quantity))
             scheduleSync()
         }
     }
@@ -102,7 +109,10 @@ object CartStore {
     fun removeItem(cartKey: String){
         val ownerId = AccountScope.currentOwner()
         scope.launch {
+            val removed = repo().getLocalItem(ownerId, cartKey)
             repo().removeItem(ownerId, cartKey)
+            removed?.let { AppAnalytics.get().track(AnalyticsEvents.commerce(AnalyticsNames.REMOVE_FROM_CART,
+                listOf(AnalyticsEvents.item(it)), value = it.price * it.quantity)) }
             scheduleSync()
         }
     }

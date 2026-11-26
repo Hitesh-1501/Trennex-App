@@ -6,6 +6,8 @@ import com.example.trennex.repository.user.AddressEntity
 import com.example.trennex.repository.user.UserRepository
 import com.example.trennex.data.local.AccountScope
 import com.example.trennex.ui.cart.CartUiState
+import com.example.trennex.analytics.AppAnalytics
+import com.example.trennex.analytics.AnalyticsEvents
 import com.example.trennex.utils.cart.CartStore
 import com.google.firebase.functions.FirebaseFunctionsException
 import kotlinx.coroutines.flow.SharingStarted
@@ -79,12 +81,12 @@ class CartViewModel: ViewModel() {
         }
 
         val checkoutOwner = AccountScope.currentOwner()
+        _checkoutState.value = CheckoutState(isSubmitting = true)
         viewModelScope.launch {
-            _checkoutState.value = CheckoutState(isSubmitting = true)
             try {
                 val address = uiState.value.selectedAddress
                     ?: throw IllegalStateException("Please select a delivery address")
-                val requestId = userRepository.submitOrderRequest(
+                val orderId = userRepository.submitOrderRequest(
                     items = selectedItems.map { item ->
                         buildMap<String, Any> {
                             if (item.productId != null && item.variantId != null) {
@@ -108,9 +110,19 @@ class CartViewModel: ViewModel() {
                     ),
                     paymentMethod = "COD",
                 )
-                android.util.Log.d("CartViewModel", "order request accepted: $requestId")
+                android.util.Log.d("CartViewModel", "order confirmed")
                 CartStore.deleteSelectedItems(checkoutOwner)
                 _checkoutState.value = CheckoutState(isSuccess = true)
+                // Analytics is intentionally outside the checkout success path.
+                if (AppAnalytics.get().isCollectionEnabled) {
+                    try {
+                        val (totalMinor, items) = userRepository.getConfirmedCodOrderAnalytics(orderId)
+                        AppAnalytics.get().trackPurchaseOnce(orderId,
+                            AnalyticsEvents.confirmedCodOrder(orderId, totalMinor, items))
+                    } catch (analyticsError: Exception) {
+                        android.util.Log.w("CartViewModel", "Confirmed order analytics unavailable", analyticsError)
+                    }
+                }
             } catch (e: Exception) {
                 android.util.Log.e("CartViewModel", "order request failed; cart was preserved", e)
                 _checkoutState.value = CheckoutState(
