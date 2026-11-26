@@ -27,6 +27,10 @@ import androidx.lifecycle.repeatOnLifecycle
 import androidx.navigation.fragment.findNavController
 import androidx.recyclerview.widget.LinearLayoutManager
 import com.example.trennex.R
+import com.example.trennex.analytics.AppAnalytics
+import com.example.trennex.analytics.AnalyticsEvent
+import com.example.trennex.analytics.AnalyticsNames
+import com.example.trennex.analytics.AnalyticsParams
 import com.example.trennex.databinding.BottomSheetSelectLocationBinding
 import com.example.trennex.databinding.FragmentCheckoutBinding
 import com.example.trennex.repository.user.AddressEntity
@@ -116,6 +120,9 @@ class CheckoutFragment : Fragment(R.layout.fragment_checkout) {
                 Toast.makeText(requireContext(), "Connect to the internet to continue checkout.", Toast.LENGTH_LONG).show()
                 return@setOnClickListener
             }
+            if (viewModel.uiState.value.selectedAddress != null)
+                AppAnalytics.get().track(AnalyticsEvent(AnalyticsNames.ADD_SHIPPING_INFO,
+                    mapOf(AnalyticsParams.CURRENCY to "INR")))
             findNavController().navigate(R.id.action_checkoutFragment_to_paymentFragment)
         }
     }

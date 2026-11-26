@@ -12,6 +12,10 @@ import androidx.lifecycle.repeatOnLifecycle
 import androidx.navigation.fragment.findNavController
 import androidx.recyclerview.widget.LinearLayoutManager
 import com.example.trennex.R
+import com.example.trennex.analytics.AppAnalytics
+import com.example.trennex.analytics.AnalyticsEvents
+import com.example.trennex.analytics.AnalyticsNames
+import com.example.trennex.analytics.AnalyticsParams
 import com.example.trennex.data.model.ProductResponse
 import com.example.trennex.databinding.FragmentCategoryProductsBinding
 import com.example.trennex.databinding.SheetSearchSortBinding
@@ -31,6 +35,7 @@ class CategoryProductsFragment : Fragment(R.layout.fragment_category_products) {
     private val binding get() = _binding!!
     private val repository = ProductRepository()
     private var products = emptyList<ProductResponse>()
+    private var lastTrackedListIds: List<String>? = null
     private var sortOrder = SearchSortOrder.RELEVANCE
     private var loadJob: Job? = null
 
@@ -40,6 +45,9 @@ class CategoryProductsFragment : Fragment(R.layout.fragment_category_products) {
         val slug = requireArguments().getString(ARG_CATEGORY).orEmpty()
         val tile = requireArguments().getString(ARG_TILE)
         val adapter = SearchResultAdapter { product ->
+            AppAnalytics.get().track(AnalyticsEvents.commerce(AnalyticsNames.SELECT_ITEM,
+                listOf(AnalyticsEvents.item(product)),
+                extra = mapOf(AnalyticsParams.ITEM_LIST_ID to "category_products")))
             findNavController().navigate(R.id.productDetailFragment,
                 Bundle().apply { putInt("productId", product.id) })
         }
@@ -69,6 +77,13 @@ class CategoryProductsFragment : Fragment(R.layout.fragment_category_products) {
             try {
                 products = withTimeout(15_000) {
                     CategoryProductFilter.filter(repository.getProductByCategory(slug), tile)
+                }
+                val trackedIds = products.take(20).map { it.catalogProductId ?: "legacy:${it.id}" }
+                if (trackedIds.isNotEmpty() && lastTrackedListIds != trackedIds) {
+                    lastTrackedListIds = trackedIds
+                    AppAnalytics.get().track(AnalyticsEvents.commerce(
+                        AnalyticsNames.VIEW_ITEM_LIST, products.take(20).map(AnalyticsEvents::item),
+                        extra = mapOf(AnalyticsParams.ITEM_LIST_ID to "category_products")))
                 }
                 if (_binding == null) return@launch
                 binding.sortButton.isVisible = products.isNotEmpty()
