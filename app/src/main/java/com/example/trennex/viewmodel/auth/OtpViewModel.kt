@@ -1,6 +1,10 @@
 package com.example.trennex.viewmodel.auth
 
 import android.app.Activity
+import com.example.trennex.analytics.AppAnalytics
+import com.example.trennex.analytics.AnalyticsEvent
+import com.example.trennex.analytics.AnalyticsNames
+import com.example.trennex.analytics.AnalyticsParams
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.trennex.ui.auth.otp.OtpUiState
@@ -48,7 +52,10 @@ class OtpViewModel: ViewModel(){
         _state.value = OtpUiState.Loading
         val credential = PhoneAuthProvider.getCredential(verificationId,code)
         auth.signInWithCredential(credential)
-            .addOnSuccessListener { _state.value = OtpUiState.Success }
+            .addOnSuccessListener { result ->
+                trackSignIn(result.additionalUserInfo?.isNewUser == true)
+                _state.value = OtpUiState.Success
+            }
             .addOnFailureListener { exception ->
                 _state.value = OtpUiState.Error(exception.localizedMessage ?: "Invalid OTP")
             }
@@ -72,7 +79,10 @@ class OtpViewModel: ViewModel(){
         val callbacks = object : PhoneAuthProvider.OnVerificationStateChangedCallbacks() {
             override fun onVerificationCompleted(credential: PhoneAuthCredential) {
                 auth.signInWithCredential(credential)
-                    .addOnSuccessListener { _state.value = OtpUiState.Success }
+                    .addOnSuccessListener { result ->
+                        trackSignIn(result.additionalUserInfo?.isNewUser == true)
+                        _state.value = OtpUiState.Success
+                    }
                     .addOnFailureListener {exception ->
                         _state.value = OtpUiState.Error(
                             exception.localizedMessage ?: "Phone verification failed"
@@ -107,6 +117,11 @@ class OtpViewModel: ViewModel(){
                 delay(1000)
             }
         }
+    }
+    private fun trackSignIn(isNewUser: Boolean) {
+        AppAnalytics.get().track(AnalyticsEvent(
+            if (isNewUser) AnalyticsNames.SIGN_UP else AnalyticsNames.LOGIN,
+            mapOf(AnalyticsParams.METHOD to "phone")))
     }
     private companion object {
         const val OTP_LENGTH = 6

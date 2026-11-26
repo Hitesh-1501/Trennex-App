@@ -14,6 +14,10 @@ import androidx.core.view.WindowInsetsControllerCompat
 import androidx.navigation.NavController
 import androidx.navigation.fragment.NavHostFragment
 import com.example.trennex.R
+import com.example.trennex.analytics.AppAnalytics
+import com.example.trennex.analytics.AnalyticsEvent
+import com.example.trennex.analytics.AnalyticsNames
+import com.example.trennex.analytics.AnalyticsParams
 import com.example.trennex.databinding.ActivityMainBinding
 import com.example.trennex.databinding.ItemsToolbarBinding
 import com.example.trennex.databinding.NavigationIconToolbarBinding
@@ -45,10 +49,17 @@ import kotlinx.coroutines.flow.collectLatest
 class MainActivity : AppCompatActivity() {
     private lateinit var binding: ActivityMainBinding
     private lateinit var  navController: NavController
+    private var lastTrackedScreenId: Int? = null
+
+    override fun onSaveInstanceState(outState: Bundle) {
+        lastTrackedScreenId?.let { outState.putInt("lastTrackedScreenId", it) }
+        super.onSaveInstanceState(outState)
+    }
     private val viewModel: MainViewModel by viewModels()
     
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        lastTrackedScreenId = savedInstanceState?.getInt("lastTrackedScreenId")
         
         // Prevent multiple instances of MainActivity when launched from the home screen
         if (!isTaskRoot) {
@@ -81,6 +92,11 @@ class MainActivity : AppCompatActivity() {
         observeViewModel()
 
         navController.addOnDestinationChangedListener {_, destination, _ ->
+            if (lastTrackedScreenId != destination.id) {
+                lastTrackedScreenId = destination.id
+                AppAnalytics.get().track(AnalyticsEvent(AnalyticsNames.SCREEN_VIEW,
+                    mapOf(AnalyticsParams.SCREEN_NAME to resources.getResourceEntryName(destination.id))))
+            }
             when(destination.id){
                 R.id.splashFragment, R.id.onboardingFragment, R.id.loginFragment,R.id.imagePreviewFragment ->{
                     showToolBar(ToolBarType.NONE)
