@@ -273,6 +273,15 @@
                 <include layout="@layout/item_profile_row" android:id="@+id/terms_section"/>
             </LinearLayout>
 
+            <com.google.android.material.materialswitch.MaterialSwitch
+                android:id="@+id/analyticsConsent"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginHorizontal="24dp"
+                android:layout_marginTop="16dp"
+                android:text="Share anonymous app usage analytics"
+                android:contentDescription="Allow anonymous app usage analytics" />
+
             <com.google.android.material.button.MaterialButton
                 android:id="@+id/btnLogout"
                 style="@style/Widget.MaterialComponents.Button.OutlinedButton"
