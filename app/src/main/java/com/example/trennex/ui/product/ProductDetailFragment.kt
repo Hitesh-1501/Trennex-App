@@ -14,6 +14,9 @@ import androidx.navigation.fragment.FragmentNavigatorExtras
 import androidx.navigation.fragment.findNavController
 import androidx.recyclerview.widget.LinearLayoutManager
 import com.example.trennex.R
+import com.example.trennex.analytics.AppAnalytics
+import com.example.trennex.analytics.AnalyticsEvents
+import com.example.trennex.analytics.AnalyticsNames
 import com.example.trennex.ui.common.NetworkStatus
 import com.example.trennex.databinding.FragmentProductDetailBinding
 import com.example.trennex.ui.product.adapter.ColorVariantAdapter
@@ -149,6 +152,7 @@ class ProductDetailFragment : Fragment(R.layout.fragment_product_detail), WishLi
     private var cartReturnPolicy: String = ""
     private var cartDeliveryDetails: String = ""
     private var currentProduct: ProductResponse? = null
+    private var lastTrackedProductId: Int? = null
 
 
     override fun onCreateView(
@@ -162,6 +166,7 @@ class ProductDetailFragment : Fragment(R.layout.fragment_product_detail), WishLi
             selectedVariant = it.getString("selected_variant", "")
             selectedColorPosition = it.getInt("selected_color_position", 0)
             selectedVariantPosition = it.getInt("selected_variant_position", 0)
+            lastTrackedProductId = it.getInt("last_tracked_product_id", 0).takeIf { id -> id != 0 }
         }
 
         return binding.root
@@ -228,6 +233,12 @@ class ProductDetailFragment : Fragment(R.layout.fragment_product_detail), WishLi
                 viewModel.products.collect { response ->
                     response?.let {product ->
                         currentProduct = product
+                        if (lastTrackedProductId != product.id) {
+                            lastTrackedProductId = product.id
+                            AppAnalytics.get().track(AnalyticsEvents.commerce(AnalyticsNames.VIEW_ITEM,
+                                listOf(AnalyticsEvents.item(product,
+                                    product.catalogVariants.getOrNull(selectedVariantPosition)?.id))))
+                        }
                         val price = product.price
                         val discount = product.discountPercentage
                         val mrp = price / (1.0 - discount / 100.0)
@@ -741,6 +752,7 @@ class ProductDetailFragment : Fragment(R.layout.fragment_product_detail), WishLi
         outState.putString("selected_variant", selectedVariant)
         outState.putInt("selected_color_position", selectedColorPosition)
         outState.putInt("selected_variant_position", selectedVariantPosition)
+        lastTrackedProductId?.let { outState.putInt("last_tracked_product_id", it) }
     }
 
     private fun bindTopFeatures(product: ProductResponse){

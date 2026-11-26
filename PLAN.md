@@ -10,7 +10,7 @@ TrenNex is a production-grade **portfolio and resume project**, not currently a 
 
 ## Current focus
 
-Roadmap **Milestone A: stability** has its core implementation complete, with acceptance verification pending. On 2026-11-25 the owner explicitly approved a sequencing exception: proceed with **Milestone B: Engineering Foundation** before closing A's remaining checks. Implement B incrementally, starting with B1 GitHub Actions CI/CD. After B, run combined A+B staging regression tests and request the owner's approval before starting C. Keep every unfinished A check in `DEVELOPMENT_STATUS.md`; this exception does not waive acceptance.
+Roadmap **Milestone A: stability** has its core implementation complete, with acceptance verification pending. On 2026-11-25 the owner explicitly approved a sequencing exception: proceed with **Milestone B: Engineering Foundation** before closing A's remaining checks. B1 GitHub Actions CI/CD is complete by owner acceptance; B2 Firebase Analytics is the current implementation slice. After B, run combined A+B staging regression tests and request the owner's approval before starting C. Keep every unfinished A check in `DEVELOPMENT_STATUS.md`; this exception does not waive acceptance.
 
 ## Environment gate
 

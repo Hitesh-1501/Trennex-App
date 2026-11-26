@@ -15,6 +15,10 @@ import androidx.lifecycle.lifecycleScope
 import androidx.lifecycle.repeatOnLifecycle
 import androidx.navigation.fragment.findNavController
 import com.example.trennex.R
+import com.example.trennex.analytics.AppAnalytics
+import com.example.trennex.analytics.AnalyticsEvent
+import com.example.trennex.analytics.AnalyticsNames
+import com.example.trennex.analytics.AnalyticsParams
 import com.example.trennex.databinding.FragmentPaymentBinding
 import com.example.trennex.ui.cart.CartUiState
 import com.example.trennex.ui.main.MainActivity
@@ -61,6 +65,11 @@ class PaymentFragment : Fragment(R.layout.fragment_payment) {
                 Toast.makeText(requireContext(), "Connect to the internet before placing your order.", Toast.LENGTH_LONG).show()
                 return@setOnClickListener
             }
+            if (!viewModel.checkoutState.value.isSubmitting && !viewModel.checkoutState.value.isSuccess &&
+                viewModel.uiState.value.selectedAddress != null &&
+                viewModel.uiState.value.selectedItems > 0)
+                AppAnalytics.get().track(AnalyticsEvent(AnalyticsNames.ADD_PAYMENT_INFO,
+                    mapOf(AnalyticsParams.PAYMENT_TYPE to "COD", AnalyticsParams.CURRENCY to "INR")))
             viewModel.placeOrder(isOnline = true)
         }
         toggleAccordion(5)
