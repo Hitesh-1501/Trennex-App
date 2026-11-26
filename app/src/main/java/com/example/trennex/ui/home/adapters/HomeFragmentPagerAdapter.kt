@@ -11,7 +11,7 @@ class HomeFragmentPagerAdapter(
 ): FragmentStateAdapter(fragment){
     override fun createFragment(position: Int): Fragment {
         val page = banners[position]
-        return HomePageFragment.newInstance(page.banner)
+        return HomePageFragment.newInstance(page.banner, page.id)
     }
 
     override fun getItemCount(): Int {

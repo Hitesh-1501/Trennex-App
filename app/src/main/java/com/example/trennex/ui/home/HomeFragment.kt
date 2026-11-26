@@ -35,6 +35,11 @@ import androidx.recyclerview.widget.GridLayoutManager
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.viewpager2.widget.ViewPager2
 import com.example.trennex.R
+import com.example.trennex.analytics.AppAnalytics
+import com.example.trennex.analytics.AnalyticsEvent
+import com.example.trennex.analytics.AnalyticsEvents
+import com.example.trennex.analytics.AnalyticsNames
+import com.example.trennex.analytics.AnalyticsParams
 import com.example.trennex.databinding.BottomSheetSelectLocationBinding
 import com.example.trennex.databinding.DialogLocationPermissionBinding
 import com.example.trennex.databinding.FragmentHomeBinding
@@ -413,6 +418,8 @@ class HomeFragment : Fragment(R.layout.fragment_home) {
         binding.rvCategories.apply {
             layoutManager = LinearLayoutManager(requireContext(), LinearLayoutManager.HORIZONTAL,false)
             adapter = CategoryAdapter(orderedCategories){
+                AppAnalytics.get().track(AnalyticsEvent("select_category",
+                    mapOf(AnalyticsParams.ITEM_CATEGORY to (it.slug ?: "all"))))
                 viewModel.fetchProductsByCategory(it.slug)
             }
         }
@@ -422,10 +429,16 @@ class HomeFragment : Fragment(R.layout.fragment_home) {
     private fun setupProducts(list: List<ProductModel>){
         if (currentProducts == list) return
         currentProducts = list
+        if (list.isNotEmpty()) AppAnalytics.get().track(AnalyticsEvents.commerce(
+            AnalyticsNames.VIEW_ITEM_LIST, list.take(20).map(AnalyticsEvents::item),
+            extra = mapOf(AnalyticsParams.ITEM_LIST_ID to "home_products")))
         binding.rvProducts.apply {
             layoutManager = GridLayoutManager(requireContext(),3)
             isNestedScrollingEnabled = false
             adapter = ProductAdapter(list) {product->
+                AppAnalytics.get().track(AnalyticsEvents.commerce(AnalyticsNames.SELECT_ITEM,
+                    listOf(AnalyticsEvents.item(product)),
+                    extra = mapOf(AnalyticsParams.ITEM_LIST_ID to "home_products")))
                 val action = HomeFragmentDirections.actionHomeFragmentToProductDetailFragment(product.id)
                 findNavController().navigate(action)
             }
@@ -436,6 +449,9 @@ class HomeFragment : Fragment(R.layout.fragment_home) {
     private fun setupTopDeals(list: List<ProductModel>) {
         if (currentTopDeals == list) return
         currentTopDeals = list
+        if (list.isNotEmpty()) AppAnalytics.get().track(AnalyticsEvents.commerce(
+            AnalyticsNames.VIEW_ITEM_LIST, list.take(20).map(AnalyticsEvents::item),
+            extra = mapOf(AnalyticsParams.ITEM_LIST_ID to "top_deals")))
         
         val hasDeals = list.isNotEmpty()
         binding.topDealsHeader.isVisible = hasDeals
@@ -447,6 +463,9 @@ class HomeFragment : Fragment(R.layout.fragment_home) {
             layoutManager = GridLayoutManager(requireContext(), 2) // Larger items for top deals
             isNestedScrollingEnabled = false
             adapter = ProductAdapter(list) { product ->
+                AppAnalytics.get().track(AnalyticsEvents.commerce(AnalyticsNames.SELECT_ITEM,
+                    listOf(AnalyticsEvents.item(product)),
+                    extra = mapOf(AnalyticsParams.ITEM_LIST_ID to "top_deals")))
                 val action = HomeFragmentDirections.actionHomeFragmentToProductDetailFragment(product.id)
                 findNavController().navigate(action)
             }
@@ -457,6 +476,9 @@ class HomeFragment : Fragment(R.layout.fragment_home) {
     private fun setupNewArrivals(list: List<ProductModel>) {
         if (currentNewArrivals == list) return
         currentNewArrivals = list
+        if (list.isNotEmpty()) AppAnalytics.get().track(AnalyticsEvents.commerce(
+            AnalyticsNames.VIEW_ITEM_LIST, list.take(20).map(AnalyticsEvents::item),
+            extra = mapOf(AnalyticsParams.ITEM_LIST_ID to "new_arrivals")))
         
         val hasArrivals = list.isNotEmpty()
         binding.newArrivalsHeader.isVisible = hasArrivals
@@ -468,6 +490,9 @@ class HomeFragment : Fragment(R.layout.fragment_home) {
             layoutManager = GridLayoutManager(requireContext(), 2) 
             isNestedScrollingEnabled = false
             adapter = ProductAdapter(list) { product ->
+                AppAnalytics.get().track(AnalyticsEvents.commerce(AnalyticsNames.SELECT_ITEM,
+                    listOf(AnalyticsEvents.item(product)),
+                    extra = mapOf(AnalyticsParams.ITEM_LIST_ID to "new_arrivals")))
                 val action = HomeFragmentDirections.actionHomeFragmentToProductDetailFragment(product.id)
                 findNavController().navigate(action)
             }
