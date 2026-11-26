@@ -30,6 +30,9 @@ import androidx.lifecycle.repeatOnLifecycle
 import androidx.navigation.fragment.findNavController
 import androidx.recyclerview.widget.LinearLayoutManager
 import com.example.trennex.R
+import com.example.trennex.analytics.AppAnalytics
+import com.example.trennex.analytics.AnalyticsEvents
+import com.example.trennex.analytics.AnalyticsNames
 import com.example.trennex.databinding.BottomSheetSelectLocationBinding
 import com.example.trennex.databinding.DialogLocationPermissionBinding
 import com.example.trennex.databinding.FragmentCartBinding
@@ -68,6 +71,7 @@ class CartFragment : Fragment(R.layout.fragment_cart) {
     private lateinit var fusedLocationClient: FusedLocationProviderClient
     private lateinit var saveAddressAdapter: SaveAddressAdapter
     private var wasOffline = false
+    private var cartViewTracked = false
 
     private val cartAdapter by lazy {
         CartAdapter(
@@ -142,7 +146,11 @@ class CartFragment : Fragment(R.layout.fragment_cart) {
         }
 
         binding.btnPlaceOrder.setOnClickListener {
+            if (findNavController().currentDestination?.id != R.id.cartFragment) return@setOnClickListener
             if (viewModel.uiState.value.selectedItems > 0) {
+                val selected = viewModel.uiState.value.items.filter { it.isSelected }
+                AppAnalytics.get().track(AnalyticsEvents.commerce(AnalyticsNames.BEGIN_CHECKOUT,
+                    selected.map(AnalyticsEvents::item), value = viewModel.uiState.value.totalPrice))
                 findNavController().navigate(R.id.action_cartFragment_to_checkoutFragment)
             } else {
                 Toast.makeText(requireContext(), "Please select at least one item to checkout", Toast.LENGTH_SHORT).show()
@@ -162,6 +170,11 @@ class CartFragment : Fragment(R.layout.fragment_cart) {
 
 
     private fun render(state: CartUiState, online: Boolean, remoteStatus: CartStore.RemoteStatus){
+        if (!cartViewTracked && (state.items.isNotEmpty() || remoteStatus == CartStore.RemoteStatus.READY)) {
+            cartViewTracked = true
+            AppAnalytics.get().track(AnalyticsEvents.commerce(AnalyticsNames.VIEW_CART,
+                state.items.map(AnalyticsEvents::item)))
+        }
         if (online && wasOffline) CartStore.refreshRemote()
         wasOffline = !online
         val hasItems = state.totalItems > 0

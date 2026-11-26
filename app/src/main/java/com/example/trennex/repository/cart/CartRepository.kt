@@ -89,6 +89,9 @@ class CartRepository(
         addItemLocally(ownerId, item)
     }
 
+    suspend fun getLocalItem(ownerId: String, cartKey: String): CartItemModel? =
+        dao.getItemByKey(ownerId, cartKey)?.toModel()
+
     suspend fun addItemLocally(ownerId: String, item: CartItemModel): CartItemModel = mutationLock.withLock {
         database.withTransaction {
             val updated = mergeItem(ownerId, item)
