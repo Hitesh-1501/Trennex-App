@@ -25,6 +25,31 @@ class AnalyticsEventsTest {
         assertTrue(AnalyticsPrivacy.isSafe(AnalyticsEvents.search("photo", 2)))
     }
 
+    @Test fun rejectsSensitiveFieldsInsideCommerceItems() {
+        val item = AnalyticsItem("product_1", "variant_1", "mobiles", 999.0).parameters()
+        val safeEvent = AnalyticsEvents.commerce(AnalyticsNames.ADD_TO_CART,
+            listOf(AnalyticsItem("product_1", "variant_1", "mobiles", 999.0)))
+        assertTrue(AnalyticsPrivacy.isSafe(safeEvent))
+        assertFalse(AnalyticsPrivacy.isSafe(AnalyticsEvent(AnalyticsNames.ADD_TO_CART,
+            mapOf(AnalyticsParams.CURRENCY to "INR", AnalyticsParams.ITEMS to
+                listOf(item + ("address" to "private delivery address"))))))
+    }
+
+    @Test fun purchaseGateRejectsMismatchedAndSensitiveOrders() {
+        val reserved = mutableSetOf<String>()
+        val store = object : PurchaseEventGate.Storage {
+            override fun contains(orderId: String) = orderId in reserved
+            override fun reserve(orderId: String) = reserved.add(orderId)
+        }
+        val gate = PurchaseEventGate(store)
+        val valid = AnalyticsEvents.confirmedCodOrder("order_123", 10000,
+            listOf(AnalyticsItem("product_1", price = 100.0)))
+        assertFalse(gate.reserve("order_456", valid))
+        assertFalse(gate.reserve("order_123", valid.copy(parameters =
+            valid.parameters + ("phone" to "1234567890"))))
+        assertTrue(gate.reserve("order_123", valid))
+    }
+
     @Test fun purchaseReservationPreventsDuplicateCallbacksAndRecreation() {
         val reserved = mutableSetOf<String>()
         val store = object : PurchaseEventGate.Storage {
