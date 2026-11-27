@@ -8,22 +8,22 @@ initializeApp();
 const db = getFirestore();
 const REGION = 'asia-south1';
 const MAX_QUANTITY = 10;
+const safeId = (value) => typeof value === 'string'
+  && /^[A-Za-z0-9_-]{1,128}$/.test(value);
+const safeText = (value, max) => typeof value === 'string'
+  && value.trim().length > 0 && value.length <= max;
+const allowedKeys = (value, keys) => value && typeof value === 'object'
+  && !Array.isArray(value) && Object.keys(value).every((key) => keys.includes(key));
 
 exports.askShoppingAssistant = onCall({ region: REGION, maxInstances: 2, concurrency: 10,
   timeoutSeconds: 30 }, async (request) => {
   if (!request.auth) {
     throw new HttpsError('unauthenticated', 'Sign in to use the shopping assistant.');
   }
-  const question = validateQuestion(request.data?.question);
+  const question = allowedKeys(request.data, ['question'])
+    ? validateQuestion(request.data.question) : null;
   if (!question) {
     throw new HttpsError('invalid-argument', 'Enter a question between 3 and 500 characters.');
-  }
-
-  const snapshot = await db.collection('products').where('status', '==', 'ACTIVE').limit(100).get();
-  const matches = selectProducts(question, snapshot.docs.map((doc) => ({ id: doc.id, ...doc.data() })));
-  if (!matches.length) {
-    return { answer: 'I could not find a matching product in the current TrenNex catalog. Try a product name or category.',
-      products: [], remainingToday: null };
   }
 
   const day = new Date().toISOString().slice(0, 10);
@@ -42,6 +42,13 @@ exports.askShoppingAssistant = onCall({ region: REGION, maxInstances: 2, concurr
     transaction.set(userRef, { count: userCount + 1 }, { merge: true });
     return 11 - userCount;
   });
+
+  const snapshot = await db.collection('products').where('status', '==', 'ACTIVE').limit(100).get();
+  const matches = selectProducts(question, snapshot.docs.map((doc) => ({ id: doc.id, ...doc.data() })));
+  if (!matches.length) {
+    return { answer: 'I could not find a matching product in the current TrenNex catalog. Try a product name or category.',
+      products: [], remainingToday };
+  }
 
   try {
     const project = process.env.GCLOUD_PROJECT || process.env.GCP_PROJECT;
@@ -73,14 +80,13 @@ exports.askShoppingAssistant = onCall({ region: REGION, maxInstances: 2, concurr
       },
     );
     if (!response.ok) {
-      const detail = await response.text();
-      throw new Error(`Vertex AI failed: ${response.status} ${detail.slice(0, 700)}`);
+      throw new Error(`Vertex AI status ${response.status}`);
     }
     const result = await response.json();
     const answerText = result.candidates?.[0]?.content?.parts?.map((part) => part.text || '').join('');
     return { ...parseGroundedAnswer(answerText, matches), remainingToday };
   } catch (error) {
-    console.error('Shopping assistant failed', error);
+    console.error('Shopping assistant failed', { code: 'upstream_unavailable' });
     throw new HttpsError('unavailable', 'Shopping help is temporarily unavailable. Please try again later.');
   }
 });
@@ -91,7 +97,7 @@ exports.createOrder = onCall({ region: REGION }, async (request) => {
   }
 
   const requestId = request.data?.requestId;
-  if (typeof requestId !== 'string' || requestId.trim().length === 0) {
+  if (!allowedKeys(request.data, ['requestId']) || !safeId(requestId)) {
     throw new HttpsError('invalid-argument', 'A checkout request ID is required.');
   }
 
@@ -113,20 +119,45 @@ exports.createOrder = onCall({ region: REGION }, async (request) => {
     if (rawItems.length === 0 || rawItems.length > 50) {
       throw new HttpsError('invalid-argument', 'Checkout must contain between one and fifty items.');
     }
-    if (checkout.payment?.method !== 'COD') {
+    if (!allowedKeys(checkout.payment, ['method']) || checkout.payment.method !== 'COD') {
       throw new HttpsError('invalid-argument', 'Only cash on delivery is currently supported.');
     }
-    if (typeof checkout.shippingAddress?.address !== 'string'
-        || !checkout.shippingAddress.address.trim()
-        || typeof checkout.recipient?.name !== 'string'
-        || !checkout.recipient.name.trim()) {
+    if (!allowedKeys(checkout.shippingAddress, [
+      'address', 'flatNo', 'placeName', 'addressType', 'latitude', 'longitude',
+    ]) || !safeText(checkout.shippingAddress.address, 500)
+        || !allowedKeys(checkout.recipient, ['name', 'phone'])
+        || !safeText(checkout.recipient.name, 120)
+        || (checkout.recipient.phone !== undefined
+          && !safeText(checkout.recipient.phone, 20))) {
       throw new HttpsError('invalid-argument', 'A delivery address and recipient name are required.');
+    }
+    if ((checkout.shippingAddress.latitude !== undefined
+        && (typeof checkout.shippingAddress.latitude !== 'number'
+          || checkout.shippingAddress.latitude < -90 || checkout.shippingAddress.latitude > 90))
+        || (checkout.shippingAddress.longitude !== undefined
+          && (typeof checkout.shippingAddress.longitude !== 'number'
+            || checkout.shippingAddress.longitude < -180 || checkout.shippingAddress.longitude > 180))) {
+      throw new HttpsError('invalid-argument', 'Delivery coordinates are invalid.');
+    }
+    for (const field of ['flatNo', 'placeName', 'addressType']) {
+      if (checkout.shippingAddress[field] !== undefined
+          && (typeof checkout.shippingAddress[field] !== 'string'
+            || checkout.shippingAddress[field].length > 200)) {
+        throw new HttpsError('invalid-argument', 'Delivery address fields are invalid.');
+      }
     }
 
     const resolvedItems = [];
     const inventoryReservations = new Map();
     for (const rawItem of rawItems) {
-      const quantity = Number(rawItem.quantity);
+      if (!allowedKeys(rawItem, ['productId', 'variantId', 'legacyId', 'quantity'])
+          || (rawItem.productId !== undefined && !safeId(rawItem.productId))
+          || (rawItem.variantId !== undefined && !safeId(rawItem.variantId))
+          || (rawItem.productId === undefined
+            && (!Number.isSafeInteger(rawItem.legacyId) || rawItem.legacyId < 0))) {
+        throw new HttpsError('invalid-argument', 'A checkout item is invalid.');
+      }
+      const quantity = rawItem.quantity;
       if (!Number.isInteger(quantity) || quantity < 1 || quantity > MAX_QUANTITY) {
         throw new HttpsError('invalid-argument', 'Each item quantity must be between one and ten.');
       }
@@ -134,7 +165,7 @@ exports.createOrder = onCall({ region: REGION }, async (request) => {
       const productSnapshot = rawItem.productId
         ? await transaction.get(db.doc(`products/${rawItem.productId}`))
         : (await transaction.get(
-            db.collection('products').where('legacyId', '==', Number(rawItem.legacyId)).limit(1),
+            db.collection('products').where('legacyId', '==', rawItem.legacyId).limit(1),
           )).docs[0];
 
       if (!productSnapshot || !productSnapshot.exists) {
@@ -157,7 +188,8 @@ exports.createOrder = onCall({ region: REGION }, async (request) => {
       const variant = variantSnapshot.data();
       const priceMinor = Number(variant.priceMinor);
       const mrpMinor = Number(variant.mrpMinor);
-      if (!Number.isInteger(priceMinor) || priceMinor < 0 || !Number.isInteger(mrpMinor)) {
+      if (!Number.isSafeInteger(priceMinor) || priceMinor < 0
+          || !Number.isSafeInteger(mrpMinor) || mrpMinor < 0) {
         throw new HttpsError('failed-precondition', 'A product has invalid pricing.');
       }
 

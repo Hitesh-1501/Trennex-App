@@ -51,9 +51,13 @@ describe('catalog rules', () => {
   test('the public can read active products but not drafts', async () => {
     await seed('products/active-shirt', { status: 'ACTIVE', title: 'Active shirt' });
     await seed('products/draft-shirt', { status: 'DRAFT', title: 'Draft shirt' });
+    await seed('products/draft-active-shirt', { status: 'DRAFT', active: true, title: 'Draft' });
+    await seed('products/draft-legacy-shirt', { id: 3, title: 'Draft', price: 1, status: 'DRAFT' });
 
     await assertSucceeds(getDoc(doc(publicClient(), 'products/active-shirt')));
     await assertFails(getDoc(doc(publicClient(), 'products/draft-shirt')));
+    await assertFails(getDoc(doc(publicClient(), 'products/draft-active-shirt')));
+    await assertFails(getDoc(doc(publicClient(), 'products/draft-legacy-shirt')));
   });
 
   test('the current unversioned product and category documents remain readable during migration', async () => {
@@ -140,8 +144,8 @@ describe('order migration rules', () => {
     }));
   });
 
-  test('the current legacy pending-order write remains temporarily supported', async () => {
-    await assertSucceeds(setDoc(doc(user('buyer-1'), 'users/buyer-1/orders/101'), {
+  test('legacy orders stay readable but customer-created orders are denied', async () => {
+    const legacyOrder = {
       id: 101,
       title: 'T-shirt',
       description: 'Legacy checkout item',
@@ -152,7 +156,11 @@ describe('order migration rules', () => {
       status: 'Pending',
       orderDate: '2026-11-08',
       expectedDeliveryDate: '2026-11-12',
-    }));
+    };
+    await seed('users/buyer-1/orders/101', legacyOrder);
+    await assertSucceeds(getDoc(doc(user('buyer-1'), 'users/buyer-1/orders/101')));
+    await assertFails(getDoc(doc(user('buyer-2'), 'users/buyer-1/orders/101')));
+    await assertFails(setDoc(doc(user('buyer-1'), 'users/buyer-1/orders/102'), legacyOrder));
   });
 
   test('users can create immutable checkout requests but cannot create orders directly', async () => {
@@ -183,6 +191,64 @@ describe('order migration rules', () => {
       doc(user('buyer-1'), 'users/buyer-1/orderRequests/request-1'),
       { status: 'CONFIRMED' },
     ));
+  });
+});
+
+describe('B4 access boundaries', () => {
+  test('signed-out and another account cannot read private customer data', async () => {
+    await seed('users/buyer-1/savedAddresses/home', { address: 'Private Street' });
+    await seed('users/buyer-1/cartItems/sku', { productId: 'shirt', variantId: 'sku', quantity: 1 });
+    await seed('users/buyer-1/wishlistItems/sku', { productId: 'shirt', variantId: 'sku' });
+    await seed('users/buyer-1/collections/favorites', { name: 'Favorites' });
+    for (const pathName of ['savedAddresses/home', 'cartItems/sku', 'wishlistItems/sku', 'collections/favorites']) {
+      await assertFails(getDoc(doc(publicClient(), `users/buyer-1/${pathName}`)));
+      await assertFails(getDoc(doc(user('buyer-2'), `users/buyer-1/${pathName}`)));
+      await assertSucceeds(getDoc(doc(user('buyer-1'), `users/buyer-1/${pathName}`)));
+    }
+  });
+
+  test('client cannot escalate privilege or write inventory, prices, or unknown paths', async () => {
+    await assertFails(setDoc(doc(user('buyer-1'), 'users/buyer-1'), { role: 'admin' }));
+    await assertFails(setDoc(doc(user('buyer-1'), 'inventory/sku'), { available: 100 }));
+    await assertFails(setDoc(doc(user('buyer-1'), 'products/shirt'), { status: 'ACTIVE', priceMinor: 1 }));
+    await assertFails(setDoc(doc(publicClient(), 'banners/banner'), { active: true }));
+    await assertFails(setDoc(doc(user('buyer-1'), 'unexpected/data'), { value: true }));
+  });
+
+  test('profile and cart reject malformed or unexpected fields', async () => {
+    await assertFails(setDoc(doc(user('buyer-1'), 'users/buyer-1'), { name: 123 }));
+    await assertFails(setDoc(doc(user('buyer-1'), 'users/buyer-1'), { name: 'Buyer', admin: true }));
+    const cart = { schemaVersion: 1, productId: 'shirt', variantId: 'sku', quantity: 1,
+      selected: true, createdAt: serverTimestamp(), updatedAt: serverTimestamp() };
+    await assertSucceeds(setDoc(doc(user('buyer-1'), 'users/buyer-1/cartItems/sku'), cart));
+    await assertFails(setDoc(doc(user('buyer-1'), 'users/buyer-1/cartItems/bad'), { ...cart, quantity: '2' }));
+    await assertFails(setDoc(doc(user('buyer-1'), 'users/buyer-1/cartItems/bad'), { ...cart, quantity: 11 }));
+    await assertFails(setDoc(doc(user('buyer-1'), 'users/buyer-1/cartItems/bad'), { ...cart, priceMinor: 1 }));
+    await assertFails(setDoc(doc(user('buyer-2'), 'users/buyer-1/cartItems/sku'), cart));
+  });
+
+  test('profile creation time stays immutable and address coordinates are bounded', async () => {
+    await assertSucceeds(setDoc(doc(user('buyer-1'), 'users/buyer-1'),
+      { name: 'Buyer', createdAt: serverTimestamp() }));
+    await assertFails(updateDoc(doc(user('buyer-1'), 'users/buyer-1'),
+      { createdAt: serverTimestamp() }));
+    await assertFails(setDoc(doc(user('buyer-1'), 'users/buyer-1/savedAddresses/bad'),
+      { address: 'Street', latitude: 101 }));
+    await assertSucceeds(setDoc(doc(user('buyer-1'), 'users/buyer-1/savedAddresses/good'),
+      { address: 'Street', latitude: 20, longitude: 80 }));
+  });
+
+  test('checkout request rejects malformed input and cannot become an order', async () => {
+    const valid = { schemaVersion: 1, status: 'PENDING', items: [{ legacyId: 101, quantity: 1 }],
+      itemCount: 1, shippingAddress: { address: 'Street' }, recipient: { name: 'Buyer' },
+      payment: { method: 'COD' }, createdAt: serverTimestamp() };
+    await assertFails(setDoc(doc(publicClient(), 'users/buyer-1/orderRequests/a'), valid));
+    await assertFails(setDoc(doc(user('buyer-2'), 'users/buyer-1/orderRequests/a'), valid));
+    await assertFails(setDoc(doc(user('buyer-1'), 'users/buyer-1/orderRequests/a'), { ...valid, items: [] }));
+    await assertFails(setDoc(doc(user('buyer-1'), 'users/buyer-1/orderRequests/a'), { ...valid, payment: { method: 'UPI' } }));
+    await assertFails(setDoc(doc(user('buyer-1'), 'users/buyer-1/orderRequests/a'), { ...valid, totalMinor: 1 }));
+    await assertSucceeds(setDoc(doc(user('buyer-1'), 'users/buyer-1/orderRequests/a'), valid));
+    await assertFails(updateDoc(doc(user('buyer-1'), 'users/buyer-1/orderRequests/a'), { status: 'PROCESSED' }));
   });
 });
 

@@ -20,6 +20,19 @@ service cloud.firestore {
       return request.resource.data.keys().hasOnly(fields);
     }
 
+    function optionalString(data, key, maxLength) {
+      return !(key in data) || (data[key] is string && data[key].size() <= maxLength);
+    }
+
+    function optionalTimestamp(data, key) {
+      return !(key in data) || data[key] is timestamp;
+    }
+
+    function optionalNumber(data, key, minimum, maximum) {
+      return !(key in data) || (data[key] is number
+        && data[key] >= minimum && data[key] <= maximum);
+    }
+
     function activeDocument() {
       return ('status' in resource.data && resource.data.status == 'ACTIVE')
         || ('active' in resource.data && resource.data.active == true);
@@ -27,6 +40,8 @@ service cloud.firestore {
 
     function legacyProductDocument(data) {
       return !('schemaVersion' in data)
+        && !('status' in data)
+        && !('active' in data)
         && 'id' in data
         && data.id is int
         && 'title' in data
@@ -36,6 +51,8 @@ service cloud.firestore {
 
     function legacyCategoryDocument(data) {
       return !('schemaVersion' in data)
+        && !('status' in data)
+        && !('active' in data)
         && 'slug' in data
         && data.slug is string
         && 'name' in data
@@ -58,7 +75,8 @@ service cloud.firestore {
     }
 
     match /products/{productId} {
-      allow read: if isAdmin() || legacyProductDocument(resource.data) || activeDocument();
+      allow read: if isAdmin() || legacyProductDocument(resource.data)
+        || ('status' in resource.data && resource.data.status == 'ACTIVE');
       allow write: if isAdmin();
 
       match /variants/{variantId} {
@@ -118,7 +136,21 @@ service cloud.firestore {
           'schemaVersion', 'displayName', 'name', 'email', 'phoneE164', 'phone',
           'photoUrl', 'selectedAddressId', 'preferences', 'createdAt', 'updatedAt',
           'lastLoginAt'
-        ]);
+        ])
+        && (!('schemaVersion' in request.resource.data) || request.resource.data.schemaVersion == 1)
+        && optionalString(request.resource.data, 'displayName', 120)
+        && optionalString(request.resource.data, 'name', 120)
+        && optionalString(request.resource.data, 'email', 254)
+        && optionalString(request.resource.data, 'phoneE164', 20)
+        && optionalString(request.resource.data, 'phone', 20)
+        && optionalString(request.resource.data, 'photoUrl', 2048)
+        && optionalString(request.resource.data, 'selectedAddressId', 128)
+        && (!('preferences' in request.resource.data) || request.resource.data.preferences is map)
+        && optionalTimestamp(request.resource.data, 'createdAt')
+        && optionalTimestamp(request.resource.data, 'updatedAt')
+        && optionalTimestamp(request.resource.data, 'lastLoginAt')
+        && (request.method == 'create' || !('createdAt' in resource.data)
+          || request.resource.data.createdAt == resource.data.createdAt);
       allow delete: if isAdmin();
 
       match /savedAddresses/{addressId} {
@@ -130,7 +162,18 @@ service cloud.firestore {
             'isDefault', 'createdAt', 'updatedAt',
             'flatNo', 'address', 'userName', 'mobile', 'latitude', 'longitude',
             'placeName', 'addressType'
-          ]);
+          ])
+          && (!('schemaVersion' in request.resource.data) || request.resource.data.schemaVersion == 1)
+          && optionalString(request.resource.data, 'address', 500)
+          && optionalString(request.resource.data, 'flatNo', 200)
+          && optionalString(request.resource.data, 'userName', 120)
+          && optionalString(request.resource.data, 'mobile', 20)
+          && optionalString(request.resource.data, 'placeName', 200)
+          && optionalString(request.resource.data, 'addressType', 40)
+          && optionalNumber(request.resource.data, 'latitude', -90, 90)
+          && optionalNumber(request.resource.data, 'longitude', -180, 180)
+          && optionalTimestamp(request.resource.data, 'createdAt')
+          && optionalTimestamp(request.resource.data, 'updatedAt');
       }
 
       match /cartItems/{cartItemId} {
@@ -140,11 +183,19 @@ service cloud.firestore {
             'schemaVersion', 'productId', 'variantId', 'quantity', 'selected',
             'createdAt', 'updatedAt'
           ])
+          && request.resource.data.schemaVersion == 1
           && request.resource.data.productId is string
+          && request.resource.data.productId.size() > 0
+          && request.resource.data.productId.size() <= 128
           && request.resource.data.variantId is string
+          && request.resource.data.variantId.size() > 0
+          && request.resource.data.variantId.size() <= 128
           && request.resource.data.quantity is int
           && request.resource.data.quantity >= 1
-          && request.resource.data.quantity <= 10;
+          && request.resource.data.quantity <= 10
+          && request.resource.data.selected is bool
+          && request.resource.data.createdAt is timestamp
+          && request.resource.data.updatedAt is timestamp;
       }
 
       // Temporary compatibility for the current Android model. Remove after migration.
@@ -157,9 +208,12 @@ service cloud.firestore {
             'isSelected'
           ])
           && request.resource.data.id is int
+          && request.resource.data.id >= 0
           && request.resource.data.quantity is int
           && request.resource.data.quantity >= 1
-          && request.resource.data.quantity <= 10;
+          && request.resource.data.quantity <= 10
+          && optionalNumber(request.resource.data, 'price', 0, 100000000)
+          && optionalNumber(request.resource.data, 'mrp', 0, 100000000);
       }
 
       match /wishlistItems/{wishlistItemId} {
@@ -168,7 +222,13 @@ service cloud.firestore {
           && onlyFields([
             'schemaVersion', 'productId', 'variantId', 'createdAt', 'updatedAt'
           ])
-          && request.resource.data.productId is string;
+          && request.resource.data.schemaVersion == 1
+          && request.resource.data.productId is string
+          && request.resource.data.productId.size() > 0
+          && request.resource.data.productId.size() <= 128
+          && request.resource.data.variantId is string
+          && request.resource.data.variantId.size() > 0
+          && request.resource.data.variantId.size() <= 128;
       }
 
       // Temporary compatibility for the current Android model. Remove after migration.
@@ -179,7 +239,8 @@ service cloud.firestore {
             'id', 'imageUrl', 'title', 'description', 'mrp', 'price', 'rating',
             'ratingCount', 'returnPolicy', 'deliveryDetails'
           ])
-          && request.resource.data.id is int;
+          && request.resource.data.id is int
+          && request.resource.data.id >= 0;
       }
 
       match /collections/{collectionId} {
@@ -199,23 +260,14 @@ service cloud.firestore {
         allow create, delete: if isAdmin();
         allow update: if isAdmin()
           || (owns(userId)
-            && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['readAt']));
+            && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['readAt'])
+            && request.resource.data.readAt is timestamp);
       }
 
-      // Temporary client-created legacy orders. New checkout writes top-level orders server-side.
+      // Legacy orders remain readable, but only trusted server/admin operations may write them.
       match /orders/{orderId} {
         allow read: if owns(userId) || isAdmin();
-        allow create: if isAdmin()
-          || (owns(userId)
-            && onlyFields([
-              'id', 'title', 'description', 'imageUrl', 'imageRes', 'price',
-              'quantity', 'status', 'orderDate', 'expectedDeliveryDate'
-            ])
-            && request.resource.data.id is int
-            && request.resource.data.quantity is int
-            && request.resource.data.quantity >= 1
-            && request.resource.data.status == 'Pending');
-        allow update, delete: if isAdmin();
+        allow write: if isAdmin();
       }
 
       // Client checkout requests are untrusted input. A trusted server function
@@ -229,8 +281,17 @@ service cloud.firestore {
           && request.resource.data.schemaVersion == 1
           && request.resource.data.status == 'PENDING'
           && request.resource.data.items is list
+          && request.resource.data.items.size() >= 1
+          && request.resource.data.items.size() <= 50
           && request.resource.data.itemCount is int
-          && request.resource.data.itemCount >= 1;
+          && request.resource.data.itemCount >= 1
+          && request.resource.data.itemCount <= 500
+          && request.resource.data.shippingAddress is map
+          && request.resource.data.recipient is map
+          && request.resource.data.payment is map
+          && request.resource.data.payment.keys().hasOnly(['method'])
+          && request.resource.data.payment.method == 'COD'
+          && request.resource.data.createdAt is timestamp;
         allow read: if owns(userId) || isAdmin();
         allow update, delete: if isAdmin();
       }
