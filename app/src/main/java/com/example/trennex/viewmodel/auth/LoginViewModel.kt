@@ -4,6 +4,8 @@ import android.app.Activity
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.trennex.ui.auth.login.LoginUIState
+import com.example.trennex.crash.AppCrash
+import com.example.trennex.crash.CrashArea
 import com.google.firebase.FirebaseApp
 import com.google.firebase.FirebaseException
 import com.google.firebase.auth.FirebaseAuth
@@ -50,6 +52,7 @@ class LoginViewModel: ViewModel() {
                 auth.signInWithCredential(credential)
                     .addOnSuccessListener { _state.value = LoginUIState.AutoVerified }
                     .addOnFailureListener { exception ->
+                        AppCrash.get().recordUnexpected(CrashArea.AUTH, exception)
                         _state.value = LoginUIState.Error(
                             exception.localizedMessage ?: "Phone verification failed"
                         )
@@ -57,6 +60,7 @@ class LoginViewModel: ViewModel() {
             }
 
             override fun onVerificationFailed(exception: FirebaseException) {
+                AppCrash.get().recordUnexpected(CrashArea.AUTH, exception)
                 _state.value = LoginUIState.Error(
                     exception.localizedMessage ?: "Could not send OTP. Please try again."
                 )
