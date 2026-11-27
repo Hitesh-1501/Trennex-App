@@ -7,7 +7,7 @@ Updated 2026-11-25. TrenNex is a production-grade engineering portfolio applicat
 - Native Kotlin/XML Android app with Firebase Auth, Firestore, Storage, Cloud Functions, Room, and a staging build.
 - The owned staging catalog has 11 products, 15 variants, 10 root categories, and 3 banners. Category tiles now open one reusable product listing, but many legacy subcategory tiles have no matching owned products.
 - COD order creation and order history work on staging. Rich shipping events, submitted reviews, a persisted notification inbox, and real non-COD payments do not yet have complete backend flows.
-- No protected web admin dashboard, Razorpay integration, FCM inbox, or App Check enforcement is present. B1 GitHub Actions and B2 Analytics are complete by owner acceptance; individual B2 privacy, purchase reliability, and regression checks remain for combined A+B acceptance. B3 Crashlytics is implemented locally for staging, with console and physical-device verification pending; the other features remain planned.
+- No protected web admin dashboard, Razorpay integration, FCM inbox, or App Check enforcement is present. B1 GitHub Actions, B2 Analytics, and B3 Crashlytics are complete by owner acceptance; the owner manually verified staging fatal and non-fatal Crashlytics reports. Individual B2/B3 privacy, consent, environment isolation, and regression checks remain for combined A+B acceptance. B4 security hardening is implemented locally and remains in verification pending owner review and approved staging deployment; B5/B6 remain planned. Preserve the B3 shared application ID isolation risk and exported staging test activity limitation.
 - Figma has a structural inventory and route mapping in `FIGMA_SCREEN_INVENTORY.md` and `FIGMA_ROUTE_MAPPING.md`. Some frames have not been visually inspected because the Figma Starter-plan MCP limit blocked further design-context calls. For every redesigned screen, retrieve its own frame context and screenshot when access is available; do not claim inaccessible states match Figma.
 
 ## Work order
@@ -34,7 +34,7 @@ Milestones can be split into small, reviewable issues. A milestone is complete o
 1. **B1 CI/CD:** PR and `master` checks compile staging Android with a demo Firebase configuration, run Android and Cloud Functions unit tests, Firestore/Storage rules tests, checkout emulator integration, and catalog validation. A separate manual workflow runs the same checks before a staging-only Firebase deploy; protect its `staging` GitHub environment with required reviewers and short-lived Workload Identity Federation. No production deployment workflow or credentials.
 2. **B2 Analytics:** instrument privacy-safe product, category, banner, search, cart, wishlist, checkout, and assistant events with staging/production separation.
 3. **B3 Crashlytics:** configure staging reporting, safe diagnostic context, and controlled crash/non-fatal verification.
-4. **B4 Security:** audit Firestore/Storage rules and callable authorization; add denial and account-isolation tests.
+4. **B4 Security:** audit Firestore/Storage rules and callable authorization; add denial and account-isolation tests. Keep local changes in verification until reviewed and deployed to staging with owner approval; retain legacy order reads while denying customer-created legacy orders. B5 role management and B6 App Check stay separate.
 5. **B5 Roles:** server-managed customer/admin claims, revoked-admin checks, and no client privilege escalation.
 6. **B6 App Check:** stage Android integration and legitimate device validation in monitoring mode before any enforcement.
 7. **Combined A+B acceptance:** complete every documented A pending check and regress B1–B6 on emulators and staging devices. Request owner approval before C.
@@ -131,7 +131,7 @@ These checks supplement the milestone criteria. Each request remains open until 
 
 ## First implementation slice
 
-Milestone A's core implementation includes the add-address transition, cart guards and durable sync, offline/loading/error/empty/Retry states, and offline operation guards. Its remaining checks are listed in `DEVELOPMENT_STATUS.md` and will be verified with B during combined staging acceptance. B1 and B2 are complete by owner acceptance, with individually unverified B2 checks retained. B3 Crashlytics is locally implemented and remains in verification until the owner confirms its staging reports.
+Milestone A's core implementation includes the add-address transition, cart guards and durable sync, offline/loading/error/empty/Retry states, and offline operation guards. Its remaining checks are listed in `DEVELOPMENT_STATUS.md` and will be verified with B during combined staging acceptance. B1, B2, and B3 are complete by owner acceptance, with individually unverified B2/B3 checks retained. B4 security hardening remains in local verification until reviewed and approved for staging deployment.
 
 ## Production gate
 
