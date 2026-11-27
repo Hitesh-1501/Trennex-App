@@ -13,6 +13,8 @@ import androidx.navigation.fragment.findNavController
 import androidx.recyclerview.widget.LinearLayoutManager
 import com.example.trennex.R
 import com.example.trennex.analytics.AppAnalytics
+import com.example.trennex.crash.AppCrash
+import com.example.trennex.crash.CrashArea
 import com.example.trennex.analytics.AnalyticsEvents
 import com.example.trennex.analytics.AnalyticsNames
 import com.example.trennex.analytics.AnalyticsParams
@@ -98,6 +100,7 @@ class CategoryProductsFragment : Fragment(R.layout.fragment_category_products) {
                 renderProducts(adapter)
             } catch (error: Exception) {
                 if (error is CancellationException && error !is TimeoutCancellationException) throw error
+                AppCrash.get().recordUnexpected(CrashArea.CATALOG, error)
                 if (_binding == null) return@launch
                 if (products.isNotEmpty()) {
                     binding.contentStatus.hide()

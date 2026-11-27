@@ -7,6 +7,8 @@ import com.example.trennex.repository.user.UserRepository
 import com.example.trennex.data.local.AccountScope
 import com.example.trennex.ui.cart.CartUiState
 import com.example.trennex.analytics.AppAnalytics
+import com.example.trennex.crash.AppCrash
+import com.example.trennex.crash.CrashArea
 import com.example.trennex.analytics.AnalyticsEvents
 import com.example.trennex.utils.cart.CartStore
 import com.google.firebase.functions.FirebaseFunctionsException
@@ -82,6 +84,7 @@ class CartViewModel: ViewModel() {
 
         val checkoutOwner = AccountScope.currentOwner()
         _checkoutState.value = CheckoutState(isSubmitting = true)
+        AppCrash.get().log(CrashArea.CHECKOUT, "start")
         viewModelScope.launch {
             try {
                 val address = uiState.value.selectedAddress
@@ -113,6 +116,7 @@ class CartViewModel: ViewModel() {
                 android.util.Log.d("CartViewModel", "order confirmed")
                 CartStore.deleteSelectedItems(checkoutOwner)
                 _checkoutState.value = CheckoutState(isSuccess = true)
+                AppCrash.get().log(CrashArea.CHECKOUT, "complete")
                 // Analytics is intentionally outside the checkout success path.
                 if (AppAnalytics.get().isCollectionEnabled) {
                     try {
@@ -124,6 +128,8 @@ class CartViewModel: ViewModel() {
                     }
                 }
             } catch (e: Exception) {
+                AppCrash.get().log(CrashArea.CHECKOUT, "failed")
+                if (e !is IllegalStateException) AppCrash.get().recordUnexpected(CrashArea.CHECKOUT, e)
                 android.util.Log.e("CartViewModel", "order request failed; cart was preserved", e)
                 _checkoutState.value = CheckoutState(
                     errorMessage = (if (e is FirebaseFunctionsException &&
