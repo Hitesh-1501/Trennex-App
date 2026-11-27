@@ -2,6 +2,8 @@ package com.example.trennex.repository.cart
 
 import android.util.Log
 import com.example.trennex.data.local.AccountScope
+import com.example.trennex.crash.AppCrash
+import com.example.trennex.crash.CrashArea
 import com.example.trennex.data.local.cart.CartDao
 import com.example.trennex.data.local.cart.CartItemEntity
 import com.example.trennex.data.local.cart.AppDatabase
@@ -80,6 +82,7 @@ class CartRepository(
             }
             return true
         } catch (exception: Exception) {
+            AppCrash.get().recordUnexpected(CrashArea.CART, exception)
             Log.e(TAG, "Failed to sync remote cart", exception)
             return false
         }
@@ -191,6 +194,10 @@ class CartRepository(
                 if (auth.currentUser?.uid != uid) continue
                 dao.clearPending(pending.ownerId, pending.cartKey, pending.generation)
             } catch (error: Exception) {
+                AppCrash.get().log(CrashArea.CART_SYNC, "retry")
+                if (error !is IllegalStateException || error.message != "Selected variant is unavailable") {
+                    AppCrash.get().recordUnexpected(CrashArea.CART_SYNC, error)
+                }
                 Log.w(TAG, "Pending cart sync will retry", error)
                 hadFailure = true
             }

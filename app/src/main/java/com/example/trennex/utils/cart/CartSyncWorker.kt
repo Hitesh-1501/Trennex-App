@@ -9,6 +9,8 @@ import androidx.work.OneTimeWorkRequestBuilder
 import androidx.work.WorkManager
 import androidx.work.WorkerParameters
 import com.example.trennex.data.local.cart.AppDatabase
+import com.example.trennex.crash.AppCrash
+import com.example.trennex.crash.CrashArea
 import com.example.trennex.repository.cart.CartRepository
 import java.util.concurrent.TimeUnit
 
@@ -16,7 +18,8 @@ class CartSyncWorker(context: Context, params: WorkerParameters) : CoroutineWork
     override suspend fun doWork(): Result = try {
         if (CartRepository(AppDatabase.getInstance(applicationContext)).drainPending()) Result.success()
         else Result.retry()
-    } catch (_: Exception) {
+    } catch (error: Exception) {
+        AppCrash.get().recordUnexpected(CrashArea.ROOM, error)
         Result.retry()
     }
 
