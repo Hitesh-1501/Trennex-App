@@ -2,6 +2,8 @@ package com.example.trennex.repository.wishlist
 
 import android.util.Log
 import com.example.trennex.data.local.AccountScope
+import com.example.trennex.crash.AppCrash
+import com.example.trennex.crash.CrashArea
 import com.example.trennex.data.local.wihslist.WishlistDao
 import com.example.trennex.data.local.wihslist.WishlistItemEntity
 import com.example.trennex.repository.product.CatalogItemResolver
@@ -61,6 +63,7 @@ class WishlistRepository(
                 syncItemToFirestore(ownerId, item)
             }
         } catch (exception: Exception) {
+            AppCrash.get().recordUnexpected(CrashArea.WISHLIST, exception)
             Log.e(TAG, "Failed to sync remote wishlist", exception)
         }
     }
@@ -90,6 +93,7 @@ class WishlistRepository(
                 .delete()
                 .await()
         } catch (exception: Exception) {
+            AppCrash.get().recordUnexpected(CrashArea.WISHLIST, exception)
             Log.e(TAG, "Failed to remove wishlist item $itemId", exception)
         }
     }
