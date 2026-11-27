@@ -6,6 +6,7 @@ plugins {
     alias(libs.plugins.navigation.safeargs)
     alias(libs.plugins.kotlin.kapt)
     alias(libs.plugins.google.gms.google.services)
+    alias(libs.plugins.firebase.crashlytics)
 }
 
 val localProperties = Properties().apply {
@@ -100,6 +101,7 @@ dependencies {
     implementation(libs.firebase.firestore)
     implementation(libs.firebase.functions)
     implementation(libs.firebase.analytics)
+    implementation(libs.firebase.crashlytics)
     implementation(libs.firebase.storage)
     testImplementation(libs.junit)
     androidTestImplementation(libs.androidx.junit)

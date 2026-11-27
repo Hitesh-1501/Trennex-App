@@ -4,6 +4,8 @@ import android.app.Activity
 import android.util.Patterns
 import androidx.lifecycle.ViewModel
 import com.example.trennex.ui.profile.AccountDetailsUiStat
+import com.example.trennex.crash.AppCrash
+import com.example.trennex.crash.CrashArea
 import com.example.trennex.ui.profile.AccountOtpState
 import com.google.firebase.FirebaseApp
 import com.google.firebase.FirebaseException
@@ -45,7 +47,8 @@ class AccountDetailsViewModel: ViewModel() {
                     message = null
                 )
             }
-            .addOnFailureListener {
+            .addOnFailureListener { error ->
+                AppCrash.get().recordUnexpected(CrashArea.PROFILE, error)
                 _state.value = _state.value.copy(message = "Could not load account details")
             }
     }
@@ -174,6 +177,7 @@ class AccountDetailsViewModel: ViewModel() {
                 )
             }
             .addOnFailureListener {exception ->
+                AppCrash.get().recordUnexpected(CrashArea.PROFILE, exception)
                 _state.value = _state.value.copy(
                     isSaving = false,
                     message = exception.localizedMessage ?: "Could not update details. Please try again."
