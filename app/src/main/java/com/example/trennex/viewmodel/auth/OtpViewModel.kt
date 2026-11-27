@@ -5,6 +5,8 @@ import com.example.trennex.analytics.AppAnalytics
 import com.example.trennex.analytics.AnalyticsEvent
 import com.example.trennex.analytics.AnalyticsNames
 import com.example.trennex.analytics.AnalyticsParams
+import com.example.trennex.crash.AppCrash
+import com.example.trennex.crash.CrashArea
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.trennex.ui.auth.otp.OtpUiState
@@ -57,6 +59,7 @@ class OtpViewModel: ViewModel(){
                 _state.value = OtpUiState.Success
             }
             .addOnFailureListener { exception ->
+                AppCrash.get().recordUnexpected(CrashArea.AUTH, exception)
                 _state.value = OtpUiState.Error(exception.localizedMessage ?: "Invalid OTP")
             }
     }

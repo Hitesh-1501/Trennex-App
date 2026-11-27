@@ -3,6 +3,8 @@ package com.example.trennex.viewmodel.product
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.trennex.data.model.ProductResponse
+import com.example.trennex.crash.AppCrash
+import com.example.trennex.crash.CrashArea
 import com.example.trennex.repository.product.ProductRepository
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Job
@@ -33,6 +35,7 @@ class ProductDetailViewModel : ViewModel(){
                 _products.value = data
             }catch (e: Exception){
                 if (e is CancellationException && e !is TimeoutCancellationException) throw e
+                AppCrash.get().recordUnexpected(CrashArea.PRODUCT, e)
                 _error.value = e.localizedMessage ?: "Could not load product"
             } finally {
                 _isLoading.value = false
