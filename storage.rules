@@ -10,10 +10,17 @@ service firebase.storage {
       return signedIn() && request.auth.uid == userId;
     }
 
-    function isAdmin() {
+    function hasMediaAdminGrant() {
+      let grant = firestore.get(/databases/(default)/documents/adminRoleGrants/$(request.auth.uid)).data;
+      return grant.active == true
+        && grant.scopes is list
+        && 'media' in grant.scopes;
+    }
+
+    function isMediaAdmin() {
       return signedIn()
-        && 'admin' in request.auth.token
-        && request.auth.token.admin == true;
+        && request.auth.token.get('trennexRole', '') == 'admin'
+        && hasMediaAdminGrant();
     }
 
     function isImageUnder(maxBytes) {
@@ -28,32 +35,32 @@ service firebase.storage {
 
     match /catalog/categories/{fileName} {
       allow read: if safeImageName(fileName);
-      allow create, update: if isAdmin() && safeImageName(fileName) && isImageUnder(10 * 1024 * 1024);
-      allow delete: if isAdmin() && safeImageName(fileName);
+      allow create, update: if isMediaAdmin() && safeImageName(fileName) && isImageUnder(10 * 1024 * 1024);
+      allow delete: if isMediaAdmin() && safeImageName(fileName);
     }
 
     match /catalog/banners/{fileName} {
       allow read: if safeImageName(fileName);
-      allow create, update: if isAdmin() && safeImageName(fileName) && isImageUnder(10 * 1024 * 1024);
-      allow delete: if isAdmin() && safeImageName(fileName);
+      allow create, update: if isMediaAdmin() && safeImageName(fileName) && isImageUnder(10 * 1024 * 1024);
+      allow delete: if isMediaAdmin() && safeImageName(fileName);
     }
 
     match /catalog/products/{productId}/{fileName} {
       allow read: if safeImageName(fileName);
-      allow create, update: if isAdmin() && safeImageName(fileName) && isImageUnder(10 * 1024 * 1024);
-      allow delete: if isAdmin() && safeImageName(fileName);
+      allow create, update: if isMediaAdmin() && safeImageName(fileName) && isImageUnder(10 * 1024 * 1024);
+      allow delete: if isMediaAdmin() && safeImageName(fileName);
     }
 
     match /users/{userId}/{fileName} {
-      allow read: if owns(userId) || isAdmin();
-      allow create, update: if (owns(userId) || isAdmin())
+      allow read: if owns(userId);
+      allow create, update: if owns(userId)
         && fileName.matches('avatar\\.(jpg|jpeg|png|webp)')
         && isImageUnder(5 * 1024 * 1024);
-      allow delete: if owns(userId) || isAdmin();
+      allow delete: if owns(userId);
     }
 
     match /orders/{userId}/{allPaths=**} {
-      allow read: if owns(userId) || isAdmin();
+      allow read: if owns(userId);
       // No order-media upload flow exists yet. Future B7/F work must define a schema.
       allow write: if false;
     }

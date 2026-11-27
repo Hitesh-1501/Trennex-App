@@ -1,4 +1,4 @@
-import { after, before, describe, test } from 'node:test';
+import { after, before, beforeEach, describe, test } from 'node:test';
 import { readFile } from 'node:fs/promises';
 import { fileURLToPath } from 'node:url';
 import path from 'node:path';
@@ -8,10 +8,15 @@ import {
   initializeTestEnvironment,
 } from '@firebase/rules-unit-testing';
 import { deleteObject, getBytes, ref, uploadBytes } from 'firebase/storage';
+import { doc, setDoc } from 'firebase/firestore';
 
 const currentDirectory = path.dirname(fileURLToPath(import.meta.url));
 const repositoryRoot = path.resolve(currentDirectory, '..', '..');
 const projectId = 'demo-trennex';
+const [firestoreHost, firestorePort] =
+  (process.env.FIRESTORE_EMULATOR_HOST || '127.0.0.1:8080').split(':');
+const [storageHost, storagePort] =
+  (process.env.FIREBASE_STORAGE_EMULATOR_HOST || '127.0.0.1:9199').split(':');
 let testEnvironment;
 
 const onePixelPng = Uint8Array.from([
@@ -22,13 +27,27 @@ const onePixelPng = Uint8Array.from([
 const storageFor = (uid, claims = {}) =>
   testEnvironment.authenticatedContext(uid, claims).storage();
 const publicStorage = () => testEnvironment.unauthenticatedContext().storage();
+const adminStorage = () => storageFor('admin-user', { trennexRole: 'admin' });
+
+async function seedGrant(active, scopes) {
+  await testEnvironment.withSecurityRulesDisabled(async (context) => {
+    await setDoc(doc(context.firestore(), 'adminRoleGrants/admin-user'), { active, scopes });
+  });
+}
 
 before(async () => {
   const rules = await readFile(path.join(repositoryRoot, 'storage.rules'), 'utf8');
   testEnvironment = await initializeTestEnvironment({
     projectId,
-    storage: { rules, host: '127.0.0.1', port: 9199 },
+    firestore: { rules: await readFile(path.join(repositoryRoot, 'firestore.rules'), 'utf8'),
+      host: firestoreHost, port: Number(firestorePort) },
+    storage: { rules, host: storageHost, port: Number(storagePort) },
   });
+});
+
+beforeEach(async () => {
+  await testEnvironment.clearFirestore();
+  await seedGrant(true, ['media']);
 });
 
 after(async () => {
@@ -41,7 +60,7 @@ describe('catalog assets', () => {
     await assertFails(uploadBytes(ref(storageFor('buyer-1'), objectPath), onePixelPng, {
       contentType: 'image/png',
     }));
-    await assertSucceeds(uploadBytes(ref(storageFor('admin-user', { admin: true }), objectPath), onePixelPng, {
+    await assertSucceeds(uploadBytes(ref(adminStorage(), objectPath), onePixelPng, {
       contentType: 'image/png',
     }));
     await assertSucceeds(getBytes(ref(publicStorage(), objectPath)));
@@ -51,7 +70,7 @@ describe('catalog assets', () => {
 describe('B4 storage boundaries', () => {
   test('unknown paths, unsafe content types, and non-admin catalog writes fail', async () => {
     const buyer = storageFor('buyer-1');
-    const administrator = storageFor('admin-user', { admin: true });
+    const administrator = adminStorage();
     await assertFails(uploadBytes(ref(buyer, 'catalog/banners/sale.png'), onePixelPng,
       { contentType: 'image/png' }));
     await assertFails(uploadBytes(ref(administrator, 'catalog/banners/sale.svg'), onePixelPng,
@@ -74,6 +93,29 @@ describe('B4 storage boundaries', () => {
     await assertFails(deleteObject(ref(storageFor('buyer-2'), ownPath)));
     await assertFails(uploadBytes(ref(storageFor('buyer-1'), 'users/buyer-1/other.png'), onePixelPng,
       { contentType: 'image/png' }));
+  });
+});
+
+describe('B5 media role', () => {
+  test('legacy claim and admin role without media scope cannot upload', async () => {
+    const objectPath = 'catalog/banners/role-test.png';
+    await assertFails(uploadBytes(ref(storageFor('legacy-admin', { admin: true }), objectPath),
+      onePixelPng, { contentType: 'image/png' }));
+    await seedGrant(true, ['catalog']);
+    await assertFails(uploadBytes(ref(adminStorage(), objectPath), onePixelPng,
+      { contentType: 'image/png' }));
+  });
+
+  test('revoked grant blocks stale admin token and admin cannot read private avatar', async () => {
+    const objectPath = 'catalog/banners/revocation-test.png';
+    await assertSucceeds(uploadBytes(ref(adminStorage(), objectPath), onePixelPng,
+      { contentType: 'image/png' }));
+    await assertSucceeds(uploadBytes(ref(storageFor('buyer-1'), 'users/buyer-1/avatar.png'),
+      onePixelPng, { contentType: 'image/png' }));
+    await assertFails(getBytes(ref(adminStorage(), 'users/buyer-1/avatar.png')));
+    await seedGrant(false, ['media']);
+    await assertFails(uploadBytes(ref(adminStorage(), 'catalog/banners/after-revoke.png'),
+      onePixelPng, { contentType: 'image/png' }));
   });
 });
 

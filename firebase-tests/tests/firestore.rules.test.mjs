@@ -19,10 +19,12 @@ import {
 const currentDirectory = path.dirname(fileURLToPath(import.meta.url));
 const repositoryRoot = path.resolve(currentDirectory, '..', '..');
 const projectId = 'demo-trennex';
+const [firestoreHost, firestorePort] =
+  (process.env.FIRESTORE_EMULATOR_HOST || '127.0.0.1:8080').split(':');
 let testEnvironment;
 
 const user = (uid) => testEnvironment.authenticatedContext(uid).firestore();
-const admin = () => testEnvironment.authenticatedContext('admin-user', { admin: true }).firestore();
+const admin = () => testEnvironment.authenticatedContext('admin-user', { trennexRole: 'admin' }).firestore();
 const publicClient = () => testEnvironment.unauthenticatedContext().firestore();
 
 async function seed(pathName, data) {
@@ -35,12 +37,15 @@ before(async () => {
   const rules = await readFile(path.join(repositoryRoot, 'firestore.rules'), 'utf8');
   testEnvironment = await initializeTestEnvironment({
     projectId,
-    firestore: { rules, host: '127.0.0.1', port: 8080 },
+    firestore: { rules, host: firestoreHost, port: Number(firestorePort) },
   });
 });
 
 beforeEach(async () => {
   await testEnvironment.clearFirestore();
+  await seed('adminRoleGrants/admin-user', {
+    active: true, scopes: ['catalog', 'inventory', 'orders', 'reviews', 'promotions', 'media', 'audit'],
+  });
 });
 
 after(async () => {
@@ -269,5 +274,60 @@ describe('review moderation', () => {
     await assertFails(getDoc(doc(publicClient(), 'products/shirt-1/reviews/review-2')));
     await assertSucceeds(getDoc(doc(user('buyer-1'), 'products/shirt-1/reviews/review-2')));
     assert.ok(true);
+  });
+});
+
+describe('B5 scoped admin roles', () => {
+  test('role claim alone, grant alone, legacy boolean and editable profile cannot grant access', async () => {
+    const legacy = testEnvironment.authenticatedContext('legacy-admin', { admin: true }).firestore();
+    const claimOnly = testEnvironment.authenticatedContext('claim-only', { trennexRole: 'admin' }).firestore();
+    const grantOnly = user('admin-user');
+    await assertFails(setDoc(doc(legacy, 'products/forged'), { status: 'ACTIVE' }));
+    await assertFails(setDoc(doc(claimOnly, 'products/forged'), { status: 'ACTIVE' }));
+    await assertFails(setDoc(doc(grantOnly, 'products/forged'), { status: 'ACTIVE' }));
+    await seed('users/buyer-1', { role: 'admin', trennexRole: 'admin' });
+    await assertFails(setDoc(doc(user('buyer-1'), 'products/forged'), { status: 'ACTIVE' }));
+    await assertFails(getDoc(doc(user('buyer-1'), 'adminRoleGrants/admin-user')));
+    await assertFails(setDoc(doc(admin(), 'adminRoleGrants/other'), { active: true, scopes: ['catalog'] }));
+  });
+
+  test('scopes separate catalog, inventory, orders and audit access', async () => {
+    await seed('adminRoleGrants/admin-user', { active: true, scopes: ['catalog'] });
+    await seed('products/draft', { status: 'DRAFT' });
+    await seed('orders/order-1', { userId: 'buyer-1' });
+    await assertSucceeds(getDoc(doc(admin(), 'products/draft')));
+    await assertSucceeds(setDoc(doc(admin(), 'products/new'), { status: 'ACTIVE' }));
+    await assertFails(setDoc(doc(admin(), 'inventory/sku'), { available: 1 }));
+    await assertFails(getDoc(doc(admin(), 'orders/order-1')));
+    await assertFails(getDoc(doc(admin(), 'adminAuditLogs/log-1')));
+    await assertFails(setDoc(doc(admin(), 'orders/order-2'), { userId: 'buyer-1' }));
+  });
+
+  test('revocation removes access even while a stale token still has the admin claim', async () => {
+    await assertSucceeds(setDoc(doc(admin(), 'products/first'), { status: 'ACTIVE' }));
+    await seed('inventory/sku', { available: 1 });
+    await seed('adminRoleGrants/admin-user', { active: false, scopes: ['catalog'] });
+    await assertFails(setDoc(doc(admin(), 'products/second'), { status: 'ACTIVE' }));
+    await assertFails(getDoc(doc(admin(), 'inventory/sku')));
+  });
+
+  test('admin cannot read customer profile or cart or alter trusted orders directly', async () => {
+    await seed('users/buyer-1', { name: 'Buyer' });
+    await seed('users/buyer-1/cartItems/sku', { productId: 'shirt' });
+    await seed('orders/order-1', { userId: 'buyer-1', totalMinor: 1000 });
+    await assertFails(getDoc(doc(admin(), 'users/buyer-1')));
+    await assertFails(getDoc(doc(admin(), 'users/buyer-1/cartItems/sku')));
+    await assertSucceeds(getDoc(doc(admin(), 'orders/order-1')));
+    await assertFails(updateDoc(doc(admin(), 'orders/order-1'), { totalMinor: 1 }));
+  });
+
+  test('only the declared public app configuration is readable without a scoped grant', async () => {
+    await seed('appConfig/public', { catalogVersion: 1 });
+    await seed('appConfig/internal', { secret: 'not-public' });
+    await assertSucceeds(getDoc(doc(publicClient(), 'appConfig/public')));
+    await assertFails(getDoc(doc(publicClient(), 'appConfig/internal')));
+    await assertFails(getDoc(doc(user('buyer-1'), 'appConfig/internal')));
+    await assertFails(getDoc(doc(admin(), 'appConfig/internal')));
+    await assertFails(setDoc(doc(admin(), 'appConfig/public'), { secret: 'forbidden' }));
   });
 });

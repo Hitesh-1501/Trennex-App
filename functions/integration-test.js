@@ -1,9 +1,11 @@
-process.env.FIRESTORE_EMULATOR_HOST = '127.0.0.1:8080';
-process.env.FIREBASE_AUTH_EMULATOR_HOST = '127.0.0.1:9099';
+process.env.FIRESTORE_EMULATOR_HOST ||= '127.0.0.1:8080';
+process.env.FIREBASE_AUTH_EMULATOR_HOST ||= '127.0.0.1:9099';
+const functionsHost = process.env.TRENNEX_FUNCTIONS_EMULATOR_HOST || '127.0.0.1:5001';
 
 const { initializeApp } = require('firebase-admin/app');
 const { getAuth } = require('firebase-admin/auth');
-const { getFirestore, Timestamp } = require('firebase-admin/firestore');
+const { getFirestore, Timestamp, FieldValue } = require('firebase-admin/firestore');
+const { applyRoleChange } = require('./admin-roles');
 
 initializeApp({ projectId: 'demo-trennex' });
 const auth = getAuth();
@@ -49,7 +51,7 @@ async function main() {
   });
 
   const tokenResponse = await fetch(
-    'http://127.0.0.1:9099/identitytoolkit.googleapis.com/v1/accounts:signInWithPassword?key=demo-trennex',
+    `http://${process.env.FIREBASE_AUTH_EMULATOR_HOST}/identitytoolkit.googleapis.com/v1/accounts:signInWithPassword?key=demo-trennex`,
     {
       method: 'POST',
       headers: { 'content-type': 'application/json' },
@@ -61,7 +63,7 @@ async function main() {
 
   const callCreateOrder = async (requestId, idToken = tokenBody.idToken) => {
     const response = await fetch(
-      'http://127.0.0.1:5001/demo-trennex/asia-south1/createOrder',
+      `http://${functionsHost}/demo-trennex/asia-south1/createOrder`,
       {
         method: 'POST',
         headers: {
@@ -137,7 +139,7 @@ async function main() {
 
   const callAssistant = async (idToken, data = { question: 'unmatchedcatalogterm' }) => {
     const response = await fetch(
-      'http://127.0.0.1:5001/demo-trennex/asia-south1/askShoppingAssistant',
+      `http://${functionsHost}/demo-trennex/asia-south1/askShoppingAssistant`,
       { method: 'POST', headers: { 'content-type': 'application/json',
         ...(idToken ? { Authorization: `Bearer ${idToken}` } : {}) },
       body: JSON.stringify({ data }) },
@@ -220,7 +222,28 @@ async function main() {
     throw new Error(`Duplicate variants exceeded stock: ${JSON.stringify(duplicateVariant)}`);
   }
 
-  console.log(`PASS createOrder success and rejection cases: ${functionBody.result.orderNumber}`);
+  const roleUser = await auth.createUser({
+    email: `role-test-${Date.now()}@example.test`, password,
+  });
+  const roleServices = { auth, db, serverTimestamp: () => FieldValue.serverTimestamp() };
+  await applyRoleChange({ ...roleServices,
+    command: { uid: roleUser.uid, action: 'grant', scopes: ['catalog'] } });
+  const grantedUser = await auth.getUser(roleUser.uid);
+  const grantedDoc = await db.doc(`adminRoleGrants/${roleUser.uid}`).get();
+  if (grantedUser.customClaims?.trennexRole !== 'admin'
+      || grantedDoc.data()?.active !== true
+      || grantedDoc.data()?.scopes?.[0] !== 'catalog') {
+    throw new Error('Admin SDK grant did not persist claim and scoped grant');
+  }
+  await applyRoleChange({ ...roleServices,
+    command: { uid: roleUser.uid, action: 'revoke', scopes: [] } });
+  const revokedUser = await auth.getUser(roleUser.uid);
+  const revokedDoc = await db.doc(`adminRoleGrants/${roleUser.uid}`).get();
+  if (revokedUser.customClaims?.trennexRole || revokedDoc.data()?.active !== false) {
+    throw new Error('Admin SDK revoke did not clear role and deactivate grant');
+  }
+
+  console.log('PASS checkout, assistant quota, and Admin SDK role lifecycle cases');
 }
 
 main().catch((error) => {

@@ -10,10 +10,17 @@ service cloud.firestore {
       return signedIn() && request.auth.uid == userId;
     }
 
-    function isAdmin() {
+    function adminGrantAllows(scope) {
+      let grant = get(/databases/$(database)/documents/adminRoleGrants/$(request.auth.uid)).data;
+      return grant.active == true
+        && grant.scopes is list
+        && scope in grant.scopes;
+    }
+
+    function hasAdminScope(scope) {
       return signedIn()
-        && 'admin' in request.auth.token
-        && request.auth.token.admin == true;
+        && request.auth.token.get('trennexRole', '') == 'admin'
+        && adminGrantAllows(scope);
     }
 
     function onlyFields(fields) {
@@ -75,63 +82,63 @@ service cloud.firestore {
     }
 
     match /products/{productId} {
-      allow read: if isAdmin() || legacyProductDocument(resource.data)
+      allow read: if hasAdminScope('catalog') || legacyProductDocument(resource.data)
         || ('status' in resource.data && resource.data.status == 'ACTIVE');
-      allow write: if isAdmin();
+      allow write: if hasAdminScope('catalog');
 
       match /variants/{variantId} {
-        allow read: if isAdmin() || parentProductIsReadable(productId);
-        allow write: if isAdmin();
+        allow read: if hasAdminScope('catalog') || parentProductIsReadable(productId);
+        allow write: if hasAdminScope('catalog');
       }
 
       match /reviews/{reviewId} {
-        allow read: if isAdmin()
+        allow read: if hasAdminScope('reviews')
           || resource.data.status == 'PUBLISHED'
           || (signedIn() && resource.data.userId == request.auth.uid);
-        allow write: if isAdmin();
+        allow write: if hasAdminScope('reviews');
       }
     }
 
     match /categories/{categoryId} {
-      allow read: if isAdmin() || legacyCategoryDocument(resource.data) || activeDocument();
-      allow write: if isAdmin();
+      allow read: if hasAdminScope('catalog') || legacyCategoryDocument(resource.data) || activeDocument();
+      allow write: if hasAdminScope('catalog');
     }
 
     match /brands/{brandId} {
-      allow read: if isAdmin() || activeDocument();
-      allow write: if isAdmin();
+      allow read: if hasAdminScope('catalog') || activeDocument();
+      allow write: if hasAdminScope('catalog');
     }
 
     match /banners/{bannerId} {
-      allow read: if isAdmin() || resource.data.active == true;
-      allow write: if isAdmin();
+      allow read: if hasAdminScope('catalog') || resource.data.active == true;
+      allow write: if hasAdminScope('catalog');
     }
 
     match /homeSections/{sectionId} {
-      allow read: if isAdmin() || resource.data.active == true;
-      allow write: if isAdmin();
+      allow read: if hasAdminScope('catalog') || resource.data.active == true;
+      allow write: if hasAdminScope('catalog');
 
       match /items/{itemId} {
-        allow read: if isAdmin() || parentHomeSectionIsActive(sectionId);
-        allow write: if isAdmin();
+        allow read: if hasAdminScope('catalog') || parentHomeSectionIsActive(sectionId);
+        allow write: if hasAdminScope('catalog');
       }
     }
 
     match /inventory/{inventoryId} {
-      allow read, write: if isAdmin();
+      allow read, write: if hasAdminScope('inventory');
     }
 
     match /coupons/{couponId} {
-      allow read, write: if isAdmin();
+      allow read, write: if hasAdminScope('promotions');
 
       match /redemptions/{redemptionId} {
-        allow read, write: if isAdmin();
+        allow read, write: if hasAdminScope('promotions');
       }
     }
 
     match /users/{userId} {
-      allow read: if owns(userId) || isAdmin();
-      allow create, update: if (owns(userId) || isAdmin())
+      allow read: if owns(userId);
+      allow create, update: if owns(userId)
         && onlyFields([
           'schemaVersion', 'displayName', 'name', 'email', 'phoneE164', 'phone',
           'photoUrl', 'selectedAddressId', 'preferences', 'createdAt', 'updatedAt',
@@ -151,11 +158,11 @@ service cloud.firestore {
         && optionalTimestamp(request.resource.data, 'lastLoginAt')
         && (request.method == 'create' || !('createdAt' in resource.data)
           || request.resource.data.createdAt == resource.data.createdAt);
-      allow delete: if isAdmin();
+      allow delete: if false;
 
       match /savedAddresses/{addressId} {
-        allow read, delete: if owns(userId) || isAdmin();
-        allow create, update: if (owns(userId) || isAdmin())
+        allow read, delete: if owns(userId);
+        allow create, update: if owns(userId)
           && onlyFields([
             'schemaVersion', 'label', 'fullName', 'phoneE164', 'line1', 'line2',
             'landmark', 'city', 'state', 'postalCode', 'countryCode', 'location',
@@ -177,8 +184,8 @@ service cloud.firestore {
       }
 
       match /cartItems/{cartItemId} {
-        allow read, delete: if owns(userId) || isAdmin();
-        allow create, update: if (owns(userId) || isAdmin())
+        allow read, delete: if owns(userId);
+        allow create, update: if owns(userId)
           && onlyFields([
             'schemaVersion', 'productId', 'variantId', 'quantity', 'selected',
             'createdAt', 'updatedAt'
@@ -200,8 +207,8 @@ service cloud.firestore {
 
       // Temporary compatibility for the current Android model. Remove after migration.
       match /cart/{cartItemId} {
-        allow read, delete: if owns(userId) || isAdmin();
-        allow create, update: if (owns(userId) || isAdmin())
+        allow read, delete: if owns(userId);
+        allow create, update: if owns(userId)
           && onlyFields([
             'id', 'title', 'description', 'mrp', 'price', 'rating', 'ratingCount',
             'returnPolicy', 'deliveryDetails', 'imageUrl', 'imageRes', 'quantity',
@@ -217,8 +224,8 @@ service cloud.firestore {
       }
 
       match /wishlistItems/{wishlistItemId} {
-        allow read, delete: if owns(userId) || isAdmin();
-        allow create, update: if (owns(userId) || isAdmin())
+        allow read, delete: if owns(userId);
+        allow create, update: if owns(userId)
           && onlyFields([
             'schemaVersion', 'productId', 'variantId', 'createdAt', 'updatedAt'
           ])
@@ -233,8 +240,8 @@ service cloud.firestore {
 
       // Temporary compatibility for the current Android model. Remove after migration.
       match /wishlist/{wishlistItemId} {
-        allow read, delete: if owns(userId) || isAdmin();
-        allow create, update: if (owns(userId) || isAdmin())
+        allow read, delete: if owns(userId);
+        allow create, update: if owns(userId)
           && onlyFields([
             'id', 'imageUrl', 'title', 'description', 'mrp', 'price', 'rating',
             'ratingCount', 'returnPolicy', 'deliveryDetails'
@@ -244,30 +251,29 @@ service cloud.firestore {
       }
 
       match /collections/{collectionId} {
-        allow read, delete: if owns(userId) || isAdmin();
-        allow create, update: if (owns(userId) || isAdmin())
+        allow read, delete: if owns(userId);
+        allow create, update: if owns(userId)
           && onlyFields(['name', 'createdAt', 'updatedAt']);
 
         match /items/{itemId} {
-          allow read, delete: if owns(userId) || isAdmin();
-          allow create, update: if (owns(userId) || isAdmin())
+          allow read, delete: if owns(userId);
+          allow create, update: if owns(userId)
             && onlyFields(['productId', 'variantId', 'createdAt']);
         }
       }
 
       match /notifications/{notificationId} {
-        allow read: if owns(userId) || isAdmin();
-        allow create, delete: if isAdmin();
-        allow update: if isAdmin()
-          || (owns(userId)
+        allow read: if owns(userId);
+        allow create, delete: if false;
+        allow update: if owns(userId)
             && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['readAt'])
-            && request.resource.data.readAt is timestamp);
+            && request.resource.data.readAt is timestamp;
       }
 
       // Legacy orders remain readable, but only trusted server/admin operations may write them.
       match /orders/{orderId} {
-        allow read: if owns(userId) || isAdmin();
-        allow write: if isAdmin();
+        allow read: if owns(userId);
+        allow write: if false;
       }
 
       // Client checkout requests are untrusted input. A trusted server function
@@ -292,34 +298,41 @@ service cloud.firestore {
           && request.resource.data.payment.keys().hasOnly(['method'])
           && request.resource.data.payment.method == 'COD'
           && request.resource.data.createdAt is timestamp;
-        allow read: if owns(userId) || isAdmin();
-        allow update, delete: if isAdmin();
+        allow read: if owns(userId);
+        allow update, delete: if false;
       }
     }
 
     match /orders/{orderId} {
-      allow read: if isAdmin()
+      allow read: if hasAdminScope('orders')
         || (signedIn() && resource.data.userId == request.auth.uid);
-      allow write: if isAdmin();
+      // Status, totals, ownership and fulfillment remain server-managed.
+      allow write: if false;
 
       match /items/{itemId} {
-        allow read: if isAdmin() || ownsOrder(orderId);
-        allow write: if isAdmin();
+        allow read: if hasAdminScope('orders') || ownsOrder(orderId);
+        allow write: if false;
       }
 
       match /events/{eventId} {
-        allow read: if isAdmin() || ownsOrder(orderId);
-        allow write: if isAdmin();
+        allow read: if hasAdminScope('orders') || ownsOrder(orderId);
+        allow write: if false;
       }
     }
 
     match /appConfig/{configId} {
-      allow read: if true;
-      allow write: if isAdmin();
+      allow read: if configId == 'public';
+      allow write: if false;
     }
 
     match /adminAuditLogs/{logId} {
-      allow read, write: if isAdmin();
+      allow read: if hasAdminScope('audit');
+      allow write: if false;
+    }
+
+    // Only a trusted Admin SDK workflow can issue or revoke scoped grants.
+    match /adminRoleGrants/{userId} {
+      allow read, write: if false;
     }
 
     match /{document=**} {

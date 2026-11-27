@@ -6,8 +6,8 @@
   },
   "main": "index.js",
   "scripts": {
-    "check": "node --check index.js",
-    "test": "node --test assistant-core.test.js",
+    "check": "node --check index.js && node --check admin-roles.js && node --check manage-staging-admin.js",
+    "test": "node --test assistant-core.test.js admin-roles.test.js",
     "test:integration": "node integration-test.js"
   },
   "dependencies": {
