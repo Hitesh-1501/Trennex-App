@@ -14,6 +14,7 @@ import androidx.navigation.fragment.findNavController
 import androidx.recyclerview.widget.GridLayoutManager
 import com.example.trennex.R
 import com.example.trennex.analytics.AppAnalytics
+import com.example.trennex.crash.AppCrash
 import com.example.trennex.databinding.FragmentProfileBinding
 import com.example.trennex.ui.profile.adapter.ProfileGridAdapter
 import com.example.trennex.ui.profile.model.ProfileGridItem
@@ -42,6 +43,12 @@ class ProfileFragment : Fragment(R.layout.fragment_profile) {
         binding.analyticsConsent.isChecked = AppAnalytics.get().isCollectionEnabled
         binding.analyticsConsent.setOnCheckedChangeListener { _, checked ->
             AppAnalytics.get().setCollectionEnabled(checked)
+        }
+        binding.crashConsent.visibility = if (AppCrash.get().isAvailable) View.VISIBLE else View.GONE
+        binding.crashConsentNote.visibility = binding.crashConsent.visibility
+        binding.crashConsent.isChecked = AppCrash.get().isCollectionEnabled
+        binding.crashConsent.setOnCheckedChangeListener { _, checked ->
+            AppCrash.get().setCollectionEnabled(checked)
         }
         observeViewModel()
 

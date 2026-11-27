@@ -3,6 +3,8 @@ package com.example.trennex.viewmodel.search
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.trennex.config.CategoryLayoutConfig
+import com.example.trennex.crash.AppCrash
+import com.example.trennex.crash.CrashArea
 import com.example.trennex.data.local.search.RecentSearchDao
 import com.example.trennex.data.local.search.RecentSearchEntity
 import com.example.trennex.data.model.ProductResponse
@@ -102,6 +104,7 @@ class SearchViewModel: ViewModel(){
             }catch (e: CancellationException) {
                 throw e
             }catch (e: Exception){
+                AppCrash.get().recordUnexpected(CrashArea.SEARCH, e)
                 _uiState.value = SearchUiState(
                     query = query,
                     isLoading = false,
@@ -210,6 +213,7 @@ class SearchViewModel: ViewModel(){
             } catch (e: CancellationException) {
                 throw e
             } catch (e: Exception) {
+                AppCrash.get().recordUnexpected(CrashArea.SEARCH, e)
                 _uiState.value = SearchUiState(query = "Photo search", error = "ERROR LOADING PRODUCTS")
             }
         }

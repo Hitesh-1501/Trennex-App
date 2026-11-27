@@ -3,6 +3,8 @@ package com.example.trennex.viewmodel.profile
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.trennex.repository.user.AddressEntity
+import com.example.trennex.crash.AppCrash
+import com.example.trennex.crash.CrashArea
 import com.example.trennex.repository.user.UserRepository
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -29,6 +31,7 @@ class SavedAddressesViewModel : ViewModel() {
             val userPhone = userDetails?.get("phone").orEmpty()
 
             userRepository.observeSavedAddresses().catch {
+                AppCrash.get().recordUnexpected(CrashArea.ADDRESS, it)
                 android.util.Log.w("SavedAddressesViewModel", "Address listener stopped", it)
                 emit(emptyList())
             }.collect { list ->
@@ -51,6 +54,7 @@ class SavedAddressesViewModel : ViewModel() {
                 userRepository.deleteAddress(address.id)
                 onComplete()
             } catch (e: Exception) {
+                AppCrash.get().recordUnexpected(CrashArea.ADDRESS, e)
                 // handle error
             } finally {
                 _isLoading.value = false

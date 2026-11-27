@@ -2,6 +2,8 @@ package com.example.trennex.viewmodel.profile
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.example.trennex.crash.AppCrash
+import com.example.trennex.crash.CrashArea
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.firestore.FirebaseFirestore
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -41,6 +43,7 @@ class ProfileViewModel : ViewModel() {
                 _uiState.update { it.copy(userName = if (name.isNotEmpty()) name else null, isLoading = false) }
             }
             .addOnFailureListener { e ->
+                AppCrash.get().recordUnexpected(CrashArea.PROFILE, e)
                 _uiState.update { it.copy(error = e.message, isLoading = false) }
             }
     }

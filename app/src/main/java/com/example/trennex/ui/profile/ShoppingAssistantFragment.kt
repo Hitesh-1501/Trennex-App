@@ -1,5 +1,8 @@
 package com.example.trennex.ui.profile
 
+import com.example.trennex.crash.AppCrash
+import com.example.trennex.crash.CrashArea
+
 import android.graphics.Color
 import android.graphics.drawable.GradientDrawable
 import android.os.Bundle
@@ -78,6 +81,7 @@ class ShoppingAssistantFragment : Fragment(R.layout.fragment_shopping_assistant)
         addMessage(question, true)
         ui.assistantQuestion.text.clear()
         sending = true
+        AppCrash.get().log(CrashArea.ASSISTANT, "start")
         val startedAt = SystemClock.elapsedRealtime()
         AppAnalytics.get().track(AnalyticsEvent(AnalyticsNames.ASSISTANT_REQUEST))
         ui.assistantSend.isEnabled = false
@@ -98,10 +102,13 @@ class ShoppingAssistantFragment : Fragment(R.layout.fragment_shopping_assistant)
                         (SystemClock.elapsedRealtime() - startedAt),
                         AnalyticsParams.RECOMMENDATION_COUNT to
                             ((data["products"] as? List<*>)?.size ?: 0))))
+                AppCrash.get().log(CrashArea.ASSISTANT, "complete")
                 (data["remainingToday"] as? Number)?.let { remaining ->
                     addMessage("${remaining.toInt()} questions left today", false)
                 }
             } catch (error: Exception) {
+                AppCrash.get().log(CrashArea.ASSISTANT, "failed")
+                AppCrash.get().recordUnexpected(CrashArea.ASSISTANT, error)
                 AppAnalytics.get().track(AnalyticsEvent(AnalyticsNames.ASSISTANT_ERROR,
                     mapOf(AnalyticsParams.ERROR_CODE to
                         ((error as? FirebaseFunctionsException)?.code?.name ?: "unknown"))))
