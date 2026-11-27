@@ -3,6 +3,8 @@ package com.example.trennex.viewmodel.home
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.trennex.repository.product.ProductRepository
+import com.example.trennex.crash.AppCrash
+import com.example.trennex.crash.CrashArea
 import com.example.trennex.repository.user.AddressEntity
 import com.example.trennex.repository.user.UserRepository
 import com.example.trennex.ui.home.HomeUiState
@@ -83,6 +85,7 @@ class HomeViewModel : ViewModel() {
                 } }
             } catch (exception: Exception) {
                 if (exception is CancellationException && exception !is TimeoutCancellationException) throw exception
+                AppCrash.get().recordUnexpected(CrashArea.HOME, exception)
                 _uiState.update { it.copy(isLoading = false, error = exception.localizedMessage) }
             }
         }
@@ -127,6 +130,7 @@ class HomeViewModel : ViewModel() {
                 }
                 _uiState.update { state -> state.copy(products = products.toProductModels()) }
             } catch (exception: Exception) {
+                AppCrash.get().recordUnexpected(CrashArea.CATALOG, exception)
                 _uiState.update { it.copy(error = exception.localizedMessage) }
             }
         }

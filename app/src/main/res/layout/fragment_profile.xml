@@ -282,6 +282,23 @@
                 android:text="Share anonymous app usage analytics"
                 android:contentDescription="Allow anonymous app usage analytics" />
 
+            <com.google.android.material.materialswitch.MaterialSwitch
+                android:id="@+id/crashConsent"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginHorizontal="24dp"
+                android:layout_marginTop="8dp"
+                android:text="Share anonymous crash reports"
+                android:contentDescription="Allow anonymous crash reporting" />
+
+            <TextView
+                android:id="@+id/crashConsentNote"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginHorizontal="24dp"
+                android:text="Turning crash reports off takes effect after restart. Turning them on may send reports saved on this device."
+                android:textSize="12sp" />
+
             <com.google.android.material.button.MaterialButton
                 android:id="@+id/btnLogout"
                 style="@style/Widget.MaterialComponents.Button.OutlinedButton"
