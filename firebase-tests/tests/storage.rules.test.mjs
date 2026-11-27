@@ -37,7 +37,7 @@ after(async () => {
 
 describe('catalog assets', () => {
   test('only admins upload catalog images and catalog reads are public', async () => {
-    const objectPath = 'catalog/products/shirt-1.png';
+    const objectPath = 'catalog/products/shirt-1/primary.png';
     await assertFails(uploadBytes(ref(storageFor('buyer-1'), objectPath), onePixelPng, {
       contentType: 'image/png',
     }));
@@ -45,6 +45,35 @@ describe('catalog assets', () => {
       contentType: 'image/png',
     }));
     await assertSucceeds(getBytes(ref(publicStorage(), objectPath)));
+  });
+});
+
+describe('B4 storage boundaries', () => {
+  test('unknown paths, unsafe content types, and non-admin catalog writes fail', async () => {
+    const buyer = storageFor('buyer-1');
+    const administrator = storageFor('admin-user', { admin: true });
+    await assertFails(uploadBytes(ref(buyer, 'catalog/banners/sale.png'), onePixelPng,
+      { contentType: 'image/png' }));
+    await assertFails(uploadBytes(ref(administrator, 'catalog/banners/sale.svg'), onePixelPng,
+      { contentType: 'image/svg+xml' }));
+    await assertFails(uploadBytes(ref(administrator, 'catalog/private/secret.png'), onePixelPng,
+      { contentType: 'image/png' }));
+    await assertFails(uploadBytes(ref(buyer, 'unknown/file.png'), onePixelPng,
+      { contentType: 'image/png' }));
+    await assertFails(uploadBytes(ref(administrator, 'orders/buyer-1/proof.png'), onePixelPng,
+      { contentType: 'image/png' }));
+    await assertFails(getBytes(ref(publicStorage(), 'users/buyer-1/avatar.png')));
+  });
+
+  test('another customer cannot overwrite or delete private files', async () => {
+    const ownPath = 'users/buyer-1/avatar.png';
+    await assertSucceeds(uploadBytes(ref(storageFor('buyer-1'), ownPath), onePixelPng,
+      { contentType: 'image/png' }));
+    await assertFails(uploadBytes(ref(storageFor('buyer-2'), ownPath), onePixelPng,
+      { contentType: 'image/png' }));
+    await assertFails(deleteObject(ref(storageFor('buyer-2'), ownPath)));
+    await assertFails(uploadBytes(ref(storageFor('buyer-1'), 'users/buyer-1/other.png'), onePixelPng,
+      { contentType: 'image/png' }));
   });
 });
 

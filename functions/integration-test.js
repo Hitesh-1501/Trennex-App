@@ -33,6 +33,8 @@ async function main() {
     available: 5,
     reserved: 0,
   });
+  const cartRef = db.doc(`users/${user.uid}/cartItems/test-variant`);
+  await cartRef.set({ productId: 'test-product', variantId: 'test-variant', quantity: 4 });
 
   const requestRef = db.doc(`users/${user.uid}/orderRequests/test-request`);
   await requestRef.set({
@@ -123,10 +125,43 @@ async function main() {
   if (stock.error?.status !== 'FAILED_PRECONDITION') {
     throw new Error(`Out-of-stock request was not rejected: ${JSON.stringify(stock)}`);
   }
+  const cartAfterRejection = await cartRef.get();
+  if (cartAfterRejection.data()?.quantity !== 4) {
+    throw new Error('Rejected checkout changed the cart');
+  }
 
   const unauthenticated = await callCreateOrder('test-request', null);
   if (unauthenticated.error?.status !== 'UNAUTHENTICATED') {
     throw new Error(`Unauthenticated request was not rejected: ${JSON.stringify(unauthenticated)}`);
+  }
+
+  const callAssistant = async (idToken, data = { question: 'unmatchedcatalogterm' }) => {
+    const response = await fetch(
+      'http://127.0.0.1:5001/demo-trennex/asia-south1/askShoppingAssistant',
+      { method: 'POST', headers: { 'content-type': 'application/json',
+        ...(idToken ? { Authorization: `Bearer ${idToken}` } : {}) },
+      body: JSON.stringify({ data }) },
+    );
+    return response.json();
+  };
+  const unauthenticatedAssistant = await callAssistant(null);
+  if (unauthenticatedAssistant.error?.status !== 'UNAUTHENTICATED') {
+    throw new Error('Unauthenticated assistant request was accepted');
+  }
+  const malformedAssistant = await callAssistant(tokenBody.idToken,
+    { question: 'unmatchedcatalogterm', unexpected: true });
+  if (malformedAssistant.error?.status !== 'INVALID_ARGUMENT') {
+    throw new Error('Malformed assistant request was accepted');
+  }
+  for (let attempt = 0; attempt < 12; attempt += 1) {
+    const noMatch = await callAssistant(tokenBody.idToken);
+    if (!noMatch.result || noMatch.result.remainingToday !== 11 - attempt) {
+      throw new Error(`No-match assistant request did not count toward quota: ${JSON.stringify(noMatch)}`);
+    }
+  }
+  const overQuota = await callAssistant(tokenBody.idToken);
+  if (overQuota.error?.status !== 'RESOURCE_EXHAUSTED') {
+    throw new Error(`Assistant quota was bypassed: ${JSON.stringify(overQuota)}`);
   }
 
   const tamperedRequestRef = db.doc(`users/${user.uid}/orderRequests/tampered-request`);
@@ -141,9 +176,23 @@ async function main() {
     createdAt: Timestamp.now(),
   });
   const tampered = await callCreateOrder('tampered-request');
-  if (!tampered.result?.orderId) throw new Error(`Tampered request failed: ${JSON.stringify(tampered)}`);
-  const tamperedOrder = await db.doc(`orders/${tampered.result.orderId}`).get();
-  if (tamperedOrder.data().totalMinor !== 1000) throw new Error('Client price was trusted');
+  if (tampered.error?.status !== 'INVALID_ARGUMENT') {
+    throw new Error(`Client price field was accepted: ${JSON.stringify(tampered)}`);
+  }
+
+  for (const badId of ['../orders/forged', '', 123, 'x'.repeat(129)]) {
+    const malformed = await callCreateOrder(badId);
+    if (malformed.error?.status !== 'INVALID_ARGUMENT') {
+      throw new Error(`Malformed request ID was accepted: ${JSON.stringify(malformed)}`);
+    }
+  }
+  const malformedItemRef = db.doc(`users/${user.uid}/orderRequests/malformed-item`);
+  await malformedItemRef.set({ status: 'PENDING', items: [null], payment: { method: 'COD' },
+    shippingAddress: { address: 'Test Street' }, recipient: { name: 'Test User' } });
+  const malformedItem = await callCreateOrder('malformed-item');
+  if (malformedItem.error?.status !== 'INVALID_ARGUMENT') {
+    throw new Error(`Malformed checkout item was accepted: ${JSON.stringify(malformedItem)}`);
+  }
 
   const unsupportedPaymentRef = db.doc(`users/${user.uid}/orderRequests/unsupported-payment`);
   await unsupportedPaymentRef.set({

@@ -17,26 +17,45 @@ service firebase.storage {
     }
 
     function isImageUnder(maxBytes) {
-      return request.resource.size < maxBytes
-        && request.resource.contentType.matches('image/.*');
+      return request.resource.size > 0
+        && request.resource.size < maxBytes
+        && request.resource.contentType.matches('image/(jpeg|png|webp)');
     }
 
-    match /catalog/{allPaths=**} {
-      allow read: if true;
-      allow create, update: if isAdmin() && isImageUnder(10 * 1024 * 1024);
-      allow delete: if isAdmin();
+    function safeImageName(fileName) {
+      return fileName.matches('[A-Za-z0-9_-]+\\.(jpg|jpeg|png|webp)');
     }
 
-    match /users/{userId}/{allPaths=**} {
+    match /catalog/categories/{fileName} {
+      allow read: if safeImageName(fileName);
+      allow create, update: if isAdmin() && safeImageName(fileName) && isImageUnder(10 * 1024 * 1024);
+      allow delete: if isAdmin() && safeImageName(fileName);
+    }
+
+    match /catalog/banners/{fileName} {
+      allow read: if safeImageName(fileName);
+      allow create, update: if isAdmin() && safeImageName(fileName) && isImageUnder(10 * 1024 * 1024);
+      allow delete: if isAdmin() && safeImageName(fileName);
+    }
+
+    match /catalog/products/{productId}/{fileName} {
+      allow read: if safeImageName(fileName);
+      allow create, update: if isAdmin() && safeImageName(fileName) && isImageUnder(10 * 1024 * 1024);
+      allow delete: if isAdmin() && safeImageName(fileName);
+    }
+
+    match /users/{userId}/{fileName} {
       allow read: if owns(userId) || isAdmin();
       allow create, update: if (owns(userId) || isAdmin())
+        && fileName.matches('avatar\\.(jpg|jpeg|png|webp)')
         && isImageUnder(5 * 1024 * 1024);
       allow delete: if owns(userId) || isAdmin();
     }
 
     match /orders/{userId}/{allPaths=**} {
       allow read: if owns(userId) || isAdmin();
-      allow write: if isAdmin();
+      // No order-media upload flow exists yet. Future B7/F work must define a schema.
+      allow write: if false;
     }
 
     match /{allPaths=**} {
