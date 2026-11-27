@@ -7,7 +7,7 @@ Updated 2026-11-25. TrenNex is a production-grade engineering portfolio applicat
 - Native Kotlin/XML Android app with Firebase Auth, Firestore, Storage, Cloud Functions, Room, and a staging build.
 - The owned staging catalog has 11 products, 15 variants, 10 root categories, and 3 banners. Category tiles now open one reusable product listing, but many legacy subcategory tiles have no matching owned products.
 - COD order creation and order history work on staging. Rich shipping events, submitted reviews, a persisted notification inbox, and real non-COD payments do not yet have complete backend flows.
-- No protected web admin dashboard, Razorpay integration, FCM inbox, or App Check enforcement is present. B1 GitHub Actions, B2 Analytics, and B3 Crashlytics are complete by owner acceptance; the owner manually verified staging fatal and non-fatal Crashlytics reports. Individual B2/B3 privacy, consent, environment isolation, and regression checks remain for combined A+B acceptance. B4 security hardening is implemented locally and remains in verification pending owner review and approved staging deployment; B5/B6 remain planned. Preserve the B3 shared application ID isolation risk and exported staging test activity limitation.
+- No protected web admin dashboard, Razorpay integration, FCM inbox, or App Check enforcement is present. B1 GitHub Actions, B2 Analytics, and B3 Crashlytics are complete by owner acceptance; the owner manually verified staging fatal and non-fatal Crashlytics reports. Individual B2/B3 privacy, consent, environment isolation, and regression checks remain for combined A+B acceptance. B4 security hardening is **local implementation complete; staging acceptance pending**. Its PR, hosted CI, staging deployment, and repeated device checks are deferred until combined A+B integration after B6. B5 role authorization is the current local batch; B6 follows separately. Preserve the B3 shared application ID isolation risk and exported staging test activity limitation.
 - Figma has a structural inventory and route mapping in `FIGMA_SCREEN_INVENTORY.md` and `FIGMA_ROUTE_MAPPING.md`. Some frames have not been visually inspected because the Figma Starter-plan MCP limit blocked further design-context calls. For every redesigned screen, retrieve its own frame context and screenshot when access is available; do not claim inaccessible states match Figma.
 
 ## Work order
@@ -34,10 +34,10 @@ Milestones can be split into small, reviewable issues. A milestone is complete o
 1. **B1 CI/CD:** PR and `master` checks compile staging Android with a demo Firebase configuration, run Android and Cloud Functions unit tests, Firestore/Storage rules tests, checkout emulator integration, and catalog validation. A separate manual workflow runs the same checks before a staging-only Firebase deploy; protect its `staging` GitHub environment with required reviewers and short-lived Workload Identity Federation. No production deployment workflow or credentials.
 2. **B2 Analytics:** instrument privacy-safe product, category, banner, search, cart, wishlist, checkout, and assistant events with staging/production separation.
 3. **B3 Crashlytics:** configure staging reporting, safe diagnostic context, and controlled crash/non-fatal verification.
-4. **B4 Security:** audit Firestore/Storage rules and callable authorization; add denial and account-isolation tests. Keep local changes in verification until reviewed and deployed to staging with owner approval; retain legacy order reads while denying customer-created legacy orders. B5 role management and B6 App Check stay separate.
-5. **B5 Roles:** server-managed customer/admin claims, revoked-admin checks, and no client privilege escalation.
+4. **B4 Security:** audit Firestore/Storage rules and callable authorization; add denial and account-isolation tests. Local implementation accepted after automated tests; staging acceptance follows combined A+B integration after B6. Retain legacy order reads while denying customer-created legacy orders.
+5. **B5 Roles:** add server-managed admin claims with scoped, least-privilege grants; test signed-out, customer, revoked-admin, and forged-profile access. Review public `appConfig` exposure and prohibit authorization based on editable profile data. Do not build the C admin dashboard or run external role/configuration changes before approval.
 6. **B6 App Check:** stage Android integration and legitimate device validation in monitoring mode before any enforcement.
-7. **Combined A+B acceptance:** complete every documented A pending check and regress B1–B6 on emulators and staging devices. Request owner approval before C.
+7. **Combined A+B acceptance:** after B6, prepare one integration PR, run hosted CI (including Node 22 compatibility), review and approve the staging deployment, complete every documented A and B pending check on emulators and staging devices, and request owner approval before C.
 
 ## Original 17 requests: detailed staging acceptance
 
@@ -131,7 +131,7 @@ These checks supplement the milestone criteria. Each request remains open until 
 
 ## First implementation slice
 
-Milestone A's core implementation includes the add-address transition, cart guards and durable sync, offline/loading/error/empty/Retry states, and offline operation guards. Its remaining checks are listed in `DEVELOPMENT_STATUS.md` and will be verified with B during combined staging acceptance. B1, B2, and B3 are complete by owner acceptance, with individually unverified B2/B3 checks retained. B4 security hardening remains in local verification until reviewed and approved for staging deployment.
+Milestone A's core implementation includes the add-address transition, cart guards and durable sync, offline/loading/error/empty/Retry states, and offline operation guards. Its remaining checks are listed in `DEVELOPMENT_STATUS.md` and will be verified with B during combined staging acceptance. B1, B2, and B3 are complete by owner acceptance, with individually unverified B2/B3 checks retained. B4 local implementation is complete; staging acceptance is deferred. B5 and B6 are separate local increments. Metadata and MIME restrictions remain in B4; image-byte validation is deferred unless an exploitable upload flaw is confirmed.
 
 ## Production gate
 
