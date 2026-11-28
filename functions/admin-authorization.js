@@ -19,6 +19,8 @@ function validGrant(grant, uid, scope) {
 
 // For future onCall admin endpoints only. The Admin SDK bypasses security rules.
 // request.auth must be supplied by Firebase Functions, never by caller data.
+// For a privileged Firestore write, re-read the grant/version in that write's
+// transaction; this earlier authorization result is not a permanent lease.
 async function requireAdminScope(request, scope, { auth, db }) {
   if (!ADMIN_SCOPES.includes(scope)) throw new AdminAuthorizationError();
   const uid = request?.auth?.uid;
