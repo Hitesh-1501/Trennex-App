@@ -12,7 +12,11 @@ service firebase.storage {
 
     function hasMediaAdminGrant() {
       let grant = firestore.get(/databases/(default)/documents/adminRoleGrants/$(request.auth.uid)).data;
-      return grant.active == true
+      return grant.targetUid == request.auth.uid
+        && grant.active == true
+        && grant.operationState == 'SUCCEEDED'
+        && grant.version is int
+        && grant.version >= 1
         && grant.scopes is list
         && 'media' in grant.scopes;
     }

@@ -4,6 +4,8 @@ import { fileURLToPath } from 'node:url';
 import { applicationDefault, initializeApp } from 'firebase-admin/app';
 import { getFirestore, Timestamp } from 'firebase-admin/firestore';
 import { getStorage } from 'firebase-admin/storage';
+import { buildPublicConfig } from './public-config.mjs';
+import { validateCatalogAsset } from './catalog-image-validation.mjs';
 
 const currentDirectory = path.dirname(fileURLToPath(import.meta.url));
 const repositoryRoot = path.resolve(currentDirectory, '..', '..');
@@ -35,27 +37,25 @@ const bucket = getStorage().bucket();
 const catalog = JSON.parse(await readFile(dataPath, 'utf8'));
 const now = Timestamp.now();
 const publishedAt = Timestamp.fromDate(new Date('2026-11-08T00:00:00.000Z'));
+await Promise.all([
+  ...catalog.categories.map((item) => validateCatalogAsset(drawableDirectory, item.iconAsset)),
+  ...catalog.products.map((item) => validateCatalogAsset(mediaDirectory, item.imageAsset)),
+  ...catalog.banners.map((item) => validateCatalogAsset(mediaDirectory, item.imageAsset)),
+]);
 
 function mediaUrl(storagePath) {
   const encodedPath = encodeURIComponent(storagePath);
   return `http://10.0.2.2:9199/v0/b/${bucketName}/o/${encodedPath}?alt=media`;
 }
 
-function contentType(fileName) {
-  const extension = path.extname(fileName).toLowerCase();
-  if (extension === '.jpg' || extension === '.jpeg') return 'image/jpeg';
-  if (extension === '.webp') return 'image/webp';
-  return 'image/png';
-}
-
 async function uploadAsset(assetName, storagePath, altText) {
   const root = assetName.startsWith('products/') || assetName.startsWith('banners/')
     ? mediaDirectory : drawableDirectory;
-  const sourcePath = path.join(root, assetName);
-  await bucket.upload(sourcePath, {
+  const image = await validateCatalogAsset(root, assetName);
+  await bucket.upload(image.filePath, {
     destination: storagePath,
     metadata: {
-      contentType: contentType(assetName),
+      contentType: image.contentType,
       cacheControl: 'public,max-age=3600',
       metadata: { seededBy: 'trennex-local-catalog-v1' },
     },
@@ -243,19 +243,7 @@ for (const section of catalog.homeSections) {
   }
 }
 
-batch.set(database.doc('appConfig/public'), {
-  schemaVersion: catalog.schemaVersion,
-  minimumSupportedVersionCode: 1,
-  maintenanceMode: false,
-  supportEmail: 'support@trennex.example',
-  featureFlags: {
-    firebaseCatalog: true,
-    firebaseCheckout: false,
-    reviews: false,
-  },
-  legalVersions: { privacy: 1, terms: 1 },
-  updatedAt: now,
-});
+batch.set(database.doc('appConfig/public'), buildPublicConfig(catalog.schemaVersion, now));
 
 await batch.commit();
 

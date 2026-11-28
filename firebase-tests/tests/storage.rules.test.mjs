@@ -31,7 +31,15 @@ const adminStorage = () => storageFor('admin-user', { trennexRole: 'admin' });
 
 async function seedGrant(active, scopes) {
   await testEnvironment.withSecurityRulesDisabled(async (context) => {
-    await setDoc(doc(context.firestore(), 'adminRoleGrants/admin-user'), { active, scopes });
+    await setDoc(doc(context.firestore(), 'adminRoleGrants/admin-user'), {
+      targetUid: 'admin-user', version: 1, operationState: 'SUCCEEDED', active, scopes,
+    });
+  });
+}
+
+async function seedRawGrant(grant) {
+  await testEnvironment.withSecurityRulesDisabled(async (context) => {
+    await setDoc(doc(context.firestore(), 'adminRoleGrants/admin-user'), grant);
   });
 }
 
@@ -116,6 +124,22 @@ describe('B5 media role', () => {
     await seedGrant(false, ['media']);
     await assertFails(uploadBytes(ref(adminStorage(), 'catalog/banners/after-revoke.png'),
       onePixelPng, { contentType: 'image/png' }));
+  });
+
+  test('pending and mismatched grants deny media uploads', async () => {
+    const objectPath = 'catalog/banners/denied-grant.png';
+    for (const grant of [
+      { targetUid: 'admin-user', version: 2, operationState: 'PENDING',
+        active: true, scopes: ['media'] },
+      { targetUid: 'other-user', version: 2, operationState: 'SUCCEEDED',
+        active: true, scopes: ['media'] },
+      { targetUid: 'admin-user', version: 0, operationState: 'SUCCEEDED',
+        active: true, scopes: ['media'] },
+    ]) {
+      await seedRawGrant(grant);
+      await assertFails(uploadBytes(ref(adminStorage(), objectPath), onePixelPng,
+        { contentType: 'image/png' }));
+    }
   });
 });
 
