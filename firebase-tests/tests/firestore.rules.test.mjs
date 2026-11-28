@@ -44,6 +44,7 @@ before(async () => {
 beforeEach(async () => {
   await testEnvironment.clearFirestore();
   await seed('adminRoleGrants/admin-user', {
+    targetUid: 'admin-user', version: 1, operationState: 'SUCCEEDED',
     active: true, scopes: ['catalog', 'inventory', 'orders', 'reviews', 'promotions', 'media', 'audit'],
   });
 });
@@ -289,10 +290,12 @@ describe('B5 scoped admin roles', () => {
     await assertFails(setDoc(doc(user('buyer-1'), 'products/forged'), { status: 'ACTIVE' }));
     await assertFails(getDoc(doc(user('buyer-1'), 'adminRoleGrants/admin-user')));
     await assertFails(setDoc(doc(admin(), 'adminRoleGrants/other'), { active: true, scopes: ['catalog'] }));
+    await assertFails(setDoc(doc(admin(), 'adminAuditLogs/forged'), { state: 'SUCCEEDED' }));
   });
 
   test('scopes separate catalog, inventory, orders and audit access', async () => {
-    await seed('adminRoleGrants/admin-user', { active: true, scopes: ['catalog'] });
+    await seed('adminRoleGrants/admin-user', { targetUid: 'admin-user', version: 2,
+      operationState: 'SUCCEEDED', active: true, scopes: ['catalog'] });
     await seed('products/draft', { status: 'DRAFT' });
     await seed('orders/order-1', { userId: 'buyer-1' });
     await assertSucceeds(getDoc(doc(admin(), 'products/draft')));
@@ -306,9 +309,27 @@ describe('B5 scoped admin roles', () => {
   test('revocation removes access even while a stale token still has the admin claim', async () => {
     await assertSucceeds(setDoc(doc(admin(), 'products/first'), { status: 'ACTIVE' }));
     await seed('inventory/sku', { available: 1 });
-    await seed('adminRoleGrants/admin-user', { active: false, scopes: ['catalog'] });
+    await seed('adminRoleGrants/admin-user', { targetUid: 'admin-user', version: 2,
+      operationState: 'SUCCEEDED', active: false, scopes: ['catalog'] });
     await assertFails(setDoc(doc(admin(), 'products/second'), { status: 'ACTIVE' }));
     await assertFails(getDoc(doc(admin(), 'inventory/sku')));
+  });
+
+  test('pending and malformed grants cannot authorize catalog writes', async () => {
+    const ref = doc(admin(), 'products/should-stay-denied');
+    for (const grant of [
+      { targetUid: 'admin-user', version: 2, operationState: 'PENDING',
+        active: true, scopes: ['catalog'] },
+      { targetUid: 'admin-user', version: 2, operationState: 'INCOMPLETE',
+        active: true, scopes: ['catalog'] },
+      { targetUid: 'another-user', version: 2, operationState: 'SUCCEEDED',
+        active: true, scopes: ['catalog'] },
+      { targetUid: 'admin-user', version: 0, operationState: 'SUCCEEDED',
+        active: true, scopes: ['catalog'] },
+    ]) {
+      await seed('adminRoleGrants/admin-user', grant);
+      await assertFails(setDoc(ref, { status: 'ACTIVE' }));
+    }
   });
 
   test('admin cannot read customer profile or cart or alter trusted orders directly', async () => {

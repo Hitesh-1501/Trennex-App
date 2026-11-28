@@ -12,7 +12,11 @@ service cloud.firestore {
 
     function adminGrantAllows(scope) {
       let grant = get(/databases/$(database)/documents/adminRoleGrants/$(request.auth.uid)).data;
-      return grant.active == true
+      return grant.targetUid == request.auth.uid
+        && grant.active == true
+        && grant.operationState == 'SUCCEEDED'
+        && grant.version is int
+        && grant.version >= 1
         && grant.scopes is list
         && scope in grant.scopes;
     }

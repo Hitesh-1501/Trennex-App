@@ -226,20 +226,36 @@ async function main() {
     email: `role-test-${Date.now()}@example.test`, password,
   });
   const roleServices = { auth, db, serverTimestamp: () => FieldValue.serverTimestamp() };
+  const grantOperationId = `grant-${roleUser.uid}`;
+  const revokeOperationId = `revoke-${roleUser.uid}`;
   await applyRoleChange({ ...roleServices,
-    command: { uid: roleUser.uid, action: 'grant', scopes: ['catalog'] } });
+    command: { uid: roleUser.uid, action: 'grant', scopes: ['catalog'],
+      operationId: grantOperationId, expectedVersion: 0 } });
+  const repeatedGrant = await applyRoleChange({ ...roleServices,
+    command: { uid: roleUser.uid, action: 'grant', scopes: ['catalog'],
+      operationId: grantOperationId, expectedVersion: 0 } });
   const grantedUser = await auth.getUser(roleUser.uid);
   const grantedDoc = await db.doc(`adminRoleGrants/${roleUser.uid}`).get();
+  const grantAudit = await db.doc(`adminAuditLogs/${grantOperationId}`).get();
   if (grantedUser.customClaims?.trennexRole !== 'admin'
       || grantedDoc.data()?.active !== true
-      || grantedDoc.data()?.scopes?.[0] !== 'catalog') {
+      || grantedDoc.data()?.operationState !== 'SUCCEEDED'
+      || grantedDoc.data()?.version !== 1
+      || grantedDoc.data()?.scopes?.[0] !== 'catalog'
+      || grantAudit.data()?.state !== 'SUCCEEDED'
+      || repeatedGrant !== 'already-complete') {
     throw new Error('Admin SDK grant did not persist claim and scoped grant');
   }
   await applyRoleChange({ ...roleServices,
-    command: { uid: roleUser.uid, action: 'revoke', scopes: [] } });
+    command: { uid: roleUser.uid, action: 'revoke', scopes: [],
+      operationId: revokeOperationId } });
   const revokedUser = await auth.getUser(roleUser.uid);
   const revokedDoc = await db.doc(`adminRoleGrants/${roleUser.uid}`).get();
-  if (revokedUser.customClaims?.trennexRole || revokedDoc.data()?.active !== false) {
+  const revokeAudit = await db.doc(`adminAuditLogs/${revokeOperationId}`).get();
+  if (revokedUser.customClaims?.trennexRole || revokedDoc.data()?.active !== false
+      || revokedDoc.data()?.operationState !== 'SUCCEEDED'
+      || revokedDoc.data()?.version !== 2
+      || revokeAudit.data()?.state !== 'SUCCEEDED') {
     throw new Error('Admin SDK revoke did not clear role and deactivate grant');
   }
 
