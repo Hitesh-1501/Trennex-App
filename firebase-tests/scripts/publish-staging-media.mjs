@@ -5,6 +5,7 @@ import { fileURLToPath } from 'node:url';
 import { applicationDefault, initializeApp } from 'firebase-admin/app';
 import { FieldValue, getFirestore } from 'firebase-admin/firestore';
 import { getStorage } from 'firebase-admin/storage';
+import { validateCatalogAsset } from './catalog-image-validation.mjs';
 
 const projectId = process.env.GCLOUD_PROJECT;
 assert.equal(projectId, 'trennex-staging-ebbeb', 'Media publishing is staging-only.');
@@ -18,6 +19,10 @@ initializeApp({ credential: applicationDefault(), projectId, storageBucket: buck
 const db = getFirestore();
 const bucket = getStorage().bucket();
 assert.equal((await bucket.exists())[0], true, `Storage bucket ${bucketName} does not exist.`);
+await Promise.all([
+  ...catalog.products.map((item) => validateCatalogAsset(assetRoot, item.imageAsset)),
+  ...catalog.banners.map((item) => validateCatalogAsset(assetRoot, item.imageAsset)),
+]);
 
 // Read every target before uploading. A missing or mismatched catalog stops the entire update.
 const products = await Promise.all(catalog.products.map(async (item) => {
@@ -44,10 +49,12 @@ function imageUrl(storagePath) {
 
 async function upload(assetName, storagePath, altText) {
   assert.ok(assetName.startsWith('products/') || assetName.startsWith('banners/'));
-  await bucket.upload(path.join(assetRoot, assetName), {
+  const image = await validateCatalogAsset(assetRoot, assetName);
+  assert.equal(image.contentType, 'image/jpeg', 'V2 publication requires approved JPEG assets.');
+  await bucket.upload(image.filePath, {
     destination: storagePath,
     metadata: {
-      contentType: 'image/jpeg',
+      contentType: image.contentType,
       cacheControl: 'public,max-age=3600',
       metadata: { publishedBy: 'trennex-staging-media-v2' },
     },

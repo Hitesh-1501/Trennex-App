@@ -4,6 +4,8 @@ import { fileURLToPath } from 'node:url';
 import { applicationDefault, initializeApp } from 'firebase-admin/app';
 import { getFirestore, Timestamp } from 'firebase-admin/firestore';
 import { getStorage } from 'firebase-admin/storage';
+import { buildPublicConfig } from './public-config.mjs';
+import { validateCatalogAsset } from './catalog-image-validation.mjs';
 
 const STAGING_PROJECT = 'trennex-staging-ebbeb';
 const projectId = process.env.GCLOUD_PROJECT;
@@ -32,6 +34,11 @@ if (!bucketExists) {
 }
 const now = Timestamp.now();
 const publishedAt = Timestamp.fromDate(new Date('2026-11-08T00:00:00.000Z'));
+await Promise.all([
+  ...catalog.categories.map((item) => validateCatalogAsset(drawableDirectory, item.iconAsset)),
+  ...catalog.products.map((item) => validateCatalogAsset(mediaDirectory, item.imageAsset)),
+  ...catalog.banners.map((item) => validateCatalogAsset(mediaDirectory, item.imageAsset)),
+]);
 
 const storageUrl = (storagePath) =>
   `https://firebasestorage.googleapis.com/v0/b/${bucketName}/o/${encodeURIComponent(storagePath)}?alt=media`;
@@ -39,10 +46,11 @@ const storageUrl = (storagePath) =>
 async function uploadAsset(assetName, storagePath, altText) {
   const root = assetName.startsWith('products/') || assetName.startsWith('banners/')
     ? mediaDirectory : drawableDirectory;
-  await bucket.upload(path.join(root, assetName), {
+  const image = await validateCatalogAsset(root, assetName);
+  await bucket.upload(image.filePath, {
     destination: storagePath,
     metadata: {
-      contentType: assetName.endsWith('.jpg') ? 'image/jpeg' : 'image/png',
+      contentType: image.contentType,
       cacheControl: 'public,max-age=3600',
       metadata: { seededBy: 'trennex-staging-catalog-v1' },
     },
@@ -133,12 +141,7 @@ for (const section of catalog.homeSections) {
   }
 }
 
-batch.set(database.doc('appConfig/public'), {
-  schemaVersion: catalog.schemaVersion, minimumSupportedVersionCode: 1, maintenanceMode: false,
-  supportEmail: 'support@trennex.example',
-  featureFlags: { firebaseCatalog: true, firebaseCheckout: false, reviews: false },
-  legalVersions: { privacy: 1, terms: 1 }, updatedAt: now,
-});
+batch.set(database.doc('appConfig/public'), buildPublicConfig(catalog.schemaVersion, now));
 
 await batch.commit();
 console.log(`Staging catalog migrated to ${projectId}.`);
